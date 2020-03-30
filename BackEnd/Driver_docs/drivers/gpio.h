@@ -2,7 +2,15 @@
 #define GPIO_H
 
 #include <Arduino.h>
-#define STATE_PIN 
+
+
+/***************************/
+//ENDSTOP SWITCHES PIN CONFIGURATION
+#define ENDSTOP1 A2
+#define ENDSTOP2 9
+#define ENDSTOP3 8
+
+
 void set_GPIO_High(uint8_t PIN);
 void set_GPIO_Low(uint8_t PIN);
 bool state_GPIO(uint8_t PIN);
