@@ -1,0 +1,4 @@
+The contributors to this project in its first version, in code matters, are:
+Edison Armando Agudelo Restrepo
+Mateo García Carmona
+Alejandra Londoño Borja
