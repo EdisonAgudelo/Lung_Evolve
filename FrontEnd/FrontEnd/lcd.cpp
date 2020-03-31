@@ -86,6 +86,12 @@ void lcd_menu(void){
     case btnRIGHT:{
       is_pressure_controled = 1;
       volume_tidal = confg_v();
+      if (volume_tidal == 0){
+        manimun_volume_tidal = volume_tidal;
+      }
+      else if (volume_tidal == 65000){
+        maximun_volume_tidal = volume_tidal;
+      }
       break;
     }
 
@@ -100,6 +106,12 @@ void lcd_menu(void){
     case btnUP:{
       is_pressure_controled = 1;
       in_presure = confg_p();
+      if (in_presure == 0){
+        manimun_in_pressure = in_presure;
+      }
+      else if (in_presure == 65000){
+        maximun_in_pressure = in_presure;
+      }
       break;
     }
 
