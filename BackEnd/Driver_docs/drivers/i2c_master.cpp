@@ -6,7 +6,8 @@
  * 
 */
 
-    extern struct MASTER_PARAMETER MASTER_parameter;
+//extern union BreathingParameters;
+//    extern struct MASTER_PARAMETER MASTER_parameter;
 /************************************************************************************/
 void MASTER_init(void){
   Wire.begin(MASTER_ADDRESS);
@@ -14,25 +15,33 @@ void MASTER_init(void){
 
 
 /************************************************************************************/
-void MASTER_Write_Data(uint8_t SLAVE_ADDRESS,uint16_t DAT){
+void MASTER_Write_Data(uint8_t SLAVE_ADDRESS,uint16_t DAT, uint8_t COM){
+        
+         Wire.beginTransmission(SLAVE1_ADDRESS);   
+         Wire.write(COM );                          // send data frame
+         Wire.endTransmission();                 // stop transmittingter
+         command_sended=COM;
+         Wire.beginTransmission(SLAVE1_ADDRESS);   
+         Wire.write(DAT );                          // send data frame
+         Wire.endTransmission();                 // stop transmittingter         
+         
+  }
 
-    MASTER_parameter.tx_DAT=DAT;
-    MASTER_parameter.tx_SIZE_DAT=sizeof(DAT);
-    Wire.beginTransmission(SLAVE_ADDRESS);                        // transmit to device with address SLAVE_ADDRESS
-    Wire.write(MASTER_parameter.tx_DAT );                          // send data frame
-    Wire.endTransmission();                                       // stop transmitting
 
-}
 
 /************************************************************************************/
-uint8_t MASTER_Recieve_Data(uint8_t SLAVE_ADDRESS){
+void MASTER_Recieve_Data(uint8_t SLAVE_ADDRESS){
+  //hace un write para enviar comando
   Wire.requestFrom(SLAVE_ADDRESS, SIZE_DATA);                      // request SIZE_DATA bytes from slave device SLAVE_ADDRESS
-  while(Wire.available())                                         // slave may send less than requested
-  { 
-     MASTER_parameter.rx_DAT = Wire.read(); // receive a byte as character
-    
+  for(i=0;i<(sizeof(BreathingParameters)/sizeof(BreathingParametes.BUFFER[0]);i++)
+  {
+    while(1<Wire.available())                                         // slave may send less than requested
+    { 
+       BreathingParameters.BUFFER[command_sended]=Wire.read();
+      
+    }
   }
-  return MASTER_parameter.rx_DAT;
+
 }
 
 /******************************************** END **************************************/

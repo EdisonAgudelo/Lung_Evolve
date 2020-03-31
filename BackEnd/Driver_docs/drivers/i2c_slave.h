@@ -27,7 +27,15 @@ enum COMMANDS{
   MINIMUN_OUT_PRESSURE,
   MINIMUN_TIDAL_VOLUME,
   
+  
 };
+
+
+enum STATE_RECIEVE{
+  kGET_COMMAND =0,
+  kSEND_COMMAND
+}
+
 typedef union
   {
       struct CONFIGURATION
@@ -62,11 +70,11 @@ uint8_t command_sended;     // in this variable is storage the command sended by
 uint8_t is_command_sent;    // this is a flag, its 1 when a command is already been send, its 0 when a command is not sended yet
 
 
+#define SIZE_DATA 2
 
-
-#define MASTER_ADDRESS 1;
-#define SLAVE1_ADDRESS 2;
-#define LENGTH_ARRAY(Array[]) sizeof(Array)/sizeof(Array[0])
+#define MASTER_ADDRESS 1
+#define SLAVE1_ADDRESS 2
+//#define LENGTH(Array[]) sizeof(Array)/sizeof(Array[0])
 
 void SLAVE_init(void);
 void data_frame_conformation(void);
