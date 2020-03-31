@@ -1,10 +1,10 @@
-
-#include <lcd.h>
+#include "confg.h"
+#include "lcd.h"
 #include <LiquidCrystal.h>
 
 enum btns_mnu{
   menu_ini = 0,
-  btnRIGTH,
+  btnRIGHT,
   btnUP,
   btnDOWN,
   btnLEFT,
@@ -13,25 +13,22 @@ enum btns_mnu{
 };
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); 
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-LiquidCrystal lcd(12, 2, 7, 8, 9, 10);
+int lcd_key = 0;
+int adc_key_in = 0;
 
 void init_lcd(void){
  
   lcd.begin(16, 2);
   lcd.setCursor(0, 0);
-
-  int lcd_key = 0;
-  int adc_key_in = 0;
+  lcd_key = 0;
 }
 
 void lcd_menu(void){
-  adc_key_in =analogRead(0);
+  adc_key_in = analogRead(0);
   
   switch (lcd_key){
     case menu_ini:{
-      lcd.clear(0,0);
-      lcd.clear(0,1);
+      lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("Set FiO2/Introduzca FiO2: left  ");
       lcd.setCursor(0,1);
@@ -63,13 +60,13 @@ void lcd_menu(void){
     }
 
     case btnRIGHT:{
-      
+      //int=confg_O2();
       break;
     }
 
     
     case btnLEFT:{
-      
+     // int=confg_p();
       break;
     }
 

@@ -1,9 +1,20 @@
-void setup() {
-  // put your setup code here, to run once:
 
+#include "lcd.h"
+#include <LiquidCrystal.h>
+
+extern LiquidCrystal lcd;
+
+void setup() {
+    init_lcd();
+    lcd.print("Lung_Envolve");
+    lcd.setCursor(0,1);
+    lcd.print("firmware version 1.0 ");
+    delay(1000);
+    lcd.clear();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
+  lcd.setCursor(9,1);
+  lcd.print(millis()/1000);
+  lcd_menu();
 }
