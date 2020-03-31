@@ -4,6 +4,8 @@
 
 #include <stdint.h>
 
+
+//general main states
 typedef enum
 {
   
@@ -14,6 +16,40 @@ typedef enum
   
 } MainStates;
 
+//sub main or breathins states
+typedef enum
+{
+  kBreathingOutPause,
+  kBreathingInPause,
+  kBreathingOutCicle,
+  kBreathingInCicle,
+  kBreathingDelay,
+} BreathingStates;
+
+//this struct is used by FMSDelaySet to create "virtual" delays 
+typedef struct 
+{
+  uint32_t ref_time;
+  uint32_t delay_time;
+  union
+  {
+    BreathingStates next_state;
+  };
+  union 
+  {
+    BreathingStates *actual_state;
+  };
+  union
+  {
+    BreathingStates delay_state;
+  };
+
+}FMSDelay;
+
+//this funtion is dedicated to state machine delay before transition, is highly recommended to use at the end
+//of state
+void FMSDelaySet(FMSDelay *object, uint32_t delay_time, int nex_state);
+
 
 //this struct saves all errors of execution process 
 typedef union
@@ -22,6 +58,8 @@ typedef union
   {
     bool init_hardware:1;
     bool init_driver:1;
+    bool main_state_fault:1;
+    bool breathing_state_fault:1;
   };
   uint32_t all;
 }ErrorType;
@@ -35,14 +73,29 @@ typedef enum
   kMotorIdAirChoke
 }MotorIDs;
 
+const int kMotorMaxPos=250; //steps or mm, TBD In this position, valve is full open
+const int kMotorMinPos=5; //steps or mm, TBD. In this position, valve is closed
+
+//valves ID
 typedef enum
 {
   kValveIdManifold = 0x1,
   kValveIdInhalation,
-  kValveExhalation
+  kValveIdExhalation
 }ValveIDs;
 
+//some valve constands definitions 
+const bool kValveFullOpen = 1;  
+const bool kValveFullClose = 0;  
 
+typedef enum
+{
+  kSensorIdAirFlow,
+  kSensorIdInPressure,
+  kSensorOutInPressure,
+}SensorID;
+
+//comunication transfer
 typedef struct 
 {
     //working mode options
@@ -68,6 +121,27 @@ typedef struct
     
 } BreathingParameters;
 
+
+typedef struct
+{
+  //velocities 
+  uint32_t motor_bellows_return_vel;  //steps/min or mm/s TDB
+  uint32_t motor_bellows_foward_const_flow; //used when flow control is selected
+
+  //valve position
+  uint32_t motor_o2_choke_position;
+  uint32_t motor_air_choke_position;
+
+  //times 
+  uint32_t breathing_in_puase_time;
+  uint32_t breathing_in_time;
+  uint32_t breathing_out_puase_time;
+  uint32_t breathing_out_time;
+  
+  uint32_t motor_o2_choke_open_time; //this time denotes the needed time  to reach FiO2%
+  uint32_t motor_air_choke_open_time //this time denotes the needed time  to reach FiO2%
+
+} BreathingDinamics;
 
 
 #endif

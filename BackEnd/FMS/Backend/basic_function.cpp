@@ -18,3 +18,9 @@ bool DriverValveClose(int valve_id)
 {
   return true;
 }
+
+
+bool DriverValveOpenTo(int valve_id,  bool valve_position)
+{
+  return true;
+}

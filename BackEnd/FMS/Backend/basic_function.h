@@ -10,15 +10,24 @@
   //return 0 is no succes o 1 if action was totaly complete
   bool DriverMotorMoveTo(int motor_id, int line_pos);
 
+//this function set the lin vel or rotation vel of motor 
+  //return 0 is no succes o 1 if action was totaly complete
+  bool DriverMotorSetVel(int motor_id, int motor_vel);
+
   //this function initialize all develpment board GPIO
   //return 0 if there are some error else return 1
   bool PinInitialization(void);
   
-  //this function manage all on off valves
+  //this function manage all valves, and bring them to a close state.
   //return 0 if there are some error else return 1
   bool DriverValveClose(int valve_id);
   
 
-  
+  //this function manage all on/off valves
+  //return 0 if there are some error else return 1 
+  bool DriverValveOpenTo(int valve_id, bool valve_position);
+
+  //return filtered pressure in cmH20*1000 or air flow in mL/min*1000
+  int32_t SensorGetValue(int sensor_id)
 
 #endif
