@@ -2,6 +2,7 @@
 #include "lcd.h"
 #include <LiquidCrystal.h>
 
+//btn definitions
 enum btns_mnu{
   menu_ini = 0,
   btnRIGHT,
@@ -11,6 +12,29 @@ enum btns_mnu{
   btnSELECT,
   btnNONE
 };
+
+//working mode options (confg.cpp)
+extern bool is_tunning; //calibration
+extern bool is_standby; //no control
+extern bool is_pressure_controled; //control by volume or pressure 
+
+//reference values (confg.cpp)
+extern uint8_t FiO2;
+extern uint16_t in_presure;
+extern uint16_t volume_tidal;
+extern uint16_t breathing_rate;
+extern uint16_t ie_ratio;
+
+//warnings (confg.cpp)
+extern uint16_t maximun_in_pressure;
+extern uint16_t maximun_out_pressure;
+extern uint16_t maximun_volume_tidal;
+extern uint16_t manimun_in_pressure;
+extern uint16_t manimun_out_pressure;
+extern uint16_t manimun_volume_tidal;
+
+extern bool breath;
+extern bool ie_r;
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); 
 int lcd_key = 0;
@@ -60,37 +84,43 @@ void lcd_menu(void){
     }
 
     case btnRIGHT:{
-      //int=confg_O2();
+      is_pressure_controled = 1;
+      volume_tidal = confg_v();
       break;
     }
 
     
     case btnLEFT:{
-     // int=confg_p();
+      is_tunning = 1;
+      FiO2 =confg_o2();
       break;
     }
 
     
     case btnUP:{
-      
+      is_pressure_controled = 1;
+      in_presure = confg_p();
       break;
     }
 
     
     case btnDOWN:{
-      
+      breath = 1;
+      breathing_rate = confg_b();
       break;
     }
 
     
     case btnSELECT:{
-      
+      ie_r = 1;
+      ie_ratio = confg_ie();
       break;
     }
 
     
     case btnNONE:{
-      
+      is_standby = 1;
+      lcd.print("Push a button");
       break;
     }
   }
