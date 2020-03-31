@@ -99,7 +99,7 @@ void stepper_distance_action(uint8_t STATE_MOTOR, bool DIRECTION, uint8_t DISTAN
                 digitalWrite( driver_parameters.STEP, HIGH);
                 delayMicroseconds(10);
                 digitalWrite( driver_parameters.STEP, LOW);
-                delay(FIXED_STEP_DELAY);                                //revisar bien el tiempo 
+                delay(STEP_DELAY);                                //revisar bien el tiempo 
                 STEP_COUNT++;
 
               }

@@ -11,7 +11,7 @@ struct STEPPER_MOTOR_PARAMETERS{
   int STEPS_PER_REV;
   int SPEED_RPM;
   bool DIR;
-  float AXIS_PERIMETER;
+  float AXIS_PERIMETER; //in mm
 };//struct STEPPER_MOTOR_PARAMETERS stepper_motor_parameters;
 
  extern uint8_t STEP_COUNT;
