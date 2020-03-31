@@ -126,7 +126,11 @@ typedef struct
 {
   //velocities 
   uint32_t motor_bellows_return_vel;  //steps/min or mm/s TDB
-  uint32_t motor_bellows_foward_const_flow; //used when flow control is selected
+  uint32_t motor_bellows_foward_const_flow_vel; //used when flow control is selected
+
+  //control ref
+  uint16_t sensor_air_flow_ref;
+  uint16_t sensor_pressure_ref;
 
   //valve position
   uint32_t motor_o2_choke_position;
@@ -139,7 +143,7 @@ typedef struct
   uint32_t breathing_out_time;
   
   uint32_t motor_o2_choke_open_time; //this time denotes the needed time  to reach FiO2%
-  uint32_t motor_air_choke_open_time //this time denotes the needed time  to reach FiO2%
+  uint32_t motor_air_choke_open_time; //this time denotes the needed time  to reach FiO2%
 
 } BreathingDinamics;
 

@@ -2,6 +2,7 @@
 
 #include "definitions.h"
 #include "basic_function.h"
+#include "control.h"
 
 //error variable
 static ErrorType main_error;
@@ -20,6 +21,11 @@ static BreathingParameters breathing_config =
 
 static BreathingDinamics breathing_dinamic;
 
+//control variable
+static ControlData control_pressure;
+static ControlData control_air_flow;
+
+//function declaration
 //FMS declaration
 void FMSMainLoop(void);
 
@@ -34,6 +40,11 @@ void setup()
 
   //hardware initialization
   main_error.init_hardware = !PinInitialization();
+
+  //set control parameters
+
+  ControlInit(&control_pressure, 1.0, 0.0, 0.0, -1.0);
+  ControlInit(&control_air_flow, 1.0, 0.0, 0.0, -1.0);
 }
 
 void loop()
@@ -74,7 +85,12 @@ void FMSMainLoop(void)
       breathing_state_ref_time = millis();
       main_state = kMainBreathing;
       breathing_state = kBreathingOutPause;
+
+      //reset control energy
+      ControlWindup(&control_pressure);
+      ControlWindup(&control_air_flow);
     }
+
     else if (breathing_config.is_tunning)
     {
       main_state = kMainTunning;
@@ -152,8 +168,8 @@ void FMSMainLoop(void)
       //bring  valve motors to closed postion
       DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
       DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
-      //hold Blows position 
-
+      //hold Blows position
+      DriverMotorMoveTo(kMotorIdBellows,DriverMotorActualPos(kMotorIdBellows));
 
       //enter to in puase delay and then jump to in cicle
       FMSDelaySet(&breathing_delay, breathing_dinamic.breathing_in_puase_time, kBreathingOutCicle);
@@ -167,16 +183,36 @@ void FMSMainLoop(void)
       DriverValveOpenTo(kValveIdManifold, kValveFullClose);
 
       //selection of control type
-      if(breathing_config.is_pressure_controled){
+      if (breathing_config.is_pressure_controled)
+      {
         //presure controlled
 
+        DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
+        DriverMotorSetVel(kMotorIdBellows,
+                          ControlExecute(&control_air_flow,
+                                         ((float)(breathing_dinamic.sensor_pressure_ref - SensorGetValue(kSensorIdInPressure))) / 1000.0));
       }
       else
       {
         //flow controled
-        
+
+        //version 1
+        #if 0
+        DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
+        DriverMotorSetVel(kMotorIdBellows,
+                          ControlExecute(&control_air_flow,
+                                         ((float)(breathing_dinamic.sensor_air_flow_ref - SensorGetValue(kSensorIdAirFlow))) / 10.0));
+        #endif
+        //version 2
+        DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
+        DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_bellows_foward_const_flow_vel);
+
       }
 
+      if((millis()-breathing_state_ref_time)>=breathing_dinamic.breathing_in_time)
+      {
+        breathing_state=kBreathingInPause;
+      }
 
       break;
 

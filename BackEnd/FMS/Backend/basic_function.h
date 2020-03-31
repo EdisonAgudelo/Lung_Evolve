@@ -28,6 +28,9 @@
   bool DriverValveOpenTo(int valve_id, bool valve_position);
 
   //return filtered pressure in cmH20*1000 or air flow in mL/min*1000
-  int32_t SensorGetValue(int sensor_id)
+  long int SensorGetValue(int sensor_id);
+
+  //return actual motor position
+  int DriverMotorActualPos(int motor_id);
 
 #endif

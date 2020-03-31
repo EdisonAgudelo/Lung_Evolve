@@ -5,7 +5,7 @@
 
 //if any constant is set negative, this automatically disable asociated control.
 //if dt is set to negative, library get time by theysefl
-void control_init(ControlData *pObj, float kp, float ki, float kd, float dt)
+void ControlInit(ControlData *pObj, float kp, float ki, float kd, float dt)
 {
     pObj->constants.kp = kp;
     pObj->constants.ki = ki;
@@ -31,7 +31,7 @@ void control_init(ControlData *pObj, float kp, float ki, float kd, float dt)
 }
 
 //extra parameters to has a better control on library
-void control_set_aditional(ControlData *pObj, float max_p, float max_i, float max_d, float offset)
+void ControlSetAditional(ControlData *pObj, float max_p, float max_i, float max_d, float offset)
 {
     if (pObj->en_control_type.p)
     {
@@ -49,7 +49,7 @@ void control_set_aditional(ControlData *pObj, float max_p, float max_i, float ma
 }
 
 //execute periodically
-float control_execute(ControlData *pObj, float error)
+float ControlExecute(ControlData *pObj, float error)
 {
     float action_control=0.0;
 
@@ -93,7 +93,7 @@ float control_execute(ControlData *pObj, float error)
 }
 
 //reset energy storage varibales
-void control_windup(ControlData *pObj)
+void ControlWindup(ControlData *pObj)
 {
     pObj->energy.integer = 0.0;
     pObj->energy.previous_value = 0.0;
