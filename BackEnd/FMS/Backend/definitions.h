@@ -55,6 +55,28 @@ typedef union {
   uint32_t all;
 } ErrorType;
 
+typedef union {
+  struct 
+  {
+    
+    bool high_in_volume_tidal:1;
+    bool low_in_volume_tidal:1;
+
+    bool high_breathing_rate:1;
+    bool low_breathing_rate:1;
+    
+    bool high_in_pressure:1;
+    bool low_in_pressure:1;
+
+    bool high_out_pressure:1;
+    bool low_out_pressure:1;
+
+    bool high_ie_ratio:1;
+    bool low_ie_ratio:1;
+  };
+  uint32_t all;
+} WarningType;
+
 //motor IDs
 typedef enum
 {
@@ -98,7 +120,7 @@ typedef struct
   //reference values
   uint8_t FiO2;            // 21 - (100) [%]
   uint16_t in_presure;     // 0 ~(65*1000) [cmH2O]
-  uint16_t volume_tidal;   // 0 ~(6500*10) [mL]
+  uint16_t volume_tidal;   // 0 ~(65*1000) [L/min]
   uint16_t breathing_rate; //6*1000 ~ 40*1000 [breaths/min]
   uint16_t ie_ratio;       //1:(1*1000) ~ 1:(3*1000)
 
@@ -106,11 +128,14 @@ typedef struct
   uint16_t maximun_in_pressure;  // 0 ~(65*1000) [cmH2O]
   uint16_t maximun_out_pressure; // 0 ~(65*1000) [cmH2O]
   uint16_t maximun_volume_tidal; // 0 ~(6500*10) [mL]
-  uint16_t manimun_in_pressure;  // 0 ~(65*1000) [cmH2O]
-  uint16_t manimun_out_pressure; // 0 ~(65*1000) [cmH2O]
-  uint16_t manimun_volume_tidal; // 0 ~(6500*10) [mL]
+  uint16_t minimun_in_pressure;  // 0 ~(65*1000) [cmH2O]
+  uint16_t minimun_out_pressure; // 0 ~(65*1000) [cmH2O]
+  uint16_t minimun_volume_tidal; // 0 ~(6500*10) [mL]
 
 } BreathingParameters;
+
+const float kMaximun_deviation_breathing_rate=0.05; //[]
+const float kMaximun_deviation_ie_ratio=0.05; //[]
 
 //This struct saves all working parameters, most of them are on execution calculated
 typedef struct

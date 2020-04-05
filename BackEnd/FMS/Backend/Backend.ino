@@ -7,6 +7,9 @@
 //error variable
 static ErrorType main_error;
 
+//warning variable
+static WarningType main_warning;
+
 //state machine variables
 static MainStates main_state;
 static BreathingStates breathing_state;
@@ -29,6 +32,7 @@ static ControlData control_air_flow;
 //function declaration
 //FMS declaration
 void FMSMainLoop(void);
+void WarningMonitor(void);
 
 void setup()
 {
@@ -39,6 +43,9 @@ void setup()
 
   main_error.all = 0; //reset all errors;
   main_error.working_configuration_not_initialized = true;
+
+  //reset all warnings
+  main_warning.all = 0;
 
   //hardware initialization
   main_error.init_hardware = !PinInitialization();
@@ -54,6 +61,112 @@ void setup()
 void loop()
 {
   FMSMainLoop();
+  WarningMonitor();
+}
+
+//this function watches all critial varibles and make warnings if varible reaches threshold
+void WarningMonitor(void)
+{
+  // time varibles
+  static uint32_t last_inspiration_ref_time = 0;
+  static uint32_t last_espiration_ref_time = 0;
+  static uint32_t last_dt_ref_time = 0;
+
+  static uint32_t inspiration_time = 1000; //to avoid 0 division
+  static uint32_t espiration_time = 2000;
+  static uint32_t dt_time = 0;
+
+  //other type variables
+  static BreathingStates breathing_previous_state = breathing_state;
+
+  static uint32_t measured_tidal = 0;
+  static uint32_t measured_ie_ratio = 0;
+  static uint32_t measured_breathing = 0;
+  static uint32_t integer_tidal = 0;
+
+  if (main_state == kMainBreathing)
+  {
+    switch (breathing_state)
+    {
+
+    case kBreathingOutCicle:
+      //at the end of in cicle
+      if (breathing_previous_state != breathing_state)
+      {
+        breathing_previous_state = breathing_state;
+        last_inspiration_ref_time = millis();
+        inspiration_time = last_inspiration_ref_time - last_espiration_ref_time;
+
+        //measure
+        measured_ie_ratio = (espiration_time * 1000) / inspiration_time;
+        measured_breathing = 60000000 / (espiration_time + inspiration_time);
+
+        measured_tidal = integer_tidal / inspiration_time;
+
+        //check warnings limits
+        main_warning.high_in_volume_tidal = measured_tidal > breathing_config.maximun_volume_tidal ? true : false;
+        main_warning.low_in_volume_tidal = measured_tidal < breathing_config.minimun_volume_tidal ? true : false;
+
+        main_warning.high_breathing_rate = measured_breathing > breathing_config.breathing_rate * (1.0 + kMaximun_deviation_breathing_rate) ? true : false;
+        main_warning.low_breathing_rate = measured_breathing < breathing_config.breathing_rate * (1.0 - kMaximun_deviation_breathing_rate) ? true : false;
+
+        main_warning.high_ie_ratio = measured_ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximun_deviation_ie_ratio) ? true : false;
+        main_warning.low_ie_ratio = measured_ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximun_deviation_ie_ratio) ? true : false;
+      }
+      break;
+
+    case kBreathingInCicle:
+      //at the end of out cicle
+      if (breathing_previous_state != breathing_state)
+      {
+        breathing_previous_state = breathing_state;
+        last_espiration_ref_time = millis();
+        espiration_time = last_espiration_ref_time - last_inspiration_ref_time;
+
+        //measure
+        measured_ie_ratio = (espiration_time * 1000) / inspiration_time;
+        measured_breathing = 60000000 / (espiration_time + inspiration_time);
+
+        last_dt_ref_time = millis(); //reset dt;
+        integer_tidal = 0;           //reset integer
+
+        //check warnings limits
+        main_warning.high_breathing_rate = measured_breathing > breathing_config.breathing_rate * (1.0 + kMaximun_deviation_breathing_rate) ? true : false;
+        main_warning.low_breathing_rate = measured_breathing < breathing_config.breathing_rate * (1.0 - kMaximun_deviation_breathing_rate) ? true : false;
+
+        main_warning.high_ie_ratio = measured_ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximun_deviation_ie_ratio) ? true : false;
+        main_warning.low_ie_ratio = measured_ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximun_deviation_ie_ratio) ? true : false;
+      }
+
+      dt_time = millis() - last_dt_ref_time;
+      last_dt_ref_time = millis();
+      integer_tidal += SensorGetValue(kSensorIdAirFlow) * dt_time;
+
+      break;
+
+    default:
+
+      break;
+    }
+
+    if (breathing_previous_state == kBreathingOutCicle)
+    {
+
+      main_warning.high_out_pressure = SensorGetValue(kSensorIdOutPressure) > breathing_config.maximun_out_pressure ? true : false;
+      main_warning.low_out_pressure = SensorGetValue(kSensorIdOutPressure) < breathing_config.minimun_out_pressure ? true : false;
+    }
+    else //(breathing_previous_state == kBreathinginCicle)
+    {
+      //check warnings
+      main_warning.high_in_pressure = SensorGetValue(kSensorIdInPressure) > breathing_config.maximun_in_pressure ? true : false;
+      main_warning.low_in_pressure = SensorGetValue(kSensorIdInPressure) < breathing_config.minimun_in_pressure ? true : false;
+    }
+  }
+  else
+  {
+    //reset warnings
+    main_warning.all = 0;
+  }
 }
 
 void FMSMainLoop(void)
