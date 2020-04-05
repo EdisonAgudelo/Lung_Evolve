@@ -37,3 +37,8 @@ int DriverMotorActualPos(int motor_id)
 {
   return 100;
 }
+
+bool DirverInitialization(void)
+{
+  return true;
+}

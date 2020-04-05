@@ -33,4 +33,8 @@
   //return actual motor position
   int DriverMotorActualPos(int motor_id);
 
+  //this function initialize all peripheral drivers
+  //return 0 if there are some error else return 1
+  bool DirverInitialization(void);
+
 #endif
