@@ -3,7 +3,7 @@
 #include "definitions.h"
 #include "basic_function.h"
 #include "control.h"
-#include "driver_led.h"
+
 
 //error variable
 static ErrorType main_error;
@@ -86,6 +86,24 @@ void loop()
   DriverLoops();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void ComputeParameters(void)
 {
 
@@ -103,7 +121,7 @@ void WarningActions(void)
   {
     DriverLedTShoot(&buzzer,2000,100);
   }
-  
+
   if(main_warning.high_in_pressure)
   {
     DriverLedNBlink(&led_red, 2000, 3);
@@ -260,7 +278,7 @@ void FMSMainLoop(void)
 
     //wait for fully open bellows
     if (DriverMotorActualPos(kMotorIdBellows) == kMotorMinPos)
-    {
+    { 
       //close inputs
       DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
       DriverValveOpenTo(kValveIdManifold, kValveFullClose);
@@ -544,7 +562,7 @@ void FMSMainLoop(void)
     //if time trigger happen, change state
     if ((millis() - main_delay.ref_time) > main_delay.delay_time)
     {
-      main_state_ref_time = millis();
+      main_state_ref_time = millis(); 
       main_state = (MainStates)main_delay.next_state;
     }
     break;

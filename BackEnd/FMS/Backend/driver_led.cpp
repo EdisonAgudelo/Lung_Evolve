@@ -7,7 +7,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-inline void DriverLedInit(DriverLed *led, int gpio_output)
+#include <Arduino.h>
+
+void DriverLedInit(DriverLed *led, int gpio_output)
 {
     led->gpio_pin = gpio_output;
     led->blink = false;
