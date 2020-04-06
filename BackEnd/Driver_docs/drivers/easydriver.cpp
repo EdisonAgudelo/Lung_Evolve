@@ -126,7 +126,7 @@ void set_direction(bool DIRECTION){
 
 /************************************************************************************/
 bool detect_endstop(uint8_t PIN){
-  return state_GPIO(PIN);
+  return read_digital_pin(PIN);
   
 }
 
