@@ -2,6 +2,11 @@
 
 #include "basic_function.h"
 
+#include "hardware_interface.h"
+
+static DriverLed led_red;
+static DriverLed buzzer;
+
 bool DriverMotorMoveTo(int motor_id, int line_pos)
 {
   return true;
@@ -9,6 +14,8 @@ bool DriverMotorMoveTo(int motor_id, int line_pos)
 
 bool PinInitialization(void)
 {
+  pin_config_digital(kHardwareLedRedPin, kOutput);
+  pin_config_digital(kHardwareBuzzerPin, kOutput);
   return true;
 }
 
@@ -40,5 +47,15 @@ int DriverMotorActualPos(int motor_id)
 
 bool DirverInitialization(void)
 {
+
+  DriverLedInit(&led_red, kHardwareLedRedPin); //config pin and initialize pin
+  DriverLedInit(&led_red, kHardwareBuzzerPin); //config pin and initialize pin
+
   return true;
+}
+
+bool DriverLoops(void)
+{
+  DriverLedLoop(&led_red);
+  DriverLedLoop(&buzzer);
 }

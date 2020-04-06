@@ -55,24 +55,25 @@ typedef union {
   uint32_t all;
 } ErrorType;
 
+//this struct saves execution warning variables
 typedef union {
-  struct 
+  struct
   {
-    
-    bool high_in_volume_tidal:1;
-    bool low_in_volume_tidal:1;
 
-    bool high_breathing_rate:1;
-    bool low_breathing_rate:1;
-    
-    bool high_in_pressure:1;
-    bool low_in_pressure:1;
+    bool high_in_volume_tidal : 1;
+    bool low_in_volume_tidal : 1;
 
-    bool high_out_pressure:1;
-    bool low_out_pressure:1;
+    bool high_breathing_rate : 1;
+    bool low_breathing_rate : 1;
 
-    bool high_ie_ratio:1;
-    bool low_ie_ratio:1;
+    bool high_in_pressure : 1;
+    bool low_in_pressure : 1;
+
+    bool high_out_pressure : 1;
+    bool low_out_pressure : 1;
+
+    bool high_ie_ratio : 1;
+    bool low_ie_ratio : 1;
   };
   uint32_t all;
 } WarningType;
@@ -96,7 +97,7 @@ typedef enum
   kValveIdExhalation
 } ValveIDs;
 
-//some valve constands definitions
+//some valve constants definitions
 const bool kValveFullOpen = 1;
 const bool kValveFullClose = 0;
 
@@ -134,8 +135,8 @@ typedef struct
 
 } BreathingParameters;
 
-const float kMaximun_deviation_breathing_rate=0.05; //[]
-const float kMaximun_deviation_ie_ratio=0.05; //[]
+const float kMaximun_deviation_breathing_rate = 0.05; //[]
+const float kMaximun_deviation_ie_ratio = 0.05;       //[]
 
 //This struct saves all working parameters, most of them are on execution calculated
 typedef struct
@@ -172,5 +173,14 @@ typedef struct
 const uint32_t kMotorDefaultReturnVelBellows = 100; //steps/min or mm/s TBD
 const uint32_t kMotorDefaultVelAirChoke = 100;      //steps/min or mm/s TBD
 const uint32_t kMotorDefaultVelO2Choke = 100;       //steps/min or mm/s TBD
+
+typedef struct
+{
+  uint32_t tidal;
+  uint32_t ie_ratio;
+  uint32_t breathing_rate;
+  uint32_t in_pressure;
+  uint32_t out_pressure;
+}MeasureType;
 
 #endif
