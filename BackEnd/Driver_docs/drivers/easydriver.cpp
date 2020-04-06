@@ -1,5 +1,7 @@
 #include "easydriver.h"
+
 #include "gpio.h"
+
 /* to check out the driver http://www.schmalzhaus.com/EasyDriver/
  * the correct use of this functions is recomended to do it as follows:
  * 
