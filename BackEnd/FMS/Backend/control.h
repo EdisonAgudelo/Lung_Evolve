@@ -15,28 +15,33 @@ typedef struct
             bool d : 1;
         };
         uint8_t all:3;
-    } en_control_type;
+    } en_control_type, en_control_saturation;
+
     struct
     {
         float integer;
         float previous_value;
     } energy;
+
     struct
     {
         float kp;
         float ki;
         float kd;
     } constants;
+
     struct
     {
         float i;
         float d;
         float p;
     } max;
+
     bool take_time : 1;
     uint32_t previous_time;
     float dt; //s
     float offset;
+    
 } ControlData;
 
 //if any constant is set negative, this automatically disable asociated control.
