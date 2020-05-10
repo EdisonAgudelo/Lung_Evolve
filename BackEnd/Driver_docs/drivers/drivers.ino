@@ -21,21 +21,14 @@ void loop() {
  
 }*/
 
-
-
 /**********************************************/
 //i2c master
 
-void setup() {
-
-
-
+void setup()
+{
 }
 
-void loop() {
+void loop()
+{
   // put your main code here, to run repeatedly:
- 
-
- 
- 
 }
