@@ -23,10 +23,6 @@ bool DriverMotorSetVel(int motor_id, int motor_vel);
 //return 0 if there are some error else return 1
 bool PinInitialization(void);
 
-//this function manage all valves, and bring them to a close state.
-//return 0 if there are some error else return 1
-bool DriverValveClose(int valve_id);
-
 //this function manage all on/off valves
 //return 0 if there are some error else return 1
 bool DriverValveOpenTo(int valve_id, bool valve_position);

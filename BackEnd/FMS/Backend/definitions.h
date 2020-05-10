@@ -181,6 +181,7 @@ typedef struct
   uint32_t breathing_rate;
   uint32_t in_pressure;
   uint32_t out_pressure;
+  uint32_t mixture_flow;
 }MeasureType;
 
 #endif

@@ -4,17 +4,19 @@
 #include "control.h"
 
 //if any constant is set negative, this automatically disable asociated control.
-//if dt is set to negative, library get time by theysefl
+//if dt is set to negative or 0, library get time by itsefl
 void ControlInit(ControlData *pObj, float kp, float ki, float kd, float dt)
 {
     pObj->constants.kp = kp;
     pObj->constants.ki = ki;
     pObj->constants.kd = kd;
-    if (pObj->constants.kp < 0.0)
+    pObj->en_control_type.all = 0b111;
+
+    if (pObj->constants.kp <= 0.0)
         pObj->en_control_type.p = false;
-    if (pObj->constants.ki < 0.0)
+    if (pObj->constants.ki <= 0.0)
         pObj->en_control_type.i = false;
-    if (pObj->constants.kd < 0.0)
+    if (pObj->constants.kd <= 0.0)
         pObj->en_control_type.d = false;
     if (dt <= 0.0)
     {
@@ -90,6 +92,8 @@ float ControlExecute(ControlData *pObj, float error)
         pObj->energy.previous_value=error;
     }
     action_control+=pObj->offset;
+
+    return action_control;
 }
 
 //reset energy storage varibales

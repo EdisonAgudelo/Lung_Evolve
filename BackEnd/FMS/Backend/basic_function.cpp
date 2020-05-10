@@ -4,9 +4,8 @@
 
 #include "hardware_interface.h"
 
-
- DriverLed led_red;
- DriverLed buzzer;
+DriverLed led_red;
+DriverLed buzzer;
 
 bool DriverMotorMoveTo(int motor_id, int line_pos)
 {
@@ -20,10 +19,6 @@ bool PinInitialization(void)
   return true;
 }
 
-bool DriverValveClose(int valve_id)
-{
-  return true;
-}
 
 bool DriverValveOpenTo(int valve_id, bool valve_position)
 {
@@ -50,13 +45,13 @@ bool DirverInitialization(void)
 {
 
   DriverLedInit(&led_red, kHardwareLedRedPin); //config pin and initialize pin
- // DriverLedInit(&buzzer, kHardwareBuzzerPin); //config pin and initialize pin
+  DriverLedInit(&buzzer, kHardwareBuzzerPin); //config pin and initialize pin
 
   return true;
 }
 
 bool DriverLoops(void)
 {
- // DriverLedLoop(&led_red);
- // DriverLedLoop(&buzzer);
+  DriverLedLoop(&led_red);
+  DriverLedLoop(&buzzer);
 }
