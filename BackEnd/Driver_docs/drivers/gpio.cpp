@@ -7,21 +7,22 @@
 */
 
 /************************************************************************************/
-void set_GPIO_High(uint8_t PIN){
-  
-  digitalWrite(PIN,HIGH);
-}
+void set_pin(uint8_t pin)
+{
 
-
-/************************************************************************************/
-void set_GPIO_Low(uint8_t PIN){
-  
-  digitalWrite(PIN,LOW);
+  digitalWrite(pin, HIGH);
 }
 
 /************************************************************************************/
-bool read_GPIO(uint8_t PIN){
-  return bitRead(PIN, OUTPUT);
-  
+void clear_pin(uint8_t pin)
+{
+
+  digitalWrite(pin, LOW);
+}
+
+/************************************************************************************/
+bool read_digital_pin(int pin)
+{
+  return bitRead(pin, OUTPUT);
 }
 /****************************************  END  **************************************/

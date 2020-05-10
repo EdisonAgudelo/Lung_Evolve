@@ -1,5 +1,7 @@
 #include "easydriver.h"
+
 #include "gpio.h"
+
 /* to check out the driver http://www.schmalzhaus.com/EasyDriver/
  * the correct use of this functions is recomended to do it as follows:
  * 
@@ -124,7 +126,7 @@ void set_direction(bool DIRECTION){
 
 /************************************************************************************/
 bool detect_endstop(uint8_t PIN){
-  return state_GPIO(PIN);
+  return read_digital_pin(PIN);
   
 }
 
