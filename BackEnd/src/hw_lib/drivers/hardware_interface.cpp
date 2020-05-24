@@ -2,34 +2,54 @@
 
 #include "hardware_interface.h"
 
-void set_pin(int pin)
+#include <Arduino.h>
+
+
+
+
+void PinConfigRisingIRS(int pin, void (*callback)(void))
+{
+  //attachInterrupt(digitalPinToInterrupt(pin), callback, RISING);
+}
+
+
+void PinConfigDigital(int pin, bool dir)
 {
 
 }
 
-void clear_pin(int pin)
+void PinConfigAnalog(int pin)
 {
+
 
 }
 
 
-bool read_digital_pin(int pin)
+bool PinReadDigital(int pin)
 {
     return true;
 }
 
-uint16_t read_analog_pin(int pin)
+
+uint16_t PinReadAnalog(int pin)
 {
     return 0;
 }
 
-void pin_config_digital(int pin, bool dir)
+
+void PinSetDigital(int pin, bool level)
 {
 
 }
 
-void pin_config_analog(int pin)
+
+void PWMConfigFrecuency(int frecuency, int pwm_id)
 {
 
-
 }
+
+bool PWMIsButtom(int pwm_id)
+{
+    
+}
+

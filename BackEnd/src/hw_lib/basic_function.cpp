@@ -14,8 +14,8 @@ bool DriverMotorMoveTo(int motor_id, int line_pos)
 
 bool PinInitialization(void)
 {
-  pin_config_digital(kHardwareLedRedPin, kOutput);
-  pin_config_digital(kHardwareBuzzerPin, kOutput);
+  PinConfigDigital(kHardwareLedRedPin, kOutput);
+  PinConfigDigital(kHardwareBuzzerPin, kOutput);
   return true;
 }
 

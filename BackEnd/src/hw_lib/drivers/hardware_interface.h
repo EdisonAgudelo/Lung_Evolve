@@ -14,22 +14,31 @@ const int kHardwareBuzzerPin = 0;
 
 const bool kInput = true;
 const bool kOutput = false;
-
-//this function drives an specific to HIGH level 
-void set_pin(int pin);
-
-//this function drives an specific to LOW level
-void clear_pin(int pin);
-
-//this function read analog pin
-bool read_digital_pin(int pin);
-
-uint16_t read_analog_pin(int pin);
-
-//this functions do requiered pin config to work properly
-void pin_config_digital(int pin, bool dir);
-void pin_config_analog(int pin);
+const bool kHigh = true;
+const bool kLow = false;
 
 
+
+//configuration functions 
+void PWMConfigFrecuency(int frecuency, int pwm_id);
+
+void PinConfigRisingIRS(int pin, void (*callback)(void));
+
+void PinConfigDigital(int pin, bool dir);
+
+void PinConfigAnalog(int pin);
+
+
+//read digital level of a given pin
+bool PinReadDigital(int pin);
+
+//perform adc opration to get a "analog" value
+uint16_t PinReadAnalog(int pin);
+
+// drives an specific pint ro HIGH or low
+void PinSetDigital(int pin, bool level);
+
+//return true if pwm couter is zero
+bool PWMIsButtom(int pwm_id);
 
 #endif

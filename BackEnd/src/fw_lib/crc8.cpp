@@ -11,7 +11,7 @@ uint8_t g_crc_inital = 0xff; //default value
 
 
 uint8_t CRC8Calculate(uint8_t *data, uint8_t length)
-{
+{ 
   uint8_t crc = g_crc_inital;	
   uint8_t index;
   uint8_t bit;
