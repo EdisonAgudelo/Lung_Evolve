@@ -1,8 +1,8 @@
 
 #include <Arduino.h>
 #include "definitions.h"
-#include "basic_function.h"
-#include "control.h"
+#include "src/hw_lib/basic_function.h"
+#include "src/fw_lib/control.h"
 
 //error variable
 static ErrorType main_error;
