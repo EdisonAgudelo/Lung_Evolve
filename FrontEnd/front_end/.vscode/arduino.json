@@ -1,4 +1,4 @@
 {
-    "sketch": "front_end.ino",
-    "board": "arduino:avr:unowifi"
+    "board": "arduino:avr:unowifi",
+    "sketch": "front_end.ino"
 }

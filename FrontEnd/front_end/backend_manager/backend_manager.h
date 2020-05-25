@@ -1,9 +1,7 @@
 #ifndef BACKEND_MANAGER_H
 #define BACKEND_MANAGER_H
 
-//serial to backend pins
-#define SBACK_END_TX 8
-#define SBACK_END_RX 9
+uint8_t prev_state; 
 
 void init_serial(void);
 void serial_conf(void);

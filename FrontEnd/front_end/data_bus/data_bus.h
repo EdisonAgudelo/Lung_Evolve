@@ -2,7 +2,7 @@
 #define DATA_BUS_H
 
 //ALARMS
-struct ALARMS
+typedef struct 
 {
 
     bool ApneaAlarm;
@@ -25,11 +25,11 @@ struct ALARMS
     bool UnderPeep;
     bool NoOxygen;
 
-}alarms_state_struct;
-//extern struct ALARMS alarms_state_struct;
+} ALARMS;
+
 
 //CONFIGURATION
-struct CONFIGURATION
+typedef struct 
 {
     uint32_t peep;
     uint32_t tv;
@@ -37,11 +37,10 @@ struct CONFIGURATION
     uint32_t rr;
     uint32_t ie;
 
-}configuration_struct;
-//extern struct CONFIGURATION configuration_struct;
+}CONFIGURATION;
 
 //DATA
-struct DATA
+typedef struct 
 {
     uint32_t peep;
     uint32_t tv;
@@ -49,7 +48,7 @@ struct DATA
     uint32_t ie;
     uint32_t preassure;  
 
-}data_struct;
-//extern struct DATA data_struct;
+}DATA;
+
 
 #endif /*DATA_BUS_H*/

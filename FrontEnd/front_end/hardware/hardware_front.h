@@ -1,9 +1,24 @@
 #ifndef HARDWARE_FRONT_H
 #define HARDWARE_FRONT_H
 
-#define Ypin 7
-#define Rpin 6
+extern DriverLed RED_led;
+extern DriverLed YELLOW_led;
+
+
+
+//frontend peripheral pins
+#define Ypin 9 
+#define Rpin 10
 #define BUZZERpin 3
+
+//serial to backend pins
+#define SBACK_END_TX 7
+#define SBACK_END_RX 6
+
+//duty cycle front end peripherals 
+#define DUTY_LEDY 128
+#define DUTY_LEDR 128
+#define DUTY_BUZZER 128
 
 void REDLed(bool action);
 void YELLOWLed(bool action);

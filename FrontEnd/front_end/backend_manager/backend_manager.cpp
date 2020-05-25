@@ -7,8 +7,13 @@
 #include "backend_manager.h"
 #include <SoftwareSerial.h>
 #include "data_bus/data_bus.h" /////////revisar
+#include "hardware/hardware.h"
+#include "alarm_manager/alarm_manager.h"
 #include <stdlib.h>
 #include <string.h>
+
+
+
 
 void serial_conf(void)
 {
@@ -61,7 +66,25 @@ uint32_t backend_protocol_recieve(void)
 
 void data_bus_manager(tipo de dato,variable, valor)
 {
+    
+        
     //va a la estructura, segun la variable, almacena el valor
+
+    /*si guarda alarma
+    if(valor de la alarma a guardar == true) //si la alarma es prioritaria
+    {
+        if(prev_state==0) //revisa si había una alarma activada antes, si no:
+        {
+            start_counter=millis(); //toma dato del tiempo
+            prev_state=1; //dice que ya hay una alarma activada
+        }
+        else
+        {
+            prev_state=1; //si ya había una alarma activada, dejela activada
+        }
+    }
+    */
+
 }
 /*
 

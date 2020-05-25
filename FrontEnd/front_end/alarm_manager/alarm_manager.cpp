@@ -6,128 +6,100 @@
 #include "data_bus/data_bus.h"
 #include "hardware/hardware_front.h"
 
-extern struct ALARMS alarms_state_struct;
+ALARMS alarms_struct;
+Alarm_state AS;
 
-void alarm_management(void)
+/*
+*   this function should be call in the set_up of the main sketch   
+*   this function gives the initial values to the struct that carries the
+*   alarm states information
+*/
+void init_alarm_maganement(void) 
 {
-///////////// HIGH PRIORITY ALARMS//////////
-    if(alarms_state_struct.LowInspP==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
+    AS->HighAlarmState=false;
+    AS->MediumAlarmState=false;
+    AS->BuzzerOn=false
+    AS->ScreenSoundOff=false;
+}
 
-    if(alarms_state_struct.HighInspP==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
+/*
+*   this is a loop function that should be call in the main loop of the sketch
+*   this function contains other functions that will allow a hardware action acording to the 
+*   priority of the alarms
+*/
+void alarm_management_loop(void)
+{
 
-    if(alarms_state_struct.ProximalTube==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
-
-    if(alarms_state_struct.VteNotAchived==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
-
-    if(alarms_state_struct.VteOv==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
-
-    if(alarms_state_struct.PatientLeaks==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
-
-    if(alarms_state_struct.ShutDown==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
-
-    if(alarms_state_struct.LowBattery==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
-
-    if(alarms_state_struct.NoBattery==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
-
-    if(alarms_state_struct.HighTemp==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
-
-    if(alarms_state_struct.NoOxygen==true)
-    {
-        REDLed(true);
-    }else{
-        REDLed(false);
-    }
-/////////////MEDIUM PRIORITY ALARMS////////////
-    if(alarms_state_struct.ApneaAlarm==true)
-    {
-        YELLOWLed(true);
-    }else{
-        YELLOWLed(false);
-    }
-
-    if(alarms_state_struct.HighBreathRate==true)
-    {
-        YELLOWLed(true);
-    }else{
-        YELLOWLed(false);
-    }
-
-    if(alarms_state_struct.LowVte==true)
-    {
-        YELLOWLed(true);
-    }else{
-        YELLOWLed(false);
-    }
-
-    if(alarms_state_struct.HighVti==true)
-    {
-        YELLOWLed(true);
-    }else{
-        YELLOWLed(false);
-    }
-
-    if(alarms_state_struct.BackUpOn==true)
-    {
-        YELLOWLed(true);
-    }else{
-        YELLOWLed(false);
-    }
-
-    if(alarms_state_struct.UnderPeep==true)
-    {
-        YELLOWLed(true);
-    }else{
-        YELLOWLed(false);
-    }
+    check_state_alarm();
+    alarm_action();
 
 }
+
+/*
+*   this function checks if any high priority alarm is on, and update the alarm states information struct
+*
+*/
+void check_state_alarm(void)
+{
+    if(alarms_struct.LowInspP || alarms_struct.HighInspP || alarms_struct.VteNotAchived || alarms_struct.VteOv || alarms_struct.PatientLeaks || 
+        alarms_struct.ShutDown || alarms_struct.LowBattery || alarms_struct.NoBattery | alarms_struct.HighTemp | alarms_struct.NoOxygen == true)
+    {
+        AS->HighAlarmState=1;     
+    }
+    else
+    {
+        AS->HighAlarmState=0;     
+    }
+    
+    if(alarms_struct.ApneaAlarm || alarms_struct.HighBreathRate || alarms_struct.LowVte || alarms_struct.HighVti || alarms_struct.BackUpOn || alarms_struct.UnderPeep==true)
+    {
+        AS->MediumAlarmState=1;     
+    }
+    else
+    {
+        AS->MediumAlarmState=0;     
+    }
+    
+       
+}
+
+/*
+*   this function depending of the priority alarm states, takes action calling other 
+*   functions to activate or desactivate the peripherals of the front end hardware
+*/
+void alarm_action(void)
+{
+            //////////// HIGH PRIORITY ALARMS//////////
+        if(AS->HighAlarmState == true)
+        {
+            REDLed(true);
+            if(AS->ScreenSoundOff)
+            {
+                BUZZER(false);
+                AS->BuzzerOn=false;
+            }
+            else
+            {
+                BUZZER(true);
+                AS->BuzzerOn=true;
+            }
+            
+        }
+        else
+        {
+            REDLed(false);
+            BUZZER(false);
+            AS->BuzzerOn=false;
+        }
+        /////////////MEDIUM PRIORITY ALARMS////////////
+        if(AS->MediumAlarmState==true)
+        {
+            YELLOWLed(true);
+        }
+        else
+        {
+            YELLOWLed(false);
+        }
+
+}
+
