@@ -7,6 +7,7 @@
 // only this library to make compatible with your mcu and all other firmware elements shuld work well.
 
 #include <stdint.h>
+#include <Arduino.h>
 
 //pin definitions
 const int kHardwareLedRedPin = 12; //this constant is used to config led driver 
@@ -41,4 +42,9 @@ void PinSetDigital(int pin, bool level);
 //return true if pwm couter is zero
 bool PWMIsButtom(int pwm_id);
 
+//this configure one timer to has 1ms interrupt period
+void Timer1msISR(void (*callback)(void));
+
+//this return de actual count of timer who is generating 1ms interrupt
+uint16_t Timer1msCount(void);
 #endif

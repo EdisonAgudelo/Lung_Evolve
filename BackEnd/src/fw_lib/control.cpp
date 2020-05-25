@@ -1,5 +1,6 @@
 
-#include <Arduino.h>
+#include "../hw_lib/drivers/hardware_interface.h"
+#include "../hw_lib/time.h"
 
 #include "control.h"
 
@@ -25,7 +26,7 @@ void ControlInit(ControlData *pObj, float kp, float ki, float kd, float dt)
     if (dt <= 0.0)
     {
         pObj->take_time = true;
-        pObj->dt = ((float)millis()) / 1000.0;
+        pObj->dt = ((float)Millis()) / 1000.0;
     }
     else
     {
@@ -65,8 +66,8 @@ float ControlExecute(ControlData *pObj, float error)
 
     if(pObj->take_time)
     {
-        pObj->dt=((float)(millis()-pObj->previous_time))/1000.0;
-        pObj->previous_time=millis();
+        pObj->dt=((float)(Millis()-pObj->previous_time))/1000.0;
+        pObj->previous_time=Millis();
     }
 
     if(pObj->en_control_type.p)

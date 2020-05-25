@@ -1,8 +1,9 @@
 
-#include <Arduino.h>
+
 #include "definitions.h"
 #include "src/hw_lib/basic_function.h"
 #include "src/fw_lib/control.h"
+#include "fw_lib/time.h"
 
 //error variable
 static ErrorType main_error;
@@ -137,7 +138,7 @@ void MeasureVariables(void)
       if (breathing_previous_state != breathing_state)
       {
         breathing_previous_state = breathing_state;
-        last_inspiration_ref_time = millis();
+        last_inspiration_ref_time = Millis();
         inspiration_time = last_inspiration_ref_time - last_espiration_ref_time;
 
         //measure
@@ -152,20 +153,20 @@ void MeasureVariables(void)
       if (breathing_previous_state != breathing_state)
       {
         breathing_previous_state = breathing_state;
-        last_espiration_ref_time = millis();
+        last_espiration_ref_time = Millis();
         espiration_time = last_espiration_ref_time - last_inspiration_ref_time;
 
         //measure
         breathing_measure.ie_ratio = (espiration_time * 1000) / inspiration_time;
         breathing_measure.breathing_rate = 60000000 / (espiration_time + inspiration_time);
 
-        last_dt_ref_time = millis(); //reset dt;
+        last_dt_ref_time = Millis(); //reset dt;
         integer_tidal = 0;           //reset integer
       }
 
       //integer flow
-      dt_time = millis() - last_dt_ref_time;
-      last_dt_ref_time = millis();
+      dt_time = Millis() - last_dt_ref_time;
+      last_dt_ref_time = Millis();
       integer_tidal +=  breathing_measure.mixture_flow * dt_time;
 
       break;
@@ -323,7 +324,7 @@ void FMSMainLoop(void)
       //make sure that all required parameters are initialized;
       if (!main_error.working_configuration_not_initialized) //this is for patient safety
       {
-        //breathing_state_ref_time = millis();
+        //breathing_state_ref_time = Millis();
         main_state = kMainBreathing;
         breathing_state = kBreathingOutPause;
 
@@ -383,13 +384,13 @@ void FMSMainLoop(void)
       DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_return_vel_bellows);
 
       //close oxigen valve in first period
-      if ((millis() - breathing_state_ref_time) < breathing_dinamic.motor_open_time_air_choke)
+      if ((Millis() - breathing_state_ref_time) < breathing_dinamic.motor_open_time_air_choke)
       {
         DriverMotorMoveTo(kMotorIdAirChoke, breathing_dinamic.motor_position_air_choke);
         DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
       }
       //close air valve in second period
-      else if ((millis() - breathing_state_ref_time) < breathing_dinamic.motor_open_time_o2_choke)
+      else if ((Millis() - breathing_state_ref_time) < breathing_dinamic.motor_open_time_o2_choke)
       {
         DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
         DriverMotorMoveTo(kMotorIdO2Choke, breathing_dinamic.motor_position_o2_choke);
@@ -405,7 +406,7 @@ void FMSMainLoop(void)
 
       //when espirarion time ends, change state. Remember, this should be a little more fast
       //that patient espirarion, because it needs to refuel bellows before go to inspiration cicle
-      if ((millis() - breathing_state_ref_time) >= breathing_dinamic.breathing_out_time)
+      if ((Millis() - breathing_state_ref_time) >= breathing_dinamic.breathing_out_time)
       {
         breathing_state = kBreathingOutPause;
       }
@@ -498,7 +499,7 @@ void FMSMainLoop(void)
       }
 
       //----------transition events---------//
-      if ((millis() - breathing_state_ref_time) >= breathing_dinamic.breathing_in_time)
+      if ((Millis() - breathing_state_ref_time) >= breathing_dinamic.breathing_in_time)
       {
         breathing_state = kBreathingInPause;
       }
@@ -512,9 +513,9 @@ void FMSMainLoop(void)
       //----------transition events---------//
 
       //if time trigger happen, change state
-      if ((millis() - breathing_delay.ref_time) > breathing_delay.delay_time)
+      if ((Millis() - breathing_delay.ref_time) > breathing_delay.delay_time)
       {
-        breathing_state_ref_time = millis();
+        breathing_state_ref_time = Millis();
         breathing_state = (BreathingStates)breathing_delay.next_state;
         break;
       }
@@ -590,9 +591,9 @@ void FMSMainLoop(void)
     //----------transition events---------//
 
     //if time trigger happen, change state
-    if ((millis() - main_delay.ref_time) > main_delay.delay_time)
+    if ((Millis() - main_delay.ref_time) > main_delay.delay_time)
     {
-      main_state_ref_time = millis();
+      main_state_ref_time = Millis();
       main_state = (MainStates)main_delay.next_state;
     }
     break;
@@ -610,7 +611,7 @@ void FMSMainLoop(void)
 
 void FMSDelaySet(FMSDelay *object, uint32_t delay_time, int nex_state)
 {
-  object->ref_time = millis();
+  object->ref_time = Millis();
   object->delay_time = delay_time;
   object->next_state = nex_state;
   *(object->actual_state) = object->delay_state;

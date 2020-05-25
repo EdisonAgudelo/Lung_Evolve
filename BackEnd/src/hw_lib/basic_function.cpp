@@ -3,6 +3,7 @@
 #include "basic_function.h"
 
 #include "drivers/hardware_interface.h"
+#include "drivers/driver_stepper.h"
 
 DriverLed led_red;
 DriverLed buzzer;
