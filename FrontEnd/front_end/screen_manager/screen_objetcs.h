@@ -151,8 +151,8 @@ NexDSButton bt0 = NexDSButton(17, , "bt0");  // pause or not pause dual state Bu
 NexButton b69 = NexButton(18, , "b69");      //  previous page Button
 
 //Objects window 19//////////////////////////////////////////////
-NexDSButton bt0 = NexDSButton(17, , "bt0");  //  silence or not silence sound alarms Button
-NexButton b67 = NexButton(17, , "b67");      //  other opt Button
+NexDSButton bt1 = NexDSButton(19, , "bt1");  //  silence or not silence sound alarms Button
+NexButton b67 = NexButton(19, , "b67");      //  other opt Button
 
 
 
