@@ -7,7 +7,6 @@
 
 #include "drivers/driver_led.h"
 #include "drivers/hardware_interface.h"
-#include "drivers/driver_stepper.h"
 
 //----------Driver varibles----------//
 extern DriverLed led_red;

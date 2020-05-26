@@ -68,6 +68,8 @@ void PinConfigDigital(int pin, bool dir);
 
 void PinConfigAnalog(int pin);
 
+void CounterBegin(int counter_id);
+
 
 //read digital level of a given pin
 bool PinReadDigital(int pin);
@@ -95,4 +97,8 @@ void HardwareDisableISR(void);
 
 //enable all interrupts
 void HardwareEnableISR(void);
+
+//this function return the actual value of a counter
+uint32_t CounterGetValue(int counter_id);
+
 #endif

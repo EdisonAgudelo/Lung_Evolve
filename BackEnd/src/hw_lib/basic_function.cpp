@@ -4,18 +4,11 @@
 
 #include "drivers/hardware_interface.h"
 #include "drivers/driver_stepper.h"
+#include "drivers/driver_flowmeter.h"
+
 #include "time.h"
 
-DriverLed led_red;
-DriverLed buzzer;
 
-Stepper motor_bellow(kHardwareStepMotor1, kHardwareDirMotor1, kHardwareEnMotor1, kHardwarePWMMotor1);
-Stepper motor_valve_o2(kHardwareStepMotor2, kHardwareDirMotor2, kHardwarePWMMotor2);
-Stepper motor_valve_air(kHardwareStepMotor3, kHardwareDirMotor3, kHardwarePWMMotor3);
-
-Stepper *motor[]={&motor_bellow, &motor_valve_o2, &motor_valve_air};
-
-const int valve[]={kHarwareRele1, kHarwareRele2, kHarwareRele3};
 
 const uint8_t kMotorBellowUSteps = 2; //review
 const uint8_t kMotorO2USteps = 2; //review
@@ -28,6 +21,24 @@ const uint16_t kMotorAirSteps = 200; //review
 const float kMotorBellowmmRev = 20.0; //review
 const float kMotorO2mmRev = 200.0; //review
 const float kMotorAirmmRev = 200.0; //review
+
+const float kCountsPerSLM = 5.0;
+
+DriverLed led_red;
+DriverLed buzzer;
+
+Stepper motor_bellow(kHardwareStepMotor1, kHardwareDirMotor1, kHardwareEnMotor1, kHardwarePWMMotor1);
+Stepper motor_valve_o2(kHardwareStepMotor2, kHardwareDirMotor2, kHardwarePWMMotor2);
+Stepper motor_valve_air(kHardwareStepMotor3, kHardwareDirMotor3, kHardwarePWMMotor3);
+
+Flowmeter flow_in(kHardwareCounterFlow1, kCountsPerSLM);
+Flowmeter flow_out(kHardwareCounterFlow2, kCountsPerSLM);
+
+Stepper *motor[]={&motor_bellow, &motor_valve_o2, &motor_valve_air};
+
+void *Sensor[]={(void *)&flow_in,(void *)&flow_out};
+
+const int valve[]={kHarwareRele1, kHarwareRele2, kHarwareRele3};
 
 
 
