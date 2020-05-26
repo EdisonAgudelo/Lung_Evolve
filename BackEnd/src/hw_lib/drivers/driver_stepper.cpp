@@ -522,6 +522,28 @@ int32_t Stepper::GetPos(void)
     return pos_actual;
 }
 
+float Stepper::GetPosmm(void)
+{
+    return pos_actual/steps_per_mm;
+}
+
+
+void Stepper::SetVelmm(float _vel_mm_s)
+{
+    SetVel((int32_t)(_vel_mm_s*steps_per_mm));
+}
+
+void Stepper::SetPosmm(float _pos_mm)
+{
+    SetPos((int32_t)(_pos_mm*steps_per_mm));
+}
+
+void Stepper::SetDriverConfig(uint16_t _steps_per_rev, float _mm_per_rev, uint8_t _u_steps)
+{
+    u_steps=_u_steps;
+    steps_per_mm = _steps_per_rev * _u_steps / _mm_per_rev; 
+}
+
 /////////////// define n PinXISR acording to STEPPER_MAX_COUNT ////////////
 
 void Pin1ISR(void)

@@ -15,6 +15,7 @@ void uDelay(uint32_t dalay_microseconds);
 void Delay(uint32_t delay_milliseconds);
 
 void TimeVirtualISRBegin(void);
+
 void TimeVirtualISRAdd(int id, void (*user_callback)(void), uint32_t period);
 
 #endif

@@ -81,18 +81,18 @@ typedef union {
 //motor IDs
 typedef enum
 {
-  kMotorIdBellows = 0x1,
+  kMotorIdBellows = 0x0,
   kMotorIdO2Choke,
   kMotorIdAirChoke
 } MotorIDs;
 
-const int kMotorMaxPos = 250; //steps or mm, TBD In this position, valve is full open
-const int kMotorMinPos = 5;   //steps or mm, TBD. In this position, valve is closed
+const int kMotorMaxPos = 250; // mm. In this position, valve is full open
+const int kMotorMinPos = 5;   // mm. In this position, valve is closed
 
 //valve IDs
 typedef enum
 {
-  kValveIdManifold = 0x1,
+  kValveIdManifold = 0x0,
   kValveIdInhalation,
   kValveIdExhalation
 } ValveIDs;
@@ -142,7 +142,7 @@ const float kMaximun_deviation_ie_ratio = 0.05;       //[]
 typedef struct
 {
   //velocities
-  uint32_t motor_return_vel_bellows;            //steps/min or mm/s TDB
+  uint32_t motor_return_vel_bellows;            //mm/s
   uint32_t motor_foward_const_flow_vel_bellows; //used when flow control is selected
 
   //control ref
@@ -170,9 +170,9 @@ typedef struct
 
 } BreathingDinamics;
 
-const uint32_t kMotorDefaultReturnVelBellows = 100; //steps/min or mm/s TBD
-const uint32_t kMotorDefaultVelAirChoke = 100;      //steps/min or mm/s TBD
-const uint32_t kMotorDefaultVelO2Choke = 100;       //steps/min or mm/s TBD
+const uint32_t kMotorDefaultReturnVelBellows = 100; //mm/s 
+const uint32_t kMotorDefaultVelAirChoke = 100;      //mm/s 
+const uint32_t kMotorDefaultVelO2Choke = 100;       //mm/s
 
 typedef struct
 {

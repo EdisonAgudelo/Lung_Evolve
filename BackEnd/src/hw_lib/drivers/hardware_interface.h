@@ -9,16 +9,48 @@
 #include <stdint.h>
 #include <Arduino.h>
 
-//pin definitions
-const int kHardwareLedRedPin = 12; //this constant is used to config led driver 
-const int kHardwareBuzzerPin = 0;
-
+//------------pwm id ------------//
 const int kHardwarePWMMotor1 = 1;
 const int kHardwarePWMMotor2 = 3;
 const int kHardwarePWMMotor3 = 4;
 
-const int kHardwareFlow1 = 0;
-const int kHardwareFlow2 = 5;
+const int kHardwareCounterFlow1 = 0; 
+const int kHardwareCounterFlow2 = 5;
+
+//---------pin definitions---------//
+const int kHardwareLedRedPin = 12; // review
+const int kHardwareBuzzerPin = 0; // review
+
+//driver enable pin
+const int kHardwareEnMotor1 = 1;  // review
+
+//driver step or pulse pin
+const int kHardwareStepMotor1 = 12;
+const int kHardwareStepMotor2 = 2;
+const int kHardwareStepMotor3 = 7;
+
+//driver dir pin
+const int kHardwareDirMotor1 = 1; // review
+const int kHardwareDirMotor2 = 3; // review
+const int kHardwareDirMotor3 = 4; // review
+
+//final switch pins
+const int kHardwareSwitchFMotor1 = -1; // review
+const int kHardwareSwitchBMotor1 = -1; // review
+const int kHardwareSwitchFMotor2 = -1; // review
+const int kHardwareSwitchBMotor2 = -1; // review
+const int kHardwareSwitchFMotor3 = -1; // review
+const int kHardwareSwitchBMotor3 = -1; // review
+
+//driver flow pins
+
+//rele pins
+const int kHarwareRele1 = -1; // review
+const int kHarwareRele2 = -1; // review
+const int kHarwareRele3 = -1; // review
+
+
+// ------- conventions --------//
 
 const bool kInput = true;
 const bool kOutput = false;

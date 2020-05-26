@@ -74,7 +74,7 @@ class Stepper
         bool no_change_param; //it is used by main code flow avoid asycronus interrupt execution
 
         //driver config
-        uint16_t steps_per_rev;
+        float steps_per_mm;
         uint8_t u_steps ;
 
         //class usage
@@ -100,6 +100,7 @@ class Stepper
         ~Stepper();
 
         void SetLimitPin(int _pin_limmit_backward, int _pin_limmit_forward);
+        void SetDriverConfig(uint16_t _steps_per_rev, float _mm_per_rev, uint8_t _u_steps);
 
        //methods
         void ISRHandle(int type);
@@ -108,12 +109,15 @@ class Stepper
         void Loop(void);
         
         //setters
-        void SetVel(int32_t _vel); 
+        void SetVel(int32_t _vel);
+        void SetVelmm(float _vel_mm_s);
         void SetPos(int32_t _pos);
+        void SetPosmm(float _pos_mm);
 
         //getters
         StepperDriverStates GetState(void);
         int32_t GetPos(void);
+        float GetPosmm(void);
 };
 
 
