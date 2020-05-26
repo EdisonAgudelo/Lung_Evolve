@@ -3,7 +3,7 @@
 #include "definitions.h"
 #include "src/hw_lib/basic_function.h"
 #include "src/fw_lib/control.h"
-#include "fw_lib/time.h"
+#include "src/hw_lib/time.h"
 
 //error variable
 static ErrorType main_error;

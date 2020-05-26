@@ -39,8 +39,11 @@ uint16_t PinReadAnalog(int pin);
 // drives an specific pint ro HIGH or low
 void PinSetDigital(int pin, bool level);
 
-//return true if pwm couter is zero
-bool PWMIsButtom(int pwm_id);
+//return true if PWM has a pending interrupt
+bool PWMIsPendingInterrupt(int pwm_id);
+
+//set a flag which pwm should clear;
+bool PWMRequestInterrupt(int pwm_id);
 
 //this configure one timer to has 1ms interrupt period
 void Timer1msISR(void (*callback)(void));

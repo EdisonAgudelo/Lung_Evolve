@@ -28,9 +28,9 @@ Stepper::Stepper(int _pin_step, int _pin_dir, int _pin_enable, int _pwm_gen_id) 
     GeneralInit();
 }
 
-
-void Stepper::GeneralInit(void){
- //set the default state.
+void Stepper::GeneralInit(void)
+{
+    //set the default state.
     vel_target = STEPPER_MIN_VEL;
     pos_target = 0;
     vel_actual = 0;
@@ -63,13 +63,12 @@ void Stepper::GeneralInit(void){
     PinSetDigital(pin_step, !kStepLevel);
     PinSetDigital(pin_dir, !kStepForward);
 
-    if(0<= pin_enable)
+    if (0 <= pin_enable)
     {
         PinConfigDigital(pin_enable, kOutput);
         PinSetDigital(pin_enable, !kStepEnable);
     }
 }
-
 
 Stepper::~Stepper()
 {
@@ -198,6 +197,9 @@ void Stepper::SoftStop(void)
 
 void Stepper::Loop(void)
 {
+    uint32_t remain_distance;
+    bool update_param;
+
     if (STEPPER_UPDATE_PERIOD <= GetDiffTime(Millis(), count_prev_time))
     {
         count_prev_time = Millis();
@@ -211,8 +213,8 @@ void Stepper::Loop(void)
         case kStepperStateFoward:
         case kStepperStateBackward:
 
-            bool update_param = false;
-            uint32_t remain_distance = pos_target > pos_actual ? pos_target - pos_actual : pos_actual - pos_target;
+            update_param = false;
+            remain_distance = pos_target > pos_actual ? pos_target - pos_actual : pos_actual - pos_target;
 
             // check if motor is close to target position and it is moving
             if (remain_distance < break_distance && 0 != vel_target)
@@ -362,7 +364,7 @@ void Stepper::ISRHandle(int type)
 void Stepper::SetVel(int32_t _vel)
 {
     vel_target = _vel;
-    vel_target = vel_target <  STEPPER_MIN_VEL? STEPPER_MIN_VEL : vel_target; //avoid negative velocity;
+    vel_target = vel_target < STEPPER_MIN_VEL ? STEPPER_MIN_VEL : vel_target; //avoid negative velocity;
 }
 
 //for sercurity reasons, only a pos target can ben changed in stop estate.
@@ -445,14 +447,23 @@ void Stepper::CalculateDistance(void)
         switch (state)
         {
         case kStepperStateFoward:
-            pos_actual += (enlapsed_time * 1000) / step_period + 1;
-            while (!PWMIsButtom(pwm_id))
-                ; //wait fow PWM counter reset, this is to try to avoid motor step lose due to previous round
+            pos_actual += (enlapsed_time * 1000) / step_period;
+
+            if (!PWMIsPendingInterrupt(pwm_id))
+            {
+                PWMRequestInterrupt(pwm_id);
+                pos_actual++;
+            }
+
             break;
         case kStepperStateBackward:
-            pos_actual -= ((enlapsed_time * 1000) / step_period + 1);
-            while (!PWMIsButtom(pwm_id))
-                ; //wait fow PWM counter reset, this is to try to avoid motor step lose due to previous round
+            pos_actual -= ((enlapsed_time * 1000) / step_period);
+
+            if (!PWMIsPendingInterrupt(pwm_id))
+            {
+                PWMRequestInterrupt(pwm_id);
+                pos_actual--;
+            }
             break;
         default:
             break;
