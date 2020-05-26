@@ -16,28 +16,20 @@
 
 
 
-#include "screen_objetcs.h"
+
 #include "screen_manager.h"
 
 
 
 char textBuffer[100] = {0};  //buffer to recieve text from the screen
-                         
 
-NexTouch *nex_listen_list[] = 
+void init_screen_management(void)
 {
-  &b1,  
-  &b2,
-  &b3, 
-  &b4,
-  &b5,
-  &b6,
-  &b7,  
-  &window0,  
-  &window1,  
-  &window2,  
-  NULL  
-};  
+  handlers();
+  ScreenStates=kpage0;
+}
+
+
 
 void handlers (void)
 {
@@ -65,15 +57,17 @@ void handlers (void)
 }
 
 
-
 ////////////////////////// events when a button is pressed ////////////////////////
 
 void b1PushCallback(void *ptr)  // Press event for button b1
 {
-  
+  ScreenStates=kpage1;
 } 
 
-
+void b2PushCallback(void *ptr)
+{
+  ScreenStates=kpage2;
+}
 
 void b1PopCallback(void *ptr)  // Release event for button b1
 {
@@ -185,6 +179,55 @@ void screen_management(void)
     *si estoy en pagina tal que hago
     *si estoy en pagina de monitor que envío
     */
+
+   switch (ScreenStates)
+   {
+      case kpage0://pagina inicial, foto y boton para ir al menu ppal
+      break;
+      case kpage1://pagina del menu ppal primera parte
+      break;
+      case kpage2://pagina del menu ppal segunda parte
+      break;
+      case kpage3://pagina para escoger si es asistido o controlado 
+      break;
+      case kpage4://pagina para escoger tipo de control v o p 
+      break;
+      case kpage5://pagina para configurar los parametros cuando es control por v primera parte 
+      break;
+      case kpage6: //pagina para configurar los parámetros cuando es control por v segunda parte 
+      break;
+      case kpage7://pagina para configurar los parámetros cuando es control por p primera parte
+      break;
+      case kpage8: //pagina para configurar los parámetros cuando es control por p segunda parte
+      break;
+      case kpage9: //pagina para configurar los parametros cuando es asistido
+      break;
+      case kpage10: //pagina para configurar las alarmas primera parte
+      break;
+      case kpage11: //pagina para configurar las alarmas segunda parte
+      break;
+      case kpage12: //pagina para llevar a cabo las pruebas primera parte
+      break;
+      case kpage13: //pagina para llevar a cabo las pruebas segunda parte
+      break;
+      case kpage14: //pagina para realizar las conf del sistema
+      break;
+      case kpage15: //pagina acerca de lung evolve
+      break;
+      case kpage16: //pagina de ayuda
+      break;
+      case kpage17: //pagina donde se escoge si se quiere pausar el sistema, regresar a menu ppal o regresar a la pagina actual
+      break;
+      case kpage18: //pagina que muestra todas las alarmas
+      break;
+      case kpage19: //pagina de monitoreo
+      break;
+
+
+   default:
+    ScreenStates=kpage0;
+     break;
+   }
 }
 
 
