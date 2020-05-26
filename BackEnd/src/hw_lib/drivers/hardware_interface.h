@@ -13,6 +13,13 @@
 const int kHardwareLedRedPin = 12; //this constant is used to config led driver 
 const int kHardwareBuzzerPin = 0;
 
+const int kHardwarePWMMotor1 = 1;
+const int kHardwarePWMMotor2 = 3;
+const int kHardwarePWMMotor3 = 4;
+
+const int kHardwareFlow1 = 0;
+const int kHardwareFlow2 = 5;
+
 const bool kInput = true;
 const bool kOutput = false;
 const bool kHigh = true;
@@ -50,4 +57,10 @@ void Timer1msISR(void (*callback)(void));
 
 //this return de actual count of timer who is generating 1ms interrupt
 uint16_t Timer1msCount(void);
+
+//disable all interrupts
+void HardwareDisableISR(void);
+
+//enable all interrupts
+void HardwareEnableISR(void);
 #endif

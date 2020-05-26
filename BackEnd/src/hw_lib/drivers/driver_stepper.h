@@ -6,8 +6,8 @@
 #define STEPPER_MAX_COUNT 3 //max instaces of the class
 
 #define STEPPER_UPDATE_PERIOD 100 //Each UPDATE_PERIOD ms this library performs an upate in vel referece. This for aceleration purpose.
-#define STEPPER_MIN_VEL 60 // steps/s
-#define STEPPER_TIME_GAP 1 //this value idicate how much millisecond is isr timeout ahead of real stimate end time
+#define STEPPER_MIN_VEL_TO_STOP 60 // steps/s
+#define STEPPER_TIME_GAP 5 //this value idicate how much millisecond is isr timeout ahead of real stimate end time
 #define STEPPER_DEFAULT_ACC 60 //steps/(100ms)^2 => 600 steps/s^2
 
 
@@ -55,6 +55,8 @@ class Stepper
         int32_t pos_request; //used to save target pos when a new pos target is requested 
         bool pos_change_request;
 
+        bool soft_stop_request; // for timeout interrupt;
+
         StepperDriverStates state;
 
         uint32_t count_prev_time; //us  //this save the las revision of timer counts
@@ -62,7 +64,7 @@ class Stepper
 
         uint32_t update_prev_time; //this is for update vel rate.
 
-        uint32_t estimate_time; //ms
+        int32_t estimate_time; //ms
 
         uint32_t break_distance; //save the delta distance in which motor should start slow down;
 
@@ -111,6 +113,7 @@ class Stepper
 
         //getters
         StepperDriverStates GetState(void);
+        int32_t GetPos(void);
 };
 
 

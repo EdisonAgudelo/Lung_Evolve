@@ -92,18 +92,20 @@ void PWMConfigFrecuency(int frecuency, int pwm_id)
       }
     }
 
+  g_pending_interrupt[pwm_id]=false;
+
   switch (pwm_id)
   {
   case 1:
     
-    TCCR1A = 0x33; // mode 15, com3b as inverted PWM
+    TCCR1A = 0x23; // mode 15, com3b as normal PWM
     TCCR1B = (i+1) | 0x18; //preescaler value + mode 15. Ignore Input compare 
     
     //this register define PWM frecuency
     OCR1AH = (compare_value >> 8) & 0x00ff;  //config calculated compare value
     OCR1AL = (compare_value) & 0x00ff; //config calculated compare value
 
-    compare_value-=compare_value/4; //on period is equal to 1/5 of total time
+    compare_value/=4; //on period is equal to 1/5 of total time
     OCR1BH = (compare_value >> 8) & 0x00ff;  //config calculated compare value
     OCR1BL = (compare_value) & 0x00ff; //config calculated compare value
 
@@ -113,14 +115,14 @@ void PWMConfigFrecuency(int frecuency, int pwm_id)
 
   case 3:
 
-    TCCR3A = 0x33; // mode 15, com3b as inverted PWM
+    TCCR3A = 0x23; // mode 15, com3b as normal PWM
     TCCR3B = (i+1) | 0x18; //preescaler value + mode 15. Ignore Input compare 
     
     //this register define PWM frecuency
     OCR3AH = (compare_value >> 8) & 0x00ff;  //config calculated compare value
     OCR3AL = (compare_value) & 0x00ff; //config calculated compare value
 
-    compare_value-=compare_value/4; //on period is equal to 1/5 of total time
+    compare_value/=4; //on period is equal to 1/5 of total time
     OCR3BH = (compare_value >> 8) & 0x00ff;  //config calculated compare value
     OCR3BL = (compare_value) & 0x00ff; //config calculated compare value
 
@@ -130,14 +132,14 @@ void PWMConfigFrecuency(int frecuency, int pwm_id)
   
   case 4:
 
-    TCCR4A = 0x33; // mode 15, com3b as inverted PWM
+    TCCR4A = 0x23; // mode 15, com3b as normal PWM
     TCCR4B = (i+1) | 0x18; //preescaler value + mode 15. Ignore Input compare 
     
     //this register define PWM frecuency
     OCR4AH = (compare_value >> 8) & 0x00ff;  //config calculated compare value
     OCR4AL = (compare_value) & 0x00ff; //config calculated compare value
 
-    compare_value-=compare_value/4; //on period is equal to 1/5 of total time
+    compare_value/=4; //on period is equal to 1/5 of total time
     OCR4BH = (compare_value >> 8) & 0x00ff;  //config calculated compare value
     OCR4BL = (compare_value) & 0x00ff; //config calculated compare value
 
@@ -149,6 +151,16 @@ void PWMConfigFrecuency(int frecuency, int pwm_id)
     //no able to work with this timer as pwm
     break;
   }
+  sei();
+}
+
+inline void HardwareDisableISR(void)
+{
+  cli();
+}
+
+inline void HardwareEnableISR(void)
+{
   sei();
 }
 
@@ -174,6 +186,7 @@ bool PWMRequestInterrupt(int pwm_id)
     break;
   }
 }
+
 
 ISR(TIMER1_OVF_vect)
 {
