@@ -33,46 +33,245 @@ void init_screen_management(void)
 
 void handlers (void)
 {
-   
-  b1.attachPush(b1PushCallback);  // Button press
-  b1.attachPop(b1PopCallback);  // Button release
-  b0.attachPush(b0PushCallback);  // Button press
-  b4.attachPush(b4PushCallback);  // Button press
-  b21.attachPush(b21PushCallback);  // Button press
-  b22.attachPush(b22PushCallback);  // Button press
-  b23.attachPush(b23PushCallback);  // Button press
-  b24.attachPush(b24PushCallback);  // Button press
-  bt0.attachPop(bt0PopCallback);  // Dual state button bt0 release
-  h0.attachPop(h0PopCallback);  // Slider release
-  r0.attachPush(r0PushCallback);  // Radio checkbox press
-  r1.attachPush(r1PushCallback);  // Radio checkbox press
-  r2.attachPush(r2PushCallback);  // Radio checkbox press
-  c0.attachPush(c0PushCallback);  // Radio checkbox press
-  j0.attachPush(j0PushCallback);  // Progress bar as a button press
-  page0.attachPush(page0PushCallback);  // Page press event
-  page1.attachPush(page1PushCallback);  // Page press event
-  page2.attachPush(page2PushCallback);  // Page press event
-
-  
+  b1.attachPush(b1PushCallback);  
+  b2.attachPush(b2PushCallback);  
+  b3.attachPush(b3PushCallback);  
+  b4.attachPush(b4PushCallback);  
+  b5.attachPush(b5PushCallback);  
+  b6.attachPush(b6PushCallback);  
+  b7.attachPush(b7PushCallback);  
+  b8.attachPush(b8PushCallback);  
+  b9.attachPush(b9PushCallback);  
+  b10.attachPush(b10PushCallback);  
+  b11.attachPush(b11PushCallback);  
+  b12.attachPush(b12PushCallback);  
+  b13.attachPush(b13PushCallback);  
+  b14.attachPush(b14PushCallback);  
+  b15.attachPush(b15PushCallback);  
+  b16.attachPush(b16PushCallback);  
+  b23.attachPush(b23PushCallback);  
+  b24.attachPush(b24PushCallback);  
+  b29.attachPush(b29PushCallback);  
+  b30.attachPush(b30PushCallback);  
+  b37.attachPush(b37PushCallback);  
+  b38.attachPush(b38PushCallback);   
+  b42.attachPush(b42PushCallback);  
+  b43.attachPush(b43PushCallback);   
+  b50.attachPush(b50PushCallback);  
+  b51.attachPush(b51PushCallback);   
+  b60.attachPush(b60PushCallback);  
+  b61.attachPush(b61PushCallback);  
+  b66.attachPush(b66PushCallback);  
+  b67.attachPush(b67PushCallback);  
+  b68.attachPush(b68PushCallback);
+  b69.attachPush(b69PushCallback);  
+  b70.attachPush(b70PushCallback);  
+  b71.attachPush(b71PushCallback);    
+  b73.attachPush(b73PushCallback); 
+  bt0.attachPush(bt0PushCallback);
+  bt0.attachPop(bt0PopCallback);
+  bt1.attachPush(bt1PushCallback);
+  bt1.attachPop(bt1PopCallback);
 }
 
 
-////////////////////////// events when a button is pressed ////////////////////////
+////////////////////////// events when a button is pressed or released ////////////////////////
 
-void b1PushCallback(void *ptr)  // Press event for button b1
+void b1PushCallback(void *ptr)  
 {
   ScreenStates=kpage1;
+  
 } 
 
 void b2PushCallback(void *ptr)
 {
+  ScreenStates=kpage3;
+}
+
+void b3PushCallback(void *ptr)
+{
+  ScreenStates=kpage12;
+}
+
+void b4PushCallback(void *ptr)
+{
+  ScreenStates=kpage14;
+}
+
+void b5PushCallback(void *ptr)
+{
+  ScreenStates=kpage10;
+}
+
+void b6PushCallback(void *ptr)
+{
   ScreenStates=kpage2;
 }
 
-void b1PopCallback(void *ptr)  // Release event for button b1
+void b7PushCallback(void *ptr)
 {
- 
-} 
+  ScreenStates=kpage15;
+}
+
+void b8PushCallback(void *ptr)
+{
+  ScreenStates=kpage16;
+}
+
+void b9PushCallback(void *ptr)
+{
+  ScreenStates=kpage20;
+}
+
+void b10PushCallback(void *ptr)
+{
+  ScreenStates=kpage1;
+}
+
+void b11PushCallback(void *ptr)
+{
+  ScreenStates=kpage9;
+}
+
+void b12PushCallback(void *ptr)
+{
+  ScreenStates=kpage4;
+}
+
+void b13PushCallback(void *ptr)
+{
+  ScreenStates=kpage2;
+}
+
+void b14PushCallback(void *ptr)
+{
+  ScreenStates=kpage5;
+}
+
+void b15PushCallback(void *ptr)
+{
+  ScreenStates=kpage7;
+}
+
+void b16PushCallback(void *ptr)
+{
+  ScreenStates=kpage3;
+}
+
+void 23PushCallback(void *ptr)
+{
+  ScreenStates=kpage6;
+}
+
+void b24PushCallback(void *ptr)
+{
+  ScreenStates=kpage4;
+}
+
+void b29PushCallback(void *ptr)
+{
+  ScreenStates=kpage19;
+}
+
+void b30PushCallback(void *ptr)
+{
+  ScreenStates=kpage5;
+}
+
+void b37PushCallback(void *ptr)
+{
+  ScreenStates=kpage8;
+}
+
+void b38PushCallback(void *ptr)
+{
+  ScreenStates=kpage4;
+}
+
+void b42PushCallback(void *ptr)
+{
+  ScreenStates=kpage19;
+}
+
+void b43PushCallback(void *ptr)
+{
+  ScreenStates=kpage7;
+}
+
+void b50PushCallback(void *ptr)
+{
+  ScreenStates=kpage19;
+}
+
+void b51PushCallback(void *ptr)
+{
+  ScreenStates=kpage3;
+}
+
+void b60PushCallback(void *ptr)
+{
+  ScreenStates=kpage1;
+}
+
+void b61PushCallback(void *ptr)
+{
+  ScreenStates=kpage11;
+}
+
+void b66PushCallback(void *ptr)
+{
+  ScreenStates=kpage10;
+}
+
+void b73PushCallback(void *ptr)
+{
+  ScreenStates=kpage1;
+}
+
+void b67PushCallback(void *ptr)
+{
+  ScreenStates=kpage19;
+}
+
+void b68PushCallback(void *ptr)
+{
+  ScreenStates=kpage1;
+}
+
+void b69PushCallback(void *ptr)
+{
+  ScreenStates=kpage18;
+}
+
+void b70PushCallback(void *ptr)
+{
+  ScreenStates=kpage17;
+}
+
+void b71PushCallback(void *ptr)
+{
+  ScreenStates=kpage17;
+}
+
+void bt0PushCallback(void *ptr)
+{
+  //modificar struct de estado de funcionamiento pausado 
+}
+
+void bt0PopCallback(void *ptr)
+{
+  //modificar struct de estado de funcionamiento no pausado 
+}
+
+void bt1PushCallback(void *ptr)
+{
+  //modificar la struct de estado de funcionamiento, alarma sonora no activa 
+}
+
+void bt1PopCallback(void *ptr)
+{
+  //modificar la struct de estado de funcionamiento, alarma sonora no activa
+}
 
 
 
@@ -146,31 +345,7 @@ void b22PushCallback(void *ptr)  // Press event for "Send" button on page 2
 }  // End of press event
 
 
-
-
-
-////////////////////////////////////////window change event/////////////////////////////////////////
-void window1PushCallback(void *ptr)  
-{
-  CurrentPage = 1;  
-}  
-
-void window2PushCallback(void *ptr)  
-{
-  CurrentPage = 2;  
-}  
-
-void window3PushCallback(void *ptr)  
-{
-  CurrentPage = 3;  
-}  
-
-void window4PushCallback(void *ptr)  
-{
-  CurrentPage = 4;  
-}  
-
-//***************************** End of events when a button is pressed ********************************
+//***************************** End of events when a button is pressed or released********************************
 
 
 void screen_management(void)
@@ -221,6 +396,8 @@ void screen_management(void)
       case kpage18: //pagina que muestra todas las alarmas
       break;
       case kpage19: //pagina de monitoreo
+      break;
+      case kpage20: //pagina de apagado
       break;
 
 
