@@ -104,9 +104,10 @@ const bool kValveFullClose = 0;
 //sensor IDs
 typedef enum
 {
-  kSensorIdAirFlow,
-  kSensorIdInPressure,
-  kSensorIdOutPressure,
+  kSensorIdAirFlowIn,
+  SensorIdAirFlowOut,
+  kSensorIdPressureIn,
+  kSensorIdPressureOut,
 } SensorID;
 
 //This struct saves all Front end commands or information

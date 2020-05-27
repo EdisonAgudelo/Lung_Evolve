@@ -5,6 +5,7 @@
 #include "drivers/hardware_interface.h"
 #include "drivers/driver_stepper.h"
 #include "drivers/driver_flowmeter.h"
+#include "drivers/driver_diff_pressure.h"
 
 #include "time.h"
 
@@ -22,7 +23,7 @@ const float kMotorBellowmmRev = 20.0; //review
 const float kMotorO2mmRev = 200.0; //review
 const float kMotorAirmmRev = 200.0; //review
 
-const float kCountsPerSLM = 5.0;
+const float kCountsPerSLM = 5.0; //review
 
 DriverLed led_red;
 DriverLed buzzer;
@@ -34,10 +35,12 @@ Stepper motor_valve_air(kHardwareStepMotor3, kHardwareDirMotor3, kHardwarePWMMot
 Flowmeter flow_in(kHardwareCounterFlow1, kCountsPerSLM);
 Flowmeter flow_out(kHardwareCounterFlow2, kCountsPerSLM);
 
+DiffPressure pressure_in(kHardwareDiffPressure1);
+DiffPressure pressure_out(kHardwareDiffPressure1);
+
+
 Stepper *motor[]={&motor_bellow, &motor_valve_o2, &motor_valve_air};
-
-void *Sensor[]={(void *)&flow_in,(void *)&flow_out};
-
+void *Sensor[]={(void *)&flow_in,(void *)&flow_out, (void *)&pressure_in, (void *)&pressure_out};
 const int valve[]={kHarwareRele1, kHarwareRele2, kHarwareRele3};
 
 
@@ -74,7 +77,10 @@ bool DriverValveOpenTo(int valve_id, bool valve_position)
 //return filtered pressure in cmH20*1000 or air flow in mL/min*1000
 long int SensorGetValue(int sensor_id)
 {
-  return 0;
+  if(sensor_id<2)
+    return (uint32_t) ((Flowmeter *)Sensor[sensor_id])->GetFlow()*1000;
+  
+  return (uint32_t) ((DiffPressure *)Sensor[sensor_id])->GetDiffPressure()*1000;
 }
 
 bool DriverMotorSetVel(int motor_id, float motor_vel)
@@ -115,4 +121,11 @@ bool DriverLoops(void)
   motor[0]->Loop(); //much faster than a for
   motor[1]->Loop();
   motor[2]->Loop();
+
+  flow_in.Loop();
+  flow_out.Loop();
+
+  pressure_in.Loop();
+  pressure_out.Loop();
+
 }

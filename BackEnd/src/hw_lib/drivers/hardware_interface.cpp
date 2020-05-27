@@ -290,7 +290,7 @@ ISR(TIMER4_OVF_vect)
   g_pending_interrupt[4] = false;
 }
 
-ISR(TIMER0_5VF_vect)
+ISR(TIMER5_OVF_vect)
 {
   g_overflow_count[5]++;
 }

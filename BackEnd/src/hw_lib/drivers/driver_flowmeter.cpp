@@ -41,7 +41,10 @@ float Flowmeter::GetFlow(void)
     return flow_rate_raw/counts_per_slm;
 }
 
-float Flowmeter::GetVolume(bool reset = false)
+float Flowmeter::GetVolume(bool reset)
 {
-    return flow_counts/counts_per_slm;
+    float temp = flow_counts/counts_per_slm;
+    if(reset)
+        flow_counts = 0;
+    return temp;
 }

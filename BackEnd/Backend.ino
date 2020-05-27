@@ -126,9 +126,9 @@ void MeasureVariables(void)
   if (main_state == kMainBreathing)
   {
      //always save presure measure, and flow data
-    breathing_measure.in_pressure = SensorGetValue(kSensorIdInPressure);
-    breathing_measure.out_pressure = SensorGetValue(kSensorIdOutPressure);
-    breathing_measure.mixture_flow = SensorGetValue(kSensorIdAirFlow);
+    breathing_measure.in_pressure = SensorGetValue(kSensorIdPressureIn);
+    breathing_measure.out_pressure = SensorGetValue(kSensorIdPressureOut);
+    breathing_measure.mixture_flow = SensorGetValue(kSensorIdAirFlowIn);
 
     switch (breathing_state)
     {

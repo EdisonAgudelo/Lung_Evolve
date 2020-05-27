@@ -49,6 +49,10 @@ const int kHarwareRele1 = -1; // review
 const int kHarwareRele2 = -1; // review
 const int kHarwareRele3 = -1; // review
 
+//Driver diff pressure
+const int kHardwareDiffPressure1 = -1; // review
+const int kHardwareDiffPressure2 = -1; // review
+
 
 // ------- conventions --------//
 
@@ -56,6 +60,9 @@ const bool kInput = true;
 const bool kOutput = false;
 const bool kHigh = true;
 const bool kLow = false;
+
+// --------- HW parameter ---------//
+const uint16_t kACDResolution = 0x3ff;
 
 
 
