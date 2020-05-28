@@ -1,12 +1,21 @@
 
+//definitions for sofware I2C
+#define I2C_TIMEOUT 10
+#define I2C_PULLUP 1
+#define SDA_PORT PORTC //review
+#define SDA_PIN 4      // //review
+#define SCL_PORT PORTC //review
+#define SCL_PIN 5      //review
+
+#include "SoftI2CMaster.h"
 
 #include "hardware_interface.h"
+#include <Wire.h>
 
 //library version for arduino mega
 
 /*
-  timer 0 and 5 is for flow sensor count
-  timer 2 woriking for millis and micros aplication
+  timer 5 woriking for millis and micros aplication
   Timer 1 , 3, 4 is for custom pwm genarator
 */
 
@@ -16,15 +25,105 @@ bool g_pending_interrupt[6] = {false};
 
 uint8_t g_overflow_count[6] = {0};
 
+//I2C com
 
+//read data from a I2C slave device
+bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
+{
+  int i = 0;
+  switch (id)
+  {
+  case kSoftI2C:
+    if (!i2c_start_wait((addres << 1) | I2C_READ))
+    {
+      i2c_stop();
+      return false;
+    }
 
+    while (0 != lenght--)
+    {
+      buffer[i++] = i2c_read(0 == lenght);
+    }
+    i2c_stop();
+    break;
+
+  case kHardI2C:
+
+    // request data to a slave
+    Wire.requestFrom(addres, lenght);
+
+    do
+    {
+      while (Wire.available())
+      {
+        //for protection purpose
+        if (i >= lenght)
+          break;
+        buffer[i++] = Wire.read();
+      }
+    } while (i < lenght);
+
+    break;
+
+  default:
+    return false;
+    break;
+  }
+
+  return true;
+}
+
+//write data from I2C slave divice.
+bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
+{
+  int i = 0;
+  switch (id)
+  {
+  case kSoftI2C:
+    if (!i2c_start_wait((addres << 1) | I2C_WRITE))
+    {
+      i2c_stop();
+      return false;
+    }
+    while (0 != lenght--)
+    {
+      if (!i2c_write(buffer[i++]))
+        break;
+    }
+    i2c_stop();
+
+    //if it is a no complete transaction
+    if (lenght != 0)
+      return false;
+    break;
+
+  case kHardI2C:
+
+    Wire.beginTransmission(addres);
+    i = Wire.write(buffer, lenght);
+    Wire.endTransmission();
+
+    //if it is a no complete transaction
+    if (i != lenght)
+      return false;
+    break;
+
+  default:
+    return false;
+    break;
+  }
+  return true;
+}
+
+bool I2CBegin(int id)
+{
+}
 ////////// GPIO interface //////////
 
 void PinConfigRisingIRS(int pin, void (*callback)(void))
 {
   attachInterrupt(digitalPinToInterrupt(pin), callback, RISING);
 }
-
 
 void PinConfigDigital(int pin, bool dir)
 {
@@ -57,56 +156,28 @@ void PinSetDigital(int pin, bool level)
     digitalWrite(pin, LOW);
 }
 
-
 //////////// Timers Interfacer /////////
-
-void CounterBegin(int counter_id)
-{
-  switch (counter_id)
-  {
-  case 0:
-    TCCR0A = 0x0; // mode 0, all pins in normal operation
-    TCCR0B = 0x7; // External clock source in rising edge
-
-    TIMSK0 = 0x1; //generate interrupt on overflow flag
-    break;
-
-  case 5:
-
-    TCCR5A = 0x0; //mode 0, all pins in normal operation
-    TCCR5B = 0x7; //External clock source in rising edge
-
-    TIMSK5 = 0x1; //generate interrupt on overflow flag
-
-    break;
-
-  default:
-    //not able to work 
-    break;
-  }
-}
-
 
 uint16_t Timer1msCount(void)
 {
-  return (uint16_t)TCNT2;
+  //return (uint16_t)TCNT2;
+  return (((uint16_t)TCNT5H) << 8) + (uint16_t)TCNT5L;
 }
-
 
 void Timer1msISR(void (*callback)(void))
 {
   timer1m_callback = callback;
+  uint16_t compare_value = 16000;
 
-  TCCR2A = 0x2; // mode 2, all pins in norma operation
-  TCCR2B = 0x4; //preescaler value 64  // mode 2
+  TCCR5A = 0x00; // mode 4, no outputs pin
+  TCCR5B = 0x09; //preescaler value = 1. Ignore Input compare
 
   //this register define PWM frecuency
-  OCR2A = 250; //config calculated compare value for 1ms interrupt
+  OCR5AH = (compare_value >> 8) & 0x00ff; //config calculated compare value
+  OCR5AL = (compare_value)&0x00ff;        //config calculated compare value
 
-  TIMSK2 = 0x2; //generate interrupt on  Output Compare Match A
+  TIMSK5 = 0x2; // intterrupt in compare match A
 }
-
-
 
 void PWMConfigFrecuency(int frecuency, int pwm_id)
 {
@@ -200,8 +271,6 @@ inline void HardwareEnableISR(void)
   sei();
 }
 
-
-
 bool PWMRequestInterrupt(int pwm_id)
 {
   g_pending_interrupt[pwm_id] = true;
@@ -225,57 +294,17 @@ bool PWMRequestInterrupt(int pwm_id)
   }
 }
 
-
 bool PWMIsPendingInterrupt(int pwm_id)
 {
   return g_pending_interrupt[pwm_id];
 }
 
-uint32_t CounterGetValue(int counter_id)
-{
-  uint32_t temp=0;
-  switch (counter_id)
-  {
-  case 0:
-    temp = TCNT0;
-    TCNT0 = 0;
-    temp +=g_overflow_count[counter_id]*0xff;
-    g_overflow_count[counter_id] = 0;
-    break;
-  
-  case 5:
-    temp = (((uint32_t)TCNT5H)<<8)+TCNT5L;
-    TCNT5H = 0;
-    TCNT5L = 0;
-    temp +=g_overflow_count[counter_id]*0xffff;
-    g_overflow_count[counter_id] = 0;
-    break;
-
-  default:
-    break;
-  }
-      
-  return temp;
-}
-
-
 /////////////////// ISR /////////////////
-
-
-ISR(TIMER0_OVF_vect)
-{
-  g_overflow_count[0]++;
-}
 
 ISR(TIMER1_OVF_vect)
 {
   TIMSK1 &= ~(0x1); //turn off interrupt
   g_pending_interrupt[1] = false;
-}
-
-ISR(TIMER2_COMPA_vect)
-{
-  timer1m_callback();
 }
 
 ISR(TIMER3_OVF_vect)
@@ -290,7 +319,7 @@ ISR(TIMER4_OVF_vect)
   g_pending_interrupt[4] = false;
 }
 
-ISR(TIMER5_OVF_vect)
+ISR(TIMER5_COMPA_vect)
 {
-  g_overflow_count[5]++;
+  timer1m_callback();
 }

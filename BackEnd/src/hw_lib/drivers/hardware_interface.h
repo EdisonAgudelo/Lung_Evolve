@@ -14,8 +14,6 @@ const int kHardwarePWMMotor1 = 1;
 const int kHardwarePWMMotor2 = 3;
 const int kHardwarePWMMotor3 = 4;
 
-const int kHardwareCounterFlow1 = 0; 
-const int kHardwareCounterFlow2 = 5;
 
 //---------pin definitions---------//
 const int kHardwareLedRedPin = 12; // review
@@ -61,9 +59,15 @@ const bool kOutput = false;
 const bool kHigh = true;
 const bool kLow = false;
 
+const uint8_t kSoftI2C = 1;
+const uint8_t kHardI2C = 0;
 // --------- HW parameter ---------//
 const uint16_t kACDResolution = 0x3ff;
 
+
+bool I2CBegin(int id);
+bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght);
+bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght);
 
 
 //configuration functions 

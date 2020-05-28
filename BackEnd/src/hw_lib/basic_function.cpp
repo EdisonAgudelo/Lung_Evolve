@@ -32,8 +32,10 @@ Stepper motor_bellow(kHardwareStepMotor1, kHardwareDirMotor1, kHardwareEnMotor1,
 Stepper motor_valve_o2(kHardwareStepMotor2, kHardwareDirMotor2, kHardwarePWMMotor2);
 Stepper motor_valve_air(kHardwareStepMotor3, kHardwareDirMotor3, kHardwarePWMMotor3);
 
-Flowmeter flow_in(kHardwareCounterFlow1, kCountsPerSLM);
-Flowmeter flow_out(kHardwareCounterFlow2, kCountsPerSLM);
+//Flowmeter flow_in(kHardwareCounterFlow1, kCountsPerSLM);
+//Flowmeter flow_out(kHardwareCounterFlow2, kCountsPerSLM);
+Flowmeter flow_in(0, kCountsPerSLM);
+Flowmeter flow_out(1, kCountsPerSLM);
 
 DiffPressure pressure_in(kHardwareDiffPressure1);
 DiffPressure pressure_out(kHardwareDiffPressure1);

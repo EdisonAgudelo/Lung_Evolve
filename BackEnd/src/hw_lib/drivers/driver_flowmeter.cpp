@@ -8,7 +8,7 @@
 
 Flowmeter::Flowmeter(int8_t _counter_id, float _counts_per_slm) : counter_id(_counter_id), counts_per_slm(_counts_per_slm)
 {
-    CounterBegin(counter_id);
+  //  CounterBegin(counter_id);
 
     prev_update_time = 0;
 
@@ -24,14 +24,14 @@ Flowmeter::~Flowmeter()
 //methods
 void Flowmeter::Loop(void)
 {
-    uint32_t tranfer;
+    uint32_t transfer=6;
     if (GetDiffTime(Millis(), prev_update_time) > FLOWMETER_UPDATE_RATE)
     {
         prev_update_time = Millis();
 
-        tranfer = CounterGetValue(counter_id);
-        flow_rate_raw = tranfer*1000/(FLOWMETER_UPDATE_RATE);
-        flow_counts += tranfer;
+       // transfer = CounterGetValue(counter_id);
+        flow_rate_raw = transfer*1000/(FLOWMETER_UPDATE_RATE);
+        flow_counts += transfer;
     }
 }
 
