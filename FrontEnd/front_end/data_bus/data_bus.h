@@ -31,22 +31,36 @@ typedef struct
 //CONFIGURATION
 typedef struct 
 {
-    uint32_t peep;
-    uint32_t tv;
-    uint32_t fio2;
-    uint32_t rr;
-    uint32_t ie;
+    byte fio2;
+    byte bpm;
+    byte peep;
+    byte heigh;
+    byte apnea;
+    byte ie;
+    byte gender;  
+    byte pressure;
+    bool controlType;//assistive(true) or controlled(false)
+    bool control; //volume(true) or pressure(false)
+    bool off; //ventilator is off(true) or not
+    bool pause; //ventilation operation is paused(true)
+    byte maxInPressure;
+    byte minInPressure;
+    byte maxOutPressure;
+    byte minOutPressure;
+    byte maxTV;
+    byte minTV;
+
 
 }CONFIGURATION;
 
 //DATA
 typedef struct 
 {
-    uint32_t peep;
-    uint32_t tv;
-    uint32_t rr;
-    uint32_t ie;
-    uint32_t preassure;  
+    byte peep;
+    byte tv;
+    byte bpm;
+    byte ie;
+    byte pressure;  
 
 }DATA;
 
