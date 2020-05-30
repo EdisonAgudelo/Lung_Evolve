@@ -1,19 +1,27 @@
-
+//#include <Nextion.h>
+#include "screen_objetcs.h"
 #include "screen_manager.h"
+#include <SoftwareSerial.h>
 
-
+SoftwareSerial SFrontEnd (SFRONT_END_TX,SFRONT_END_RX);
 //buffer_screen buff;
-CONFIGURATION confg;
+CONFIGURATION config;
 Alarm_state AlarmState;
 ALARMS alarms_data;
 DATA dataValue;
 byte data[NUM_BYTES]; 
+int ScreenStates;
 
+void serial_screen_init(void)
+{
+  SFrontEnd.begin(9600);
+}
 
 void init_screen_management(void)
 {
+  
   handlers();
-  clear_buffer(&data,NUM_BYTES1);
+  clear_buffer(NUM_BYTES1);
   ScreenStates=kpage0;
 }
 
@@ -21,12 +29,12 @@ void init_screen_management(void)
 
 void handlers (void)
 {
-  b1.attachPush(b1PushCallback);  
-  b2.attachPush(b2PushCallback);  
-  b3.attachPush(b3PushCallback);  
-  b4.attachPush(b4PushCallback);  
-  b5.attachPush(b5PushCallback);  
-  b6.attachPush(b6PushCallback);  
+  b1.attachPush(b1PushCallback,&b1);  
+  b2.attachPush(b2PushCallback,&b2);  
+  b3.attachPush(b3PushCallback,&b3);  
+  b4.attachPush(b4PushCallback,&b4);  
+  b5.attachPush(b5PushCallback,&b5);  
+  b6.attachPush(b6PushCallback,&b6);  
   b7.attachPush(b7PushCallback);  
   b8.attachPush(b8PushCallback);  
   b9.attachPush(b9PushCallback);  
@@ -109,7 +117,7 @@ void b8PushCallback(void *ptr)
 void b9PushCallback(void *ptr)
 {
   ScreenStates=kpage20;
-  config->off=true;
+  config.off=true;
 }
 
 void b10PushCallback(void *ptr)
@@ -120,13 +128,13 @@ void b10PushCallback(void *ptr)
 void b11PushCallback(void *ptr)
 {
   ScreenStates=kpage9;
-  config->controlType = true;
+  config.controlType = true;
 }
 
 void b12PushCallback(void *ptr)
 {
   ScreenStates=kpage4;
-  config->controlType = false;
+  config.controlType = false;
 }
 
 void b13PushCallback(void *ptr)
@@ -137,13 +145,13 @@ void b13PushCallback(void *ptr)
 void b14PushCallback(void *ptr)
 {
   ScreenStates=kpage5;
-  config->control = true;
+  config.control = true;
 }
 
 void b15PushCallback(void *ptr)
 {
   ScreenStates=kpage7;
-  config->control = false;
+  config.control = false;
 }
 
 void b16PushCallback(void *ptr)
@@ -151,7 +159,7 @@ void b16PushCallback(void *ptr)
   ScreenStates=kpage3;
 }
 
-void 23PushCallback(void *ptr)
+void b23PushCallback(void *ptr)
 {
   ScreenStates=kpage6;
 }
@@ -164,7 +172,7 @@ void b24PushCallback(void *ptr)
 void b29PushCallback(void *ptr)
 {
   ScreenStates=kpage19;
-  recieveData(&config,&data,NUM_BYTES1);
+  recieveData(NUM_BYTES1);
 
 }
 
@@ -186,7 +194,7 @@ void b38PushCallback(void *ptr)
 void b42PushCallback(void *ptr)
 {
   ScreenStates=kpage19;
-  recieveData(&config,&data,NUM_BYTES2);
+  recieveData(NUM_BYTES1);
 }
 
 void b43PushCallback(void *ptr)
@@ -197,7 +205,7 @@ void b43PushCallback(void *ptr)
 void b50PushCallback(void *ptr)
 {
   ScreenStates=kpage19;
-  recieveData(&config,&data,NUM_BYTES3);
+  recieveData(NUM_BYTES1);
 }
 
 void b51PushCallback(void *ptr)
@@ -223,7 +231,7 @@ void b66PushCallback(void *ptr)
 void b73PushCallback(void *ptr)
 {
   ScreenStates=kpage1;
-  recieveData(&config,&data,NUM_BYTES4);
+  recieveData(NUM_BYTES1);
 }
 
 void b67PushCallback(void *ptr)
@@ -240,31 +248,31 @@ void b69PushCallback(void *ptr)
 {
   ScreenStates=kpage18;
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue->peep);  // This is the value you want to send to that object and atribute mentioned before.
+      Serial.print(dataValue.peep);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
 
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue->tv);  // This is the value you want to send to that object and atribute mentioned before.
+      Serial.print(dataValue.tv);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
 
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue->bpm);  // This is the value you want to send to that object and atribute mentioned before.
+      Serial.print(dataValue.bpm);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
 
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue->ie);  // This is the value you want to send to that object and atribute mentioned before.
+      Serial.print(dataValue.ie);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
 
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue->pressure);  // This is the value you want to send to that object and atribute mentioned before.
+      Serial.print(dataValue.pressure);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
@@ -282,22 +290,22 @@ void b71PushCallback(void *ptr)
 
 void bt0PushCallback(void *ptr)
 {
-  config->pause=true;
+  config.pause=true;
 }
 
 void bt0PopCallback(void *ptr)
 {
-  config->pause=true; 
+  config.pause=true; 
 }
 
 void bt1PushCallback(void *ptr)
 {
-  AlarmState->ScreenSoundOff=true;  
+  AlarmState.ScreenSoundOff=true;  
 }
 
 void bt1PopCallback(void *ptr)
 {
-  AlarmState->ScreenSoundOff=false; 
+  AlarmState.ScreenSoundOff=false; 
 }
 
 
@@ -316,112 +324,112 @@ void screen_management(void)
    if(ScreenStates==kpage19)
    {
      //revisar si hay alarmas prioritarias y aun hay vacante, envíe alarma para mostrar
-     if(config->controlType==true)//assistive
+     if(config.controlType==true)//assistive
      {
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue->peep);  // This is the value you want to send to that object and atribute mentioned before.
+      Serial.print(dataValue.peep);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
 
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue->tv);  // This is the value you want to send to that object and atribute mentioned before.
+      Serial.print(dataValue.tv);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
 
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue->bpm);  // This is the value you want to send to that object and atribute mentioned before.
+      Serial.print(dataValue.bpm);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
 
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue->ie);  // This is the value you want to send to that object and atribute mentioned before.
+      Serial.print(dataValue.ie);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
 
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue->pressure);  // This is the value you want to send to that object and atribute mentioned before.
+      Serial.print(dataValue.pressure);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
      }
      else//controlled
      {
-       if(config->control==true)//volume
+       if(config.control==true)//volume
        {
         Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue->peep);  // This is the value you want to send to that object and atribute mentioned before.
+        Serial.print(dataValue.peep);  // This is the value you want to send to that object and atribute mentioned before.
         Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
         Serial.write(0xff);
         Serial.write(0xff);
 
         Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue->tv);  // This is the value you want to send to that object and atribute mentioned before.
+        Serial.print(dataValue.tv);  // This is the value you want to send to that object and atribute mentioned before.
         Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
         Serial.write(0xff);
         Serial.write(0xff);
 
         Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue->bpm);  // This is the value you want to send to that object and atribute mentioned before.
+        Serial.print(dataValue.bpm);  // This is the value you want to send to that object and atribute mentioned before.
         Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
         Serial.write(0xff);
         Serial.write(0xff);
 
         Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue->ie);  // This is the value you want to send to that object and atribute mentioned before.
+        Serial.print(dataValue.ie);  // This is the value you want to send to that object and atribute mentioned before.
         Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
         Serial.write(0xff);
         Serial.write(0xff);
 
         Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue->pressure);  // This is the value you want to send to that object and atribute mentioned before.
+        Serial.print(dataValue.pressure);  // This is the value you want to send to that object and atribute mentioned before.
         Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
         Serial.write(0xff);
         Serial.write(0xff);
        }else//pressure
        {
         Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue->peep);  // This is the value you want to send to that object and atribute mentioned before.
+        Serial.print(dataValue.peep);  // This is the value you want to send to that object and atribute mentioned before.
         Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
         Serial.write(0xff);
         Serial.write(0xff);
 
         Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue->tv);  // This is the value you want to send to that object and atribute mentioned before.
+        Serial.print(dataValue.tv);  // This is the value you want to send to that object and atribute mentioned before.
         Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
         Serial.write(0xff);
         Serial.write(0xff);
 
         Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue->bpm);  // This is the value you want to send to that object and atribute mentioned before.
+        Serial.print(dataValue.bpm);  // This is the value you want to send to that object and atribute mentioned before.
         Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
         Serial.write(0xff);
         Serial.write(0xff);
 
         Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue->ie);  // This is the value you want to send to that object and atribute mentioned before.
+        Serial.print(dataValue.ie);  // This is the value you want to send to that object and atribute mentioned before.
         Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
         Serial.write(0xff);
         Serial.write(0xff);
 
         Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue->pressure);  // This is the value you want to send to that object and atribute mentioned before.
+        Serial.print(dataValue.pressure);  // This is the value you want to send to that object and atribute mentioned before.
         Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
         Serial.write(0xff);
         Serial.write(0xff); 
        }
-       
      }
+   }
      else
      {
        
      }
      
     Serial.print("n3.val=");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-    Serial.print(counter);  // This is the value you want to send to that object and atribute mentioned before.
+    //Serial.print(counter);  // This is the value you want to send to that object and atribute mentioned before.
     Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
     Serial.write(0xff);
     Serial.write(0xff);
@@ -486,11 +494,11 @@ void screen_management(void)
    }
 */
   
-}
 
 
 
-void recieveData(CONFIGURATION *config,byte *data, int dataLength)
+
+void recieveData(int dataLength)
 {
   //Serial.write(buff->fio2);
  if (Serial.available())
@@ -500,55 +508,55 @@ void recieveData(CONFIGURATION *config,byte *data, int dataLength)
    {
       if(data[i]==kfio2)
       {
-        config->fio2=data[i+1];
+        config.fio2=data[i+1];
       }else if(data[i]==kbpm)
       {
-        config->bpm=data[i+1];
+        config.bpm=data[i+1];
       }else if(data[i]==kpeep)
       {
-        config->peep=data[i+1];
+        config.peep=data[i+1];
       }else if(data[i]==kheigh)
       {
-        config->heigh=data[i+1];
+        config.heigh=data[i+1];
       }else if(data[i]==kapnea)
       {
-        config->apnea=data[i+1];
+        config.apnea=data[i+1];
       }else if(data[i]==kie)
       {
-        config->ie=data[i+1];
+        config.ie=data[i+1];
       }else if(data[i]==kgender)
       {
-       config->gender=data[i+1]; 
+       config.gender=data[i+1]; 
       }else if(data[i]==kpressure)
       {
-        config->pressure=data[i+1];
+        config.pressure=data[i+1];
       }else if(data[i]==kmaxInPressure)
       {
-        config->maxInPressure=data[i+1];
+        config.maxInPressure=data[i+1];
       }else if(data[i]==kminInPressure)
       {
-        config->minInPressure=data[i+1];
+        config.minInPressure=data[i+1];
       }else if(data[i]==kmaxOutPressure)
       {
-        config->maxOutPressure=data[i+1];
+        config.maxOutPressure=data[i+1];
       }else if(data[i]==kminOutPressure)
       {
-        config->minOutPreassure=data[i+1];
+        config.minOutPressure=data[i+1];
       }else if(data[i]==kmaxVT)
       {
-        config->maxTV=data[i+1];
+        config.maxTV=data[i+1];
       }else if(data[i]==kminTV)
       {
-        config->minTV=data[i+1];
+        config.minTV=data[i+1];
       }
 
     }
  
   }
-  clear_buffer(&data,dataLength);
+  clear_buffer(dataLength);
 }
 
-void clear_buffer(byte *data,int nbytes)
+void clear_buffer(int nbytes)
 {
   for(int i = 0;i < nbytes;i++){
         data[i] = 0x00;
@@ -568,7 +576,6 @@ void init_struct(buffer_screen *buff)
   buff->pressure=0x0;
 }
 */
-
 
 
 

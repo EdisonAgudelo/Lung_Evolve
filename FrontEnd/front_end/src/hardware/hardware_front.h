@@ -1,6 +1,8 @@
 #ifndef HARDWARE_FRONT_H
 #define HARDWARE_FRONT_H
 
+#include "driver_led.h"
+
 extern DriverLed RED_led;
 extern DriverLed YELLOW_led;
 
@@ -12,8 +14,8 @@ extern DriverLed YELLOW_led;
 #define BUZZERpin 3
 
 //serial to backend pins
-#define SBACK_END_TX 7
-#define SBACK_END_RX 6
+#define SFRONT_END_TX 7
+#define SFRONT_END_RX 6
 
 //duty cycle front end peripherals 
 #define DUTY_LEDY 128

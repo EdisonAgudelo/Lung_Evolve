@@ -1,10 +1,6 @@
-#include "driver_led.h"
-
-//#include "hardware_interface.h"
-
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "driver_led.h"
 #include <Arduino.h>
 
 void DriverLedInit(DriverLed *led, int gpio_output)
@@ -135,4 +131,12 @@ void DriverLedTShoot(DriverLed *led, uint32_t shoot_period_ms, uint32_t shoot_ti
     led->n_times_ref = 1;   
 }
 
+void set_pin(int gpio)
+{
+  digitalWrite(gpio,HIGH);
+}
 
+void clear_pin(int gpio)
+{
+  digitalWrite(gpio,LOW);
+}

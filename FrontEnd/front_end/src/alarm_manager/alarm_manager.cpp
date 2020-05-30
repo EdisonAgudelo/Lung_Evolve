@@ -1,13 +1,9 @@
-//leer del bus de datos
-//activar alarmas segun corresponda
-//manejo de perifericos
 
 #include "alarm_manager.h"
-#include "data_bus/data_bus.h"
-#include "hardware/hardware_front.h"
 
-ALARMS alarms_struct;
-Alarm_state AS;
+
+//ALARMS *alarms_struct;
+//Alarm_state *AS;
 
 /*
 *   this function should be call in the set_up of the main sketch   
@@ -16,10 +12,10 @@ Alarm_state AS;
 */
 void init_alarm_maganement(void) 
 {
-    AS->HighAlarmState=false;
-    AS->MediumAlarmState=false;
-    AS->BuzzerOn=false
-    AS->ScreenSoundOff=false;
+    AS.HighAlarmState=false;
+    AS.MediumAlarmState=false;
+    AS.BuzzerOn=false;
+    AS.ScreenSoundOff=false;
 }
 
 /*
@@ -44,20 +40,20 @@ void check_state_alarm(void)
     if(alarms_struct.LowInspP || alarms_struct.HighInspP || alarms_struct.VteNotAchived || alarms_struct.VteOv || alarms_struct.PatientLeaks || 
         alarms_struct.ShutDown || alarms_struct.LowBattery || alarms_struct.NoBattery | alarms_struct.HighTemp | alarms_struct.NoOxygen == true)
     {
-        AS->HighAlarmState=1;     
+        AS.HighAlarmState=1;     
     }
     else
     {
-        AS->HighAlarmState=0;     
+        AS.HighAlarmState=0;     
     }
     
     if(alarms_struct.ApneaAlarm || alarms_struct.HighBreathRate || alarms_struct.LowVte || alarms_struct.HighVti || alarms_struct.BackUpOn || alarms_struct.UnderPeep==true)
     {
-        AS->MediumAlarmState=1;     
+        AS.MediumAlarmState=1;     
     }
     else
     {
-        AS->MediumAlarmState=0;     
+        AS.MediumAlarmState=0;     
     }
     
        
@@ -70,18 +66,18 @@ void check_state_alarm(void)
 void alarm_action(void)
 {
             //////////// HIGH PRIORITY ALARMS//////////
-        if(AS->HighAlarmState == true)
+        if(AS.HighAlarmState == true)
         {
             REDLed(true);
-            if(AS->ScreenSoundOff)
+            if(AS.ScreenSoundOff)
             {
                 BUZZER(false);
-                AS->BuzzerOn=false;
+                AS.BuzzerOn=false;
             }
             else
             {
                 BUZZER(true);
-                AS->BuzzerOn=true;
+                AS.BuzzerOn=true;
             }
             
         }
@@ -89,10 +85,10 @@ void alarm_action(void)
         {
             REDLed(false);
             BUZZER(false);
-            AS->BuzzerOn=false;
+            AS.BuzzerOn=false;
         }
         /////////////MEDIUM PRIORITY ALARMS////////////
-        if(AS->MediumAlarmState==true)
+        if(AS.MediumAlarmState==true)
         {
             YELLOWLed(true);
         }
@@ -102,4 +98,3 @@ void alarm_action(void)
         }
 
 }
-

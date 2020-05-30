@@ -1,10 +1,34 @@
 #ifndef SCREEN_MANAGER_H
 #define SCREEN_MANAGER_H
-#include "screen_objetcs.h"
-#include "data_bus/data_bus.h"
-#include "alarm_manager/alarm_manager.h"
 
-enum ScreenStates
+#include <Nextion.h>
+//#include "screen_objetcs.h"
+#include "../data_bus/data_bus.h"
+#include "../alarm_manager/alarm_manager.h"
+
+#define kpage0 0
+#define kpage1 1
+#define kpage2 2
+#define kpage3 3
+#define kpage4 4
+#define kpage5 5
+#define kpage6 6
+#define kpage7 7
+#define kpage8 8
+#define kpage9 9
+#define kpage10 10
+#define kpage11 11
+#define kpage12 12
+#define kpage13 13
+#define kpage14 14
+#define kpage15 15
+#define kpage16 16
+#define kpage17 17
+#define kpage18 18
+#define kpage19 19
+#define kpage20 20
+/*
+enum ScreenS
 {
     kpage0,
     kpage1,
@@ -27,23 +51,9 @@ enum ScreenStates
     kpage18,
     kpage19,
     kpage20
-    
-
 };
+*/
 
-NexTouch *nex_listen_list[] = 
-{
-  &b1,  
-  &b2,
-  &b3, 
-  &b4,
-  &b5,
-  &b6,
-  &b7,    
-  &page1,  
-  &page2,  
-  NULL  
-};  
 
 typedef struct 
 {
@@ -76,19 +86,19 @@ typedef struct
 
 
 #define NUM_BYTES1 19 //for volume control
-#define NUM_BYTES2  //for pressure control
-#define NUM_BYTES3  //for assistive control
-#define NUM_BYTES4  //for alarm configuration
+//#define NUM_BYTES2  10//for pressure control
+//#define NUM_BYTES3  11//for assistive control
+//#define NUM_BYTES4  12//for alarm configuration
 
-const int NUM_BYTES=18;
+const int NUM_BYTES=19;
 
 
 
-extern CONFIGURATION config;
-extern Alarm_state AlarmState;
-extern DATA dataValue;
-extern ALARMS alarms_data;
-
+//extern CONFIGURATION config;
+//extern Alarm_state AlarmState;
+//extern DATA dataValue;
+//extern ALARMS alarms_data;
+void serial_screen_init(void);
 void init_screen_management(void);
 void handlers (void);
 void b1PushCallback(void *ptr); 
@@ -107,7 +117,7 @@ void b13PushCallback(void *ptr);
 void b14PushCallback(void *ptr);
 void b15PushCallback(void *ptr);
 void b16PushCallback(void *ptr);
-void 23PushCallback(void *ptr);
+void b23PushCallback(void *ptr);
 void b24PushCallback(void *ptr);
 void b29PushCallback(void *ptr);
 void b30PushCallback(void *ptr);
@@ -131,6 +141,6 @@ void bt0PopCallback(void *ptr);
 void bt1PushCallback(void *ptr);
 void bt1PopCallback(void *ptr);
 void screen_management(void);
-void recieveData(CONFIGURATION *config,byte *data, int dataLength);
-void clear_buffer(byte *data,int nbytes);
+void recieveData( int dataLength);
+void clear_buffer(int nbytes);
 #endif /*SCREEN_MANAGER_H*/

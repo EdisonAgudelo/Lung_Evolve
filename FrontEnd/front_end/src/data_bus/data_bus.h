@@ -1,6 +1,7 @@
 #ifndef DATA_BUS_H
 #define DATA_BUS_H
-
+#include <stdint.h>
+#define byte uint8_t
 //ALARMS
 typedef struct 
 {
@@ -26,7 +27,7 @@ typedef struct
     bool NoOxygen;
 
 } ALARMS;
-
+extern ALARMS alarms_struct;
 
 //CONFIGURATION
 typedef struct 
@@ -52,6 +53,7 @@ typedef struct
 
 
 }CONFIGURATION;
+extern CONFIGURATION config;
 
 //DATA
 typedef struct 
@@ -63,6 +65,6 @@ typedef struct
     byte pressure;  
 
 }DATA;
-
+extern DATA dataValue;
 
 #endif /*DATA_BUS_H*/

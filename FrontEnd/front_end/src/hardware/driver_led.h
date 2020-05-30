@@ -8,7 +8,7 @@
     {
         kLedOn,
         kLedOff,
-        kLedDeath,
+        kLedDeath
     };
     
     typedef struct
@@ -42,5 +42,7 @@
     void DriverLedTurnOff(DriverLed *led);
     
     void DriverLedLoop(DriverLed *led);   
+    void set_pin(int gpio);
+    void clear_pin(int gpio);
     
 #endif 

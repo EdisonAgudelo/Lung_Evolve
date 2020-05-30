@@ -1,6 +1,9 @@
 
 #include "hardware_front.h"
-#include "driver_led.h"
+
+
+#include <Arduino.h>
+
 
 DriverLed RED_led;
 DriverLed YELLOW_led;
@@ -43,7 +46,7 @@ void YELLOWLed(bool action)
     else
     {
         //digitalWrite(Ypin,LOW);
-        DriverLedTurnOff(YELLOW_led);
+        DriverLedTurnOff(&YELLOW_led);
             
     }
     
@@ -66,7 +69,7 @@ void REDLed(bool action)
     else
     {
         //digitalWrite(Rpin,LOW);
-        DriverLedTurnOff(RED_led);
+        DriverLedTurnOff(&RED_led);
     
     }
     
