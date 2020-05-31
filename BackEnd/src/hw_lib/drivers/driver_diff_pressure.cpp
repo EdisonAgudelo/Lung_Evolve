@@ -40,5 +40,5 @@ void DiffPressure::Loop(void)
 //getter
 float DiffPressure::GetDiffPressure(void)
 {
-    return (((float)analog_value) / kACDResolution - DIFFPRESSURE_OFFSET) * DIFFPRESSURE_CONSTANT;
+    return (((float)analog_value) / ((float)kACDResolution)- DIFFPRESSURE_OFFSET) * DIFFPRESSURE_CONSTANT;
 }
