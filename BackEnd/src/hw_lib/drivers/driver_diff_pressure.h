@@ -23,6 +23,7 @@ class DiffPressure
     DiffPressure(int _analog_pin);
     ~DiffPressure();
 
+    void Begin(void);
     void Loop(void);
 
 

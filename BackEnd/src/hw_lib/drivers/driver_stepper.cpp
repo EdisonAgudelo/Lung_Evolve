@@ -15,8 +15,6 @@ Stepper::Stepper(int _pin_step, int _pin_dir, int _pwm_gen_id) : pin_step(_pin_s
     pin_enable = -1;
     pin_limit_backward = -1;
     pin_limit_forward = -1;
-
-    GeneralInit();
 }
 
 Stepper::Stepper(int _pin_step, int _pin_dir, int _pin_enable, int _pwm_gen_id) : pin_step(_pin_step), pin_dir(_pin_dir), pin_enable(_pin_enable), pwm_id(_pwm_gen_id)
@@ -24,11 +22,9 @@ Stepper::Stepper(int _pin_step, int _pin_dir, int _pin_enable, int _pwm_gen_id) 
     //indicate that other pins are no available
     pin_limit_backward = -1;
     pin_limit_forward = -1;
-
-    GeneralInit();
 }
 
-void Stepper::GeneralInit(void)
+void Stepper::Begin(void)
 {
     //set the default state.
     vel_target = 100; //any value
@@ -44,7 +40,7 @@ void Stepper::GeneralInit(void)
     state = kStepperStateStop;
     step_period = 1000; //any value to avoid 0 division
 
-    break_distance = 0;
+    brake_distance = 0;
 
     hard_stop_flag = false;
     soft_stop_flag = false;
@@ -70,6 +66,8 @@ void Stepper::GeneralInit(void)
         PinConfigDigital(pin_enable, kOutput);
         PinSetDigital(pin_enable, !kStepEnable);
     }
+
+    update_prev_time = Millis();
 }
 
 Stepper::~Stepper()
@@ -178,17 +176,18 @@ void Stepper::SoftStop(void)
             while (0 != missed_steps-- && (0 > pin_end || !PinReadDigital(pin_end)))
             {
                 PinSetDigital(pin_step, kStepLevel);
-                delayMicroseconds(step_period / 1000);
+                uDelay(step_period / 2000);
                 PinSetDigital(pin_step, !kStepLevel);
-                delayMicroseconds(step_period / 1000);
+                uDelay(step_period / 2000);
             }
 
             //if while ends due to end switch
             if (0 <= pin_end && PinReadDigital(pin_end))
                 pos_target = pos_actual; //force  position
-            else
+            else{
+                pos_target -= pos_adj;
                 pos_actual = pos_target; //force  position
-
+            }
             //disable driver
             if (0 <= pin_enable)
                 PinSetDigital(pin_enable, !kStepEnable);
@@ -222,13 +221,17 @@ void Stepper::Loop(void)
         switch (state)
         {
         case kStepperStateFoward:
-        case kStepperStateBackward:
+            remain_distance = pos_target > pos_actual ? (uint32_t)(pos_target - pos_actual) : 0;
+            goto StepperStateBoth;
 
+        case kStepperStateBackward:
+            remain_distance = pos_target < pos_actual ? (uint32_t)(pos_actual - pos_target) : 0;
+            
+            StepperStateBoth:
             update_param = false;
-            remain_distance = pos_target > pos_actual ? pos_target - pos_actual : pos_actual - pos_target;
 
             // check if motor is close to target position and it is moving
-            if (remain_distance < break_distance && 0 != vel_target)
+            if ((remain_distance < brake_distance) && (0 != vel_target))
             {
                 //slowdown motor vel
                 if (vel_actual != STEPPER_MIN_VEL_TO_STOP)
@@ -267,30 +270,31 @@ void Stepper::Loop(void)
                 //trigger param calculation
                 update_param = true;
 
-                //recalculate break distance
-                break_distance = vel_actual * vel_actual / acc_value;
+                //recalculate brake distance
+                brake_distance = (vel_actual * vel_actual) / ((int32_t)(acc_value*2*((uint32_t)1000/STEPPER_UPDATE_PERIOD)));
+
             }
 
             //if actual vel reach 0 value stop driver.
-            if (0 == vel_actual)
+            if (0 >= vel_actual)
             {
                 HardStop();
             }
-            //if a update parameter tirgger is pending
+            //if a update parameter was triggered
             else if (update_param)
             {
 
                 //compute step period
-                step_period = 1000000000 / vel_actual;
+                //step_period = 1000000000 / vel_actual;
 
-                //uptade pwm frecuency and attach pin
-                PWMConfigFrecuency(vel_actual, pwm_id);
+                //uptade pwm frecuency and attach pin, compute step period
+                step_period=PWMConfigFrecuency((uint32_t)vel_actual, pwm_id);
 
                 //compute with this velocity how much time it will require to reach pos target
                 CalculateTime();
 
                 //set interrupt for stop motor in the correct moment
-                TimeVirtualISRAdd(id, timeout_isr[id], estimate_time); //stop me in the estimated time
+                TimeVirtualISRAdd(id, timeout_isr[id], estimate_time - STEPPER_TIME_GAP); //stop me in the estimated time
 
                 //if there is not more time,  trigger stop
                 if (0 > estimate_time)
@@ -302,11 +306,15 @@ void Stepper::Loop(void)
         case kStepperStateStop:
             // check if user set a position
 
-            //check if an inversion request is active
+            brake_distance=0;
+
+            //check if an pos request is active
             if (pos_change_request)
             {
                 pos_change_request = false; //end request
                 pos_target = pos_request;
+                pos_adj = ((pos_target-pos_actual) * STEPPER_FINE_ADJ) /STEPPER_FINE_ADJ_DIV;
+                pos_target += pos_adj;
             }
 
             //check if this driver can jump to foward
@@ -387,101 +395,43 @@ void Stepper::SetPos(int32_t _pos)
         pos_change_request = true;
         pos_request = _pos;
     }
-    /*
-    //check if there are changes
-    if (_pos != pos_target)
-    {
-        //update actual distance
-        CalculateDistance();
-
-        //reset flag
-        inversion_flag = false;
-
-        
-        switch (state)
-        {
-        case kStepperStateFoward:
-
-            //if it is ahead of actual position, nothing happen
-            if (_pos > pos_actual)
-            {
-                pos_target = _pos;
-                CalculateTime();
-                TimeVirtualISRAdd(id, timeout_isr[id], estimate_time); //stop me in the estimated time
-            }
-
-            //if it is back of actual position, trigger an stop request
-            else
-            {
-                inversion_flag = true;
-                pos_transfer = _pos;
-                vel_tranfer = vel_target;
-                vel_target = 0;
-                TimeVirtualISRAdd(id, nullptr, 0); //delete callback
-            }
-
-            break;
-        case kStepperStateBackward:
-
-            //if it is ahead of las position, nothing happen
-            if (_pos < pos_target)
-            {
-                pos_target = _pos;
-                CalculateTime();
-                TimeVirtualISRAdd(id, timeout_isr[id], estimate_time); //stop me in the estimated time
-            }
-            
-            //if it is back of actual position, trigger an stop request
-            else
-            {
-                inversion_flag = true;
-                pos_transfer = _pos;
-                vel_tranfer = vel_target;
-                vel_target = 0;
-                TimeVirtualISRAdd(id, nullptr, 0); //delete callback
-            }
-            break;
-        default:
-            //if motor is stopped, apply rigth now.
-            pos_target = _pos;
-            break;
-        }
-    }
-    */
 }
 
 void Stepper::CalculateDistance(void)
 {
     
-    uint32_t enlapsed_time = GetDiffTime(micros(), count_prev_time);
+    uint32_t enlapsed_time = GetDiffTime(Micros(), count_prev_time);
+    count_prev_time = Micros();
 
     if (0 != vel_actual)
         switch (state)
         {
         case kStepperStateFoward:
-            pos_actual += (enlapsed_time * 1000) / step_period;
 
             if (!PWMIsPendingInterrupt(pwm_id))
             {
                 PWMRequestInterrupt(pwm_id);
                 pos_actual++;
             }
+            pos_actual += (enlapsed_time * 1000) / step_period;
+            //pos_actual += contador1();
 
             break;
         case kStepperStateBackward:
-            pos_actual -= ((enlapsed_time * 1000) / step_period);
 
             if (!PWMIsPendingInterrupt(pwm_id))
             {
                 PWMRequestInterrupt(pwm_id);
                 pos_actual--;
             }
+
+            pos_actual -= ((enlapsed_time * 1000) / step_period);
+            
             break;
         default:
             break;
         }
 
-    count_prev_time = micros();
 }
 
 void Stepper::CalculateTime(void)
@@ -508,7 +458,7 @@ void Stepper::CalculateTime(void)
         if (delta_distance < 0)
             estimate_time = 0;
         else
-            estimate_time = (delta_distance * 1000) / vel_actual - STEPPER_TIME_GAP;
+            estimate_time =((int32_t)(((double)delta_distance)*(((double)step_period)/1000000.0)));
     }
 }
 
@@ -541,7 +491,7 @@ void Stepper::SetPosmm(float _pos_mm)
 void Stepper::SetDriverConfig(uint16_t _steps_per_rev, float _mm_per_rev, uint8_t _u_steps)
 {
     u_steps=_u_steps;
-    steps_per_mm = _steps_per_rev * _u_steps / _mm_per_rev; 
+    steps_per_mm = (_steps_per_rev * _u_steps) / _mm_per_rev; 
 }
 
 /////////////// define n PinXISR acording to STEPPER_MAX_COUNT ////////////

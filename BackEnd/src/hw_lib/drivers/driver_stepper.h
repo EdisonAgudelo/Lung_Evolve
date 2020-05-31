@@ -6,10 +6,11 @@
 #define STEPPER_MAX_COUNT 3 //max instaces of the class
 
 #define STEPPER_UPDATE_PERIOD 100 //Each UPDATE_PERIOD ms this library performs an upate in vel referece. This for aceleration purpose.
-#define STEPPER_MIN_VEL_TO_STOP 60 // steps/s
-#define STEPPER_TIME_GAP 5 //this value idicate how much millisecond is isr timeout ahead of real stimate end time
-#define STEPPER_DEFAULT_ACC 60 //steps/(100ms)^2 => 600 steps/s^2
-
+#define STEPPER_MIN_VEL_TO_STOP 200 // steps/s
+#define STEPPER_TIME_GAP 1 //this value idicate how much millisecond is isr timeout ahead of real estimate end time
+#define STEPPER_DEFAULT_ACC (4000/(1000/STEPPER_UPDATE_PERIOD)) //steps/(100ms)^2 => 600 steps/s^2
+#define STEPPER_FINE_ADJ 50 //to calibrate erros on Driver calculos
+#define STEPPER_FINE_ADJ_DIV 10000
 
 #include "hardware_interface.h"
 
@@ -49,7 +50,8 @@ class Stepper
         int32_t pos_target; //in steps
         int32_t vel_actual;
         int32_t pos_actual;
-        uint8_t acc_value; // this value is added to vel_actual value each STEPPER_UPDATE_PERIOD
+        int32_t pos_adj;
+        uint32_t acc_value; // this value is added to vel_actual value each STEPPER_UPDATE_PERIOD
 
         //for protection
         int32_t pos_request; //used to save target pos when a new pos target is requested 
@@ -66,8 +68,7 @@ class Stepper
 
         int32_t estimate_time; //ms
 
-        uint32_t break_distance; //save the delta distance in which motor should start slow down;
-
+        int32_t brake_distance; //save the delta distance in which motor should start slow down;
         //stop sincronization 
         bool hard_stop_flag; //to avoid strange behaviour, it is set to ISR soft stop to indicate that it is waiting for execution
         bool soft_stop_flag; //to avoid strange behaviour, it is set to ISR hard stop to indicate that it is waiting for execution
@@ -89,7 +90,7 @@ class Stepper
         //private methods
         void CalculateDistance(void);
         void CalculateTime(void);
-        void GeneralInit(void);
+        
         
     public:
         
@@ -103,9 +104,10 @@ class Stepper
         void SetDriverConfig(uint16_t _steps_per_rev, float _mm_per_rev, uint8_t _u_steps);
 
        //methods
+        void Begin(void);
         void ISRHandle(int type);
         void HardStop(void); //this function stops motor without pos error adjustment
-        void SoftStop(void); //this function stops motor but first it tres to reach desired ref pos manually
+        void SoftStop(void); //this function stops motor but first it tryes to reach desired ref pos manually
         void Loop(void);
         
         //setters

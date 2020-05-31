@@ -56,6 +56,67 @@ void WarningActions(void);
 //this function analyzes all config parameters to see if they are valid. if there are valid config, then calculte working parameters
 void ComputeParameters(void);
 
+
+
+
+
+
+
+
+//for testing purpose
+
+void AnyCallback(void);
+
+uint32_t ref =0 ;
+float ref2 =0;
+void setup()
+{
+  
+  //DirverInitialization();
+  
+  PinInitialization();
+  DirverInitialization();
+  DriverMotorMoveTo(kMotorIdBellows, 2.5);
+  DriverMotorSetVel(kMotorIdBellows, 0.5);
+  
+  Serial.begin(115200);
+
+  //PWMConfigFrecuency(1, kHardwarePWMMotor1);
+
+  ref = Millis();
+}
+
+
+void loop()
+{
+  
+  if(GetDiffTime(Millis(),ref)>100)
+  {
+    ref = Millis();
+    Serial.print("ok vel: ");
+    Serial.println((DriverMotorActualPos(kMotorIdBellows)-ref2)/0.1);
+    ref2 = DriverMotorActualPos(kMotorIdBellows);
+    DriverMotorMoveTo(kMotorIdBellows, 0);
+  }
+
+  DriverLoops();
+}
+
+void AnyCallback(void)
+{
+  Serial.print(Micros());
+  Serial.println(" ok\n");
+}
+
+
+
+
+
+
+
+
+
+/*
 void setup()
 {
 
@@ -88,7 +149,7 @@ void loop()
   FMSMainLoop();
   DriverLoops();
 }
-
+*/
 
 
 

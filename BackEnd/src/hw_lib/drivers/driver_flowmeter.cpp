@@ -8,8 +8,6 @@
 
 Flowmeter::Flowmeter(int8_t _counter_id, float _counts_per_slm) : counter_id(_counter_id), counts_per_slm(_counts_per_slm)
 {
-  //  CounterBegin(counter_id);
-
     prev_update_time = 0;
 
     flow_counts = 0;
@@ -22,6 +20,13 @@ Flowmeter::~Flowmeter()
 }
 
 //methods
+
+void Flowmeter::Begin(void){
+    //CounterBegin(counter_id);
+    prev_update_time = Millis();
+}
+
+
 void Flowmeter::Loop(void)
 {
     uint32_t transfer=6;

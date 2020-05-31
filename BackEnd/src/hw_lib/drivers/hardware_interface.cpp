@@ -21,10 +21,11 @@
 
 void (*timer1m_callback)(void);
 
-bool g_pending_interrupt[6] = {false};
+volatile bool g_pending_interrupt[6] = {false};
 
-uint8_t g_overflow_count[6] = {0};
+volatile uint8_t g_overflow_count[6] = {0};
 
+uint32_t g_hard_counter = 0;
 //I2C com
 
 //read data from a I2C slave device
@@ -179,25 +180,32 @@ void Timer1msISR(void (*callback)(void))
   TIMSK5 = 0x2; // intterrupt in compare match A
 }
 
-void PWMConfigFrecuency(int frecuency, int pwm_id)
+uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
 {
   uint8_t i;
 
   const uint16_t preescaler[] = {1, 8, 64, 256, 1024};
   uint16_t compare_value;
-
+  uint32_t pwm_period;
+  uint32_t A;
+  uint32_t B;
+  
   cli();
 
   compare_value = 0x00ff;
 
-  for (i = 0; i < sizeof(preescaler); i++)
+  for (i = 0; i < (sizeof(preescaler)/sizeof(uint16_t)); i++)
   {
-    if (F_CPU / (preescaler[i] * 0xffff) <= frecuency)
+    if (((uint32_t)F_CPU / ((uint32_t)preescaler[i] * (uint32_t)0xffff)) <= frecuency)
     {
       compare_value = F_CPU / (preescaler[i] * frecuency);
       break; //break for
     }
   }
+
+  A=(((uint32_t)compare_value)*10000);
+  B=((uint32_t)F_CPU)/(100*((uint32_t)preescaler[i]));
+  pwm_period = (uint32_t)(1000.0*(((float)A)/((float)B)));
 
   g_pending_interrupt[pwm_id] = false;
 
@@ -258,7 +266,11 @@ void PWMConfigFrecuency(int frecuency, int pwm_id)
     //no able to work with this timer as pwm
     break;
   }
+
+
   sei();
+
+  return pwm_period;
 }
 
 inline void HardwareDisableISR(void)
@@ -300,6 +312,7 @@ bool PWMIsPendingInterrupt(int pwm_id)
 }
 
 /////////////////// ISR /////////////////
+
 
 ISR(TIMER1_OVF_vect)
 {

@@ -16,11 +16,11 @@ const int kHardwarePWMMotor3 = 4;
 
 
 //---------pin definitions---------//
-const int kHardwareLedRedPin = 12; // review
-const int kHardwareBuzzerPin = 0; // review
+const int kHardwareLedRedPin = 8; // review
+const int kHardwareBuzzerPin = 3; // review
 
 //driver enable pin
-const int kHardwareEnMotor1 = 1;  // review
+const int kHardwareEnMotor1 = 4;  // review
 
 //driver step or pulse pin
 const int kHardwareStepMotor1 = 12;
@@ -28,12 +28,12 @@ const int kHardwareStepMotor2 = 2;
 const int kHardwareStepMotor3 = 7;
 
 //driver dir pin
-const int kHardwareDirMotor1 = 1; // review
-const int kHardwareDirMotor2 = 3; // review
-const int kHardwareDirMotor3 = 4; // review
+const int kHardwareDirMotor1 = 5; // review
+const int kHardwareDirMotor2 = 6; // review
+const int kHardwareDirMotor3 = 9; // review
 
 //final switch pins
-const int kHardwareSwitchFMotor1 = -1; // review
+const int kHardwareSwitchFMotor1 = 19; // review
 const int kHardwareSwitchBMotor1 = -1; // review
 const int kHardwareSwitchFMotor2 = -1; // review
 const int kHardwareSwitchBMotor2 = -1; // review
@@ -43,13 +43,13 @@ const int kHardwareSwitchBMotor3 = -1; // review
 //driver flow pins
 
 //rele pins
-const int kHarwareRele1 = -1; // review
-const int kHarwareRele2 = -1; // review
-const int kHarwareRele3 = -1; // review
+const int kHarwareRele1 = 10; // review
+const int kHarwareRele2 = 11; // review
+const int kHarwareRele3 = 12; // review
 
 //Driver diff pressure
-const int kHardwareDiffPressure1 = -1; // review
-const int kHardwareDiffPressure2 = -1; // review
+const int kHardwareDiffPressure1 = A8; // review
+const int kHardwareDiffPressure2 = A9; // review
 
 
 // ------- conventions --------//
@@ -61,9 +61,13 @@ const bool kLow = false;
 
 const uint8_t kSoftI2C = 1;
 const uint8_t kHardI2C = 0;
+
 // --------- HW parameter ---------//
+
 const uint16_t kACDResolution = 0x3ff;
 
+
+//--------- Functions interface --------//
 
 bool I2CBegin(int id);
 bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght);
@@ -71,7 +75,7 @@ bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght);
 
 
 //configuration functions 
-void PWMConfigFrecuency(int frecuency, int pwm_id);
+uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id);
 
 void PinConfigRisingIRS(int pin, void (*callback)(void));
 
@@ -111,5 +115,6 @@ void HardwareEnableISR(void);
 
 //this function return the actual value of a counter
 uint32_t CounterGetValue(int counter_id);
+
 
 #endif

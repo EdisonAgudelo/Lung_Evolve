@@ -27,6 +27,7 @@ public:
     ~Flowmeter();
 
     //methods
+    void Begin(void);
     void Loop(void);
 
     //getters
