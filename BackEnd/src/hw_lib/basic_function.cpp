@@ -23,7 +23,7 @@ const float kMotorBellowmmRev = (1/63.8); //review
 const float kMotorO2mmRev = 200.0; //review
 const float kMotorAirmmRev = 200.0; //review
 
-const float kCountsPerSLM = 5.0; //review
+const uint8_t kFlowI2CAddrs = 64; //review
 
 DriverLed led_red;
 DriverLed buzzer;
@@ -34,8 +34,8 @@ Stepper motor_valve_air(kHardwareStepMotor3, kHardwareDirMotor3, kHardwarePWMMot
 
 //Flowmeter flow_in(kHardwareCounterFlow1, kCountsPerSLM);
 //Flowmeter flow_out(kHardwareCounterFlow2, kCountsPerSLM);
-Flowmeter flow_in(0, kCountsPerSLM);
-Flowmeter flow_out(1, kCountsPerSLM);
+Flowmeter flow_in(kSoftI2C, kFlowI2CAddrs);
+Flowmeter flow_out(kSoftI2C, kFlowI2CAddrs);
 
 DiffPressure pressure_in(kHardwareDiffPressure1);
 DiffPressure pressure_out(kHardwareDiffPressure1);
@@ -80,9 +80,9 @@ bool DriverValveOpenTo(int valve_id, bool valve_position)
 long int SensorGetValue(int sensor_id)
 {
   if(sensor_id<2)
-    return (uint32_t) ((Flowmeter *)Sensor[sensor_id])->GetFlow()*1000;
+    return (uint32_t) (((Flowmeter *)Sensor[sensor_id])->GetFlow()*1000.0);
   
-  return (uint32_t) ((DiffPressure *)Sensor[sensor_id])->GetDiffPressure()*1000;
+  return (uint32_t) (((DiffPressure *)Sensor[sensor_id])->GetDiffPressure()*1000.0);
 }
 
 bool DriverMotorSetVel(int motor_id, float motor_vel)
@@ -114,16 +114,16 @@ bool DirverInitialization(void)
   pressure_in.Begin();
   pressure_out.Begin();
 
-
-  motor_bellow.SetLimitPin(kHardwareSwitchBMotor1, kHardwareSwitchFMotor1);
 /* restore  
+  motor_bellow.SetLimitPin(kHardwareSwitchBMotor1, kHardwareSwitchFMotor1);
+
   motor_valve_o2.SetLimitPin(kHardwareSwitchBMotor2, kHardwareSwitchFMotor2);
   motor_valve_air.SetLimitPin(kHardwareSwitchBMotor3, kHardwareSwitchFMotor3);
-  */
+ 
   motor_bellow.SetDriverConfig(kMotorBellowSteps, kMotorBellowmmRev, kMotorBellowUSteps);
   motor_valve_o2.SetDriverConfig(kMotorO2Steps, kMotorO2mmRev, kMotorO2USteps);
   motor_valve_air.SetDriverConfig(kMotorAirSteps, kMotorAirmmRev, kMotorAirUSteps);
-
+ */
   return true;
 }
 
@@ -132,13 +132,13 @@ bool DriverLoops(void)
 
   DriverLedLoop(&led_red);
   DriverLedLoop(&buzzer);
-  
+  /* restore
   motor_bellow.Loop(); //much faster than a for
   motor_valve_o2.Loop();
-  motor_valve_air.Loop();
+  motor_valve_air.Loop();*/
 
   flow_in.Loop();
-  flow_out.Loop();
+ // flow_out.Loop(); //restore
 
   pressure_in.Loop();
   pressure_out.Loop();

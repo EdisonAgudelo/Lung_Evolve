@@ -59,6 +59,7 @@ void Flowmeter::SensorGetParam(void)
     }
     else if (GetDiffTime(Millis(), sensor_reset_time)>=FLOWMETER_SOFT_RESET_TIME)
     {
+        
         sensor_power_up = false;
 
         //initial expected value
@@ -78,6 +79,7 @@ void Flowmeter::SensorGetParam(void)
             uDelay(1000);
         }
 
+
         any_use_count = 0;
 
         while (sensor_available && !MakeTransaction(kFlowCommandReadOffset, &offset_value))
@@ -95,7 +97,7 @@ void Flowmeter::SensorGetParam(void)
 
 bool Flowmeter::MakeTransaction(uint16_t command, uint16_t *buffer)
 {
-    uint8_t cmd[2] = {command >> 8, command & 0xff};
+    uint8_t cmd[2] = {(uint8_t)(command >> 8), (uint8_t)(command & 0xff)};
     uint8_t response[3];
 
     //send command if it is avilable
@@ -107,6 +109,8 @@ bool Flowmeter::MakeTransaction(uint16_t command, uint16_t *buffer)
             uDelay(500); //typical response time
     }
 
+      
+    
     //if user is waiting for data
     if (buffer != nullptr)
     {
@@ -114,6 +118,8 @@ bool Flowmeter::MakeTransaction(uint16_t command, uint16_t *buffer)
             return false;
 
         CRC8Configure(0x31, 0x0);
+
+        //Serial.print(response[0]); Serial.print(response[1]);Serial.print(" crc: "); Serial.println(response[2]);
 
         if (response[2] != CRC8Calculate(response, 2))
             return false;
@@ -161,7 +167,7 @@ void Flowmeter::Loop(void)
 float Flowmeter::GetFlow(void)
 {
     if (sensor_available)
-        return ((float)(value_raw>>2) - (float)offset_value) / ((float)scale_factor);
+        return ((float)(value_raw) - (float)offset_value) / ((float)scale_factor);
     else
         return 0.0;
 }

@@ -57,11 +57,30 @@ void WarningActions(void);
 void ComputeParameters(void);
 
 
+uint32_t ref;
+
+void setup()
+{
+  Serial.begin(115200);
+  DirverInitialization();
+  ref=Millis();
+  
+}
+
+void loop()
+{
+  if(GetDiffTime(Millis(),ref)>100)
+  {
+    ref = Millis();
+    Serial.print("pressure: ");
+    Serial.println(SensorGetValue(0));
+  }
+
+  DriverLoops();
+}
 
 
-
-
-
+/* Motor testing
 
 //for testing purpose
 
@@ -108,7 +127,7 @@ void AnyCallback(void)
   Serial.println(" ok\n");
 }
 
-
+*/
 
 
 

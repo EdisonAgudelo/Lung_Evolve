@@ -3,7 +3,7 @@
 #define I2C_TIMEOUT 10
 #define I2C_PULLUP 1
 #define SDA_PORT PORTC //review
-#define SDA_PIN 4      // //review
+#define SDA_PIN 7      // //review
 #define SCL_PORT PORTC //review
 #define SCL_PIN 5      //review
 
@@ -32,17 +32,21 @@ uint32_t g_hard_counter = 0;
 bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
 {
   int i = 0;
+  uint16_t time_out = 0;
+
   switch (id)
   {
   case kSoftI2C:
+    
     if (!i2c_start_wait((addres << 1) | I2C_READ))
     {
       i2c_stop();
       return false;
     }
-
+    
     while (0 != lenght--)
     {
+    
       buffer[i++] = i2c_read(0 == lenght);
     }
     i2c_stop();
@@ -55,14 +59,19 @@ bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
 
     do
     {
+      time_out++;
       while (Wire.available())
       {
+        time_out = 0;
         //for protection purpose
         if (i >= lenght)
           break;
         buffer[i++] = Wire.read();
       }
-    } while (i < lenght);
+    } while (i < lenght && time_out < I2C_TIMEOUT*10);
+
+    if (time_out >= I2C_TIMEOUT*10)
+      return false;
 
     break;
 
@@ -81,6 +90,8 @@ bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
   switch (id)
   {
   case kSoftI2C:
+    
+
     if (!i2c_start_wait((addres << 1) | I2C_WRITE))
     {
       i2c_stop();
@@ -94,7 +105,7 @@ bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
     i2c_stop();
 
     //if it is a no complete transaction
-    if (lenght != 0)
+    if (lenght != 0xff)
       return false;
     break;
 
@@ -118,6 +129,18 @@ bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
 
 bool I2CBegin(int id)
 {
+  switch (id)
+  {
+  case kHardI2C:
+    Wire.begin();
+    break;
+  case kSoftI2C:
+    break;
+  default:
+    return false;
+    break;
+  }
+  return true;
 }
 ////////// GPIO interface //////////
 
@@ -189,12 +212,12 @@ uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
   uint32_t pwm_period;
   uint32_t A;
   uint32_t B;
-  
+
   cli();
 
   compare_value = 0x00ff;
 
-  for (i = 0; i < (sizeof(preescaler)/sizeof(uint16_t)); i++)
+  for (i = 0; i < (sizeof(preescaler) / sizeof(uint16_t)); i++)
   {
     if (((uint32_t)F_CPU / ((uint32_t)preescaler[i] * (uint32_t)0xffff)) <= frecuency)
     {
@@ -203,9 +226,9 @@ uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
     }
   }
 
-  A=(((uint32_t)compare_value)*10000);
-  B=((uint32_t)F_CPU)/(100*((uint32_t)preescaler[i]));
-  pwm_period = (uint32_t)(1000.0*(((float)A)/((float)B)));
+  A = (((uint32_t)compare_value) * 10000);
+  B = ((uint32_t)F_CPU) / (100 * ((uint32_t)preescaler[i]));
+  pwm_period = (uint32_t)(1000.0 * (((float)A) / ((float)B)));
 
   g_pending_interrupt[pwm_id] = false;
 
@@ -267,7 +290,6 @@ uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
     break;
   }
 
-
   sei();
 
   return pwm_period;
@@ -312,7 +334,6 @@ bool PWMIsPendingInterrupt(int pwm_id)
 }
 
 /////////////////// ISR /////////////////
-
 
 ISR(TIMER1_OVF_vect)
 {
