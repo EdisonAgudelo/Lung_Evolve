@@ -11,6 +11,7 @@ ALARMS alarms_data;
 DATA dataValue;
 byte data[NUM_BYTES]; 
 int ScreenStates;
+bool update;
 
 void serial_screen_init(void)
 {
@@ -173,6 +174,7 @@ void b29PushCallback(void *ptr)
 {
   ScreenStates=kpage19;
   recieveData(NUM_BYTES1);
+  update=true;
 
 }
 
@@ -195,6 +197,7 @@ void b42PushCallback(void *ptr)
 {
   ScreenStates=kpage19;
   recieveData(NUM_BYTES1);
+  update=true;
 }
 
 void b43PushCallback(void *ptr)
@@ -206,6 +209,7 @@ void b50PushCallback(void *ptr)
 {
   ScreenStates=kpage19;
   recieveData(NUM_BYTES1);
+  update=true;
 }
 
 void b51PushCallback(void *ptr)
@@ -232,6 +236,7 @@ void b73PushCallback(void *ptr)
 {
   ScreenStates=kpage1;
   recieveData(NUM_BYTES1);
+  update=true;
 }
 
 void b67PushCallback(void *ptr)
@@ -551,7 +556,7 @@ void recieveData(int dataLength)
       }
 
     }
- 
+    
   }
   clear_buffer(dataLength);
 }

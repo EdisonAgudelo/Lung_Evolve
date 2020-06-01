@@ -6,6 +6,7 @@
 #include "../data_bus/data_bus.h"
 #include "../alarm_manager/alarm_manager.h"
 
+
 #define kpage0 0
 #define kpage1 1
 #define kpage2 2
@@ -27,32 +28,7 @@
 #define kpage18 18
 #define kpage19 19
 #define kpage20 20
-/*
-enum ScreenS
-{
-    kpage0,
-    kpage1,
-    kpage2,
-    kpage3,
-    kpage4,
-    kpage5,
-    kpage6,
-    kpage7,
-    kpage8,
-    kpage9,
-    kpage10,
-    kpage11,
-    kpage12,
-    kpage13,
-    kpage14,
-    kpage15,
-    kpage16,
-    kpage17,
-    kpage18,
-    kpage19,
-    kpage20
-};
-*/
+
 
 
 typedef struct 
@@ -92,6 +68,7 @@ typedef struct
 
 const int NUM_BYTES=19;
 
+extern bool update;
 
 
 //extern CONFIGURATION config;

@@ -29,6 +29,28 @@ typedef struct
 } ALARMS;
 extern ALARMS alarms_struct;
 
+//alarms id define
+ #define kApneaAlarm 0x1
+ #define kHighBreathRate 0x2
+ #define kLowInspP 0x3
+ #define kHighInspP 0x4
+ #define kHighVte 0x5
+ #define kLowVte 0x6
+ #define kNearToLowVte 0x7
+ #define kHighVti 0x8
+ #define kProximalTube 0x9
+ #define kVteNotAchived 0xa
+ #define kVteOv 0xb
+ #define kPatientLeaks 0xc
+ #define kShutDown 0xd
+ #define kBackUpOn 0xe
+ #define kLowBattery 0xf
+ #define kNoBattery 0x10
+ #define kHighTemp 0x11
+ #define kUnderPeep 0x12
+ #define kNoOxygen 0x13
+
+
 //CONFIGURATION
 typedef struct 
 {
@@ -67,4 +89,22 @@ typedef struct
 }DATA;
 extern DATA dataValue;
 
+//data id define
+#define kppeep 0x14
+#define kttv 0x15
+#define kbbpm 0x16
+#define kiie 0x17
+#define kppressure 0x18
+
+
+//commands id define
+#define alarms 0x19
+#define datas 0x1a
+#define sign 0x1b
+
+//signaling id define
+#define ACK 0x1c
+#define NACK 0x1d
+
+extern bool status_send,status_recieve;
 #endif /*DATA_BUS_H*/
