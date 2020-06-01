@@ -13,6 +13,7 @@ STATE_backend state_backend;
 
 uint8_t *Buffer=(uint8_t*)calloc(1,sizeof(uint8_t));  //buffer to recieve data from backend serial port, with length 1 byte
 uint8_t *Buffer2=(uint8_t*)calloc(1,sizeof(uint8_t));  //buffer to check crc_8, with length 1 byte
+uint8_t *Buffersend=(uint8_t*)calloc(38,sizeof(uint8_t));  //buffer to check crc_8, with length 1 byte
 int nbytes;
 
 void serial_backend_init(void)
@@ -60,7 +61,7 @@ void check_data(uint8_t *Buffer, int nbytes)
     uint8_t crc8;
     payload_length=Buffer[1];
     length_buffer2=2+payload_length;
-    Buffer2 = (uint8_t*)realloc(Buffer2,length_buffer2);
+    Buffer2 = (uint8_t*)realloc(Buffer2,length_buffer2*sizeof(uint8_t));
     CRC8Configure(0x31, 0x0);
     for(int i=0;i<length_buffer2;i++)
     {
@@ -208,24 +209,95 @@ void get_data(uint8_t *Buffer, int nbytes)
 
 void sendDATA(void)
 {
-    
+    uint8_t crc_calc,length_buff_send=38;
+    Buffersend = (uint8_t*)realloc(Buffersend,length_buff_send*sizeof(uint8_t));
+    //uint8_t BufferSend[38];
+    Buffersend[0]=0x2;
+    Buffersend[1]=length_buff_send-2;
+    Buffersend[2]=cfio2;
+    Buffersend[3]=config.fio2;
+    Buffersend[4]=cbpm;
+    Buffersend[5]=config.bpm;
+    Buffersend[6]=cpeep;
+    Buffersend[7]=config.peep;
+    Buffersend[8]=cheigh;
+    Buffersend[9]=config.heigh;
+    Buffersend[10]=capnea;
+    Buffersend[11]=config.apnea;
+    Buffersend[12]=cie;
+    Buffersend[13]=config.ie;
+    Buffersend[14]=cgender;
+    Buffersend[15]=config.gender;
+    Buffersend[16]=cpressure;
+    Buffersend[17]=config.pressure;
+    Buffersend[18]=ccontrolType;
+    Buffersend[19]=config.controlType;
+    Buffersend[20]=ccontrol;
+    Buffersend[21]=config.control;
+    Buffersend[22]=coff;
+    Buffersend[23]=config.off;
+    Buffersend[24]=cpause;
+    Buffersend[25]=config.pause;
+    Buffersend[26]=cmaxInPressure;
+    Buffersend[27]=config.maxInPressure;
+    Buffersend[28]=cminInPressure;
+    Buffersend[29]=config.minInPressure;
+    Buffersend[30]=cmaxOutPressure;
+    Buffersend[31]=config.maxOutPressure;
+    Buffersend[32]=cminOutPressure;
+    Buffersend[33]=config.minOutPressure;
+    Buffersend[34]=cmaxTV;
+    Buffersend[35]=config.maxTV;
+    Buffersend[36]=cminTV;
+    Buffersend[37]=config.minTV;
+    Buffersend[38]=cfio2;
+    CRC8Configure(0x31, 0x0);
+    crc_calc=CRC8Calculate(Buffersend, length_buff_send );
+    Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send +1)*sizeof(uint8_t));
+    Buffersend[39]=crc_calc;
+
+    for(int i=0;i<length_buff_send+1;i++)
+    {
+        Serial.write(Buffersend[i]);
+    }
 }
 
 void sendACK(void)
 {
-    Serial.write(0x3);//signalization command
-    Serial.write(0x1);//payload length
-    Serial.write(0x1c);//payload
-    Serial.write(0x1E);//crc8
+    uint8_t crc_calc,length_buff_send=3;
+    Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send)*sizeof(uint8_t));
+    Buffersend[0] = 0x3;
+    Buffersend[1] = 0x1;
+    Buffersend[2] = 0x1c;
+    CRC8Configure(0x31, 0x0);
+    crc_calc=CRC8Calculate(Buffersend, length_buff_send );
+    Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send +1)*sizeof(uint8_t));
+    Buffersend[3] = crc_calc;
+
+    for(int i=0;i<length_buff_send +1;i++)
+    {
+        Serial.write(Buffersend[i]);
+    }
 
 }
 
 void sendNACK(void)
 {
-    Serial.write(0x3);//signalization command
-    Serial.write(0x1);//payload length
-    Serial.write(0x1d);//payload
-    Serial.write(0x40);//crc8   
+    uint8_t crc_calc,length_buff_send=3;
+    Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send)*sizeof(uint8_t));
+    Buffersend[0] = 0x3;
+    Buffersend[1] = 0x1;
+    Buffersend[2] = 0x1d;
+    CRC8Configure(0x31, 0x0);
+    crc_calc=CRC8Calculate(Buffersend, length_buff_send );
+    Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send +1)*sizeof(uint8_t));
+    Buffersend[3] = crc_calc;
+
+    for(int i=0;i<length_buff_send +1;i++)
+    {
+        Serial.write(Buffersend[i]);  
+    }
+  
 }
 
 
@@ -274,6 +346,7 @@ void backend_management(void)
         break;
         case ksendData:
             sendDATA();
+            update=false;
             state_backend=krecieve;
         break;
         default:

@@ -76,6 +76,25 @@ typedef struct
 
 }CONFIGURATION;
 extern CONFIGURATION config;
+//configuration id define
+#define cfio2 0x1e
+#define cbpm 0x1f
+#define cpeep 0x20
+#define cheigh 0x21
+#define capnea 0x22
+#define cie 0x23
+#define cgender 0x24
+#define cpressure 0x25
+#define ccontrolType 0x26
+#define ccontrol 0x27
+#define coff 0x28
+#define cpause 0x29
+#define cmaxInPressure 0x2a
+#define cminInPressure 0x2b
+#define cmaxOutPressure 0x2c
+#define cminOutPressure 0x2d
+#define cmaxTV 0x2e
+#define cminTV 0x2f
 
 //DATA
 typedef struct 
