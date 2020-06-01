@@ -1,6 +1,6 @@
 
 #include "driver_stepper.h"
-#include "hardware_interface.h"
+#include "../low_level/hardware_interface.h"
 #include "../time.h"
 
 //initialize class variables

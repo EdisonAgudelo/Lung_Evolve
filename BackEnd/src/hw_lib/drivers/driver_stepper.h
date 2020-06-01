@@ -12,7 +12,7 @@
 #define STEPPER_FINE_ADJ 50 //to calibrate erros on Driver calculos
 #define STEPPER_FINE_ADJ_DIV 10000
 
-#include "hardware_interface.h"
+#include "../low_level/hardware_interface.h"
 
 const bool kStepForward = kHigh;
 const bool kStepBackward = kLow;
