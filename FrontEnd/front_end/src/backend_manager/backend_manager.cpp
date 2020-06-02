@@ -10,6 +10,7 @@
 //#include <string.h>
 
 STATE_backend state_backend;
+bool status_send,status_recieve;
 
 uint8_t *Buffer=(uint8_t*)calloc(1,sizeof(uint8_t));  //buffer to recieve data from backend serial port, with length 1 byte
 uint8_t *Buffer2=(uint8_t*)calloc(1,sizeof(uint8_t));  //buffer to check crc_8, with length 1 byte

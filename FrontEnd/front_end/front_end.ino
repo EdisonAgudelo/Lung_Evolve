@@ -16,5 +16,7 @@ void setup()
 
 void loop()
 {
-	
+  screen_management();
+  backend_management();
+  alarm_management_loop();
 }

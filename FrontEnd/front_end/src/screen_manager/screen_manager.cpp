@@ -6,8 +6,8 @@
 SoftwareSerial SFrontEnd (SFRONT_END_TX,SFRONT_END_RX);
 //buffer_screen buff;
 CONFIGURATION config;
-Alarm_state AlarmState;
-ALARMS alarms_data;
+Alarm_state AS;
+ALARMS alarms_struct;
 DATA dataValue;
 byte data[NUM_BYTES]; 
 int ScreenStates;
@@ -30,12 +30,12 @@ void init_screen_management(void)
 
 void handlers (void)
 {
-  b1.attachPush(b1PushCallback,&b1);  
-  b2.attachPush(b2PushCallback,&b2);  
-  b3.attachPush(b3PushCallback,&b3);  
-  b4.attachPush(b4PushCallback,&b4);  
-  b5.attachPush(b5PushCallback,&b5);  
-  b6.attachPush(b6PushCallback,&b6);  
+  b1.attachPush(b1PushCallback);  
+  b2.attachPush(b2PushCallback);  
+  b3.attachPush(b3PushCallback);  
+  b4.attachPush(b4PushCallback);  
+  b5.attachPush(b5PushCallback);  
+  b6.attachPush(b6PushCallback);  
   b7.attachPush(b7PushCallback);  
   b8.attachPush(b8PushCallback);  
   b9.attachPush(b9PushCallback);  
@@ -305,12 +305,12 @@ void bt0PopCallback(void *ptr)
 
 void bt1PushCallback(void *ptr)
 {
-  AlarmState.ScreenSoundOff=true;  
+  AS.ScreenSoundOff=true;  
 }
 
 void bt1PopCallback(void *ptr)
 {
-  AlarmState.ScreenSoundOff=false; 
+  AS.ScreenSoundOff=false; 
 }
 
 
