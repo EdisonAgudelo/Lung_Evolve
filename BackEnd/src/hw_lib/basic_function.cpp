@@ -11,15 +11,18 @@
 
 
 
-const uint8_t kMotorBellowUSteps = 8; //review
+//const uint8_t kMotorBellowUSteps = 8; //review
+const uint8_t kMotorBellowUSteps = 1; //review
 const uint8_t kMotorO2USteps = 2; //review
 const uint8_t kMotorAirUSteps = 2; //review
 
-const uint16_t kMotorBellowSteps = 32; //review
+//const uint16_t kMotorBellowSteps = 32; //review
+const uint16_t kMotorBellowSteps = 200; //review
 const uint16_t kMotorO2Steps = 200; //review
 const uint16_t kMotorAirSteps = 200; //review
 
-const float kMotorBellowmmRev = (1/63.8); //review
+//const float kMotorBellowmmRev = (1/63.8); //review
+const float kMotorBellowmmRev = 1; //review
 const float kMotorO2mmRev = 200.0; //review
 const float kMotorAirmmRev = 200.0; //review
 
@@ -100,11 +103,11 @@ bool DirverInitialization(void)
 {
 
   TimeVirtualISRBegin();
-   
+   /*
   DriverLedInit(&led_red, kHardwareLedRedPin); //config pin and initialize pin
   DriverLedInit(&buzzer, kHardwareBuzzerPin); //config pin and initialize pin
-
-  motor_bellow.Begin();
+*/
+  motor_bellow.Begin();/*
   motor_valve_o2.Begin();
   motor_valve_air.Begin();
 
@@ -112,15 +115,15 @@ bool DirverInitialization(void)
   flow_out.Begin();
 
   pressure_in.Begin();
-  pressure_out.Begin();
+  pressure_out.Begin();*/
 
 /* restore  
   motor_bellow.SetLimitPin(kHardwareSwitchBMotor1, kHardwareSwitchFMotor1);
 
   motor_valve_o2.SetLimitPin(kHardwareSwitchBMotor2, kHardwareSwitchFMotor2);
   motor_valve_air.SetLimitPin(kHardwareSwitchBMotor3, kHardwareSwitchFMotor3);
- 
-  motor_bellow.SetDriverConfig(kMotorBellowSteps, kMotorBellowmmRev, kMotorBellowUSteps);
+ */
+  motor_bellow.SetDriverConfig(kMotorBellowSteps, kMotorBellowmmRev, kMotorBellowUSteps);/*
   motor_valve_o2.SetDriverConfig(kMotorO2Steps, kMotorO2mmRev, kMotorO2USteps);
   motor_valve_air.SetDriverConfig(kMotorAirSteps, kMotorAirmmRev, kMotorAirUSteps);
  */
@@ -132,16 +135,16 @@ bool DriverLoops(void)
 
   DriverLedLoop(&led_red);
   DriverLedLoop(&buzzer);
-  /* restore
+  // restore
   motor_bellow.Loop(); //much faster than a for
-  motor_valve_o2.Loop();
-  motor_valve_air.Loop();*/
+  /*motor_valve_o2.Loop();
+  motor_valve_air.Loop();
 
   flow_in.Loop();
  // flow_out.Loop(); //restore
 
   pressure_in.Loop();
-  pressure_out.Loop();
+  pressure_out.Loop();*/
 
 
 }

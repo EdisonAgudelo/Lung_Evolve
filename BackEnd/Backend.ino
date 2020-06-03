@@ -56,7 +56,7 @@ void WarningActions(void);
 //this function analyzes all config parameters to see if they are valid. if there are valid config, then calculte working parameters
 void ComputeParameters(void);
 
-
+/*
 uint32_t ref;
 
 void setup()
@@ -78,16 +78,16 @@ void loop()
 
   DriverLoops();
 }
+*/
 
-
-/* Motor testing
+// Motor testing
 
 //for testing purpose
 
 void AnyCallback(void);
 
 uint32_t ref =0 ;
-float ref2 =0;
+float ref2 =0.0;
 void setup()
 {
   
@@ -95,8 +95,8 @@ void setup()
   
   PinInitialization();
   DirverInitialization();
-  DriverMotorMoveTo(kMotorIdBellows, 2.5);
-  DriverMotorSetVel(kMotorIdBellows, 0.5);
+  DriverMotorMoveTo(kMotorIdBellows, 25);
+  DriverMotorSetVel(kMotorIdBellows, 20);
   
   Serial.begin(115200);
 
@@ -127,7 +127,7 @@ void AnyCallback(void)
   Serial.println(" ok\n");
 }
 
-*/
+
 
 
 
