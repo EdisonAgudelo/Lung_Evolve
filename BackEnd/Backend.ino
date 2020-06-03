@@ -82,7 +82,7 @@ void loop()
 
 // Motor testing
 
-//for testing purpose
+/*
 
 void AnyCallback(void);
 
@@ -126,6 +126,7 @@ void AnyCallback(void)
   Serial.print(Micros());
   Serial.println(" ok\n");
 }
+*/
 
 
 
@@ -135,7 +136,6 @@ void AnyCallback(void)
 
 
 
-/*
 void setup()
 {
 
@@ -168,7 +168,7 @@ void loop()
   FMSMainLoop();
   DriverLoops();
 }
-*/
+
 
 
 

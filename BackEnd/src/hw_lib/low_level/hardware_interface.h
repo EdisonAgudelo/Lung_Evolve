@@ -43,13 +43,22 @@ const int kHardwareSwitchBMotor3 = -1; // review
 //driver flow pins
 
 //rele pins
-const int kHarwareRele1 = 10; // review
-const int kHarwareRele2 = 11; // review
-const int kHarwareRele3 = 12; // review
+const int kHardwareRele1 = 10; // review
+const int kHardwareRele2 = 11; // review
+const int kHardwareRele3 = 12; // review
+const int kHardwareRele4 = -1; // review
 
 //Driver diff pressure
 const int kHardwareDiffPressure1 = A8; // review
 const int kHardwareDiffPressure2 = A9; // review
+
+//Temperature sensor 
+const int kHardwareTemp1 = -1; //review
+const int kHardwareTemp2 = -1; //review
+
+//Voltage sensor
+const int kHardwareVoltage1 = -1; //review
+const int kHardwareVoltage2 = -1; //review
 
 
 // ------- conventions --------//
