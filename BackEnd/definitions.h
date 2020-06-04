@@ -189,4 +189,20 @@ typedef struct
   uint32_t mixture_flow;
 }MeasureType;
 
+
+
+//////////////////////// HICOP definitions ///////////////////
+
+
+typedef enum
+{
+  kHicopHeaderData,
+  kHicopHeaderAlarm,
+  kHicopHeaderConfig,
+  kHicopHeaderFlags
+}HicopHeaders
+
+
+
+
 #endif
