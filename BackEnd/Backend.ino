@@ -4,7 +4,7 @@
 #include "src/hw_lib/basic_function.h"
 #include "src/fw_lib/control.h"
 #include "src/hw_lib/time.h"
-
+#include "src/hw_lib/hicop.h"
 
 
 //error variable
@@ -154,7 +154,7 @@ void setup()
 
   //driver initialization
   main_error.init_driver = !DirverInitialization();
-
+ 
   //set control parameters
   ControlInit(&control_pressure, 1.0, 0.0, 0.0, -1.0);
   ControlInit(&control_air_flow, 1.0, 0.0, 0.0, -1.0);

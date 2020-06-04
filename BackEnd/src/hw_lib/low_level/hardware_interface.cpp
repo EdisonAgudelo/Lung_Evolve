@@ -19,7 +19,8 @@
   Timer 1 , 3, 4 is for custom pwm genarator
 */
 
-void (*timer1m_callback)(void);
+void (*timer1m_callback)(void)=nullptr;
+void (*uart_callback)(void)=nullptr;
 
 volatile bool g_pending_interrupt[6] = {false};
 
@@ -142,6 +143,38 @@ bool I2CBegin(int id)
   }
   return true;
 }
+
+
+////////// Serial interface ////////
+void UartConfigCallback(void (*callback)(void))
+{
+  uart_callback = callback;
+}
+
+void serialEvent() {
+  if(uart_callback!=nullptr)
+    uart_callback();
+}
+
+void UartBegin(uint32_t baudrate)
+{
+  Serial.begin(baudrate);
+}
+
+void UartWrite(uint8_t data)
+{
+  Serial.write(data);
+}
+
+uint8_t UartRead(void)
+{
+  return Serial.read();
+}
+
+bool UartAvailable(void){
+  return Serial.available();
+}
+
 ////////// GPIO interface //////////
 
 void PinConfigRisingIRS(int pin, void (*callback)(void))

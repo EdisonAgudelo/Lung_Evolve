@@ -8,6 +8,8 @@
 #define TEMP_OVERSAMPLING 10 //total average data
 #define TEMP_TEMP_OFFSET 0.4/5 //normalized
 
+#include <stdint.h>
+
 class Temp {
     private:
         int analog_pin;

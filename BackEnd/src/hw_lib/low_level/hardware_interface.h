@@ -94,6 +94,12 @@ void PinConfigAnalog(int pin);
 
 void CounterBegin(int counter_id);
 
+void UartConfigCallback(void (*callback)(void));
+void UartBegin(uint32_t baudrate);
+bool UartAvailable(void);
+void UartWrite(uint8_t data);
+uint8_t UartRead(void);
+
 
 //read digital level of a given pin
 bool PinReadDigital(int pin);

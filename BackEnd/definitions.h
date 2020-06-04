@@ -86,8 +86,8 @@ typedef enum
   kMotorIdAirChoke
 } MotorIDs;
 
-const int kMotorMaxPos = 250; // mm. In this position, valve is full open
-const int kMotorMinPos = 5;   // mm. In this position, valve is closed
+const float kMotorMaxPos = 280.0; // mm. In this position, valve is full open
+const float kMotorMinPos = 5.0;   // mm. In this position, valve is closed
 
 //valve IDs
 typedef enum
@@ -108,6 +108,10 @@ typedef enum
   SensorIdAirFlowOut,
   kSensorIdPressureIn,
   kSensorIdPressureOut,
+  kSensorIdTempMotor,
+  kSensorIdTempBattery,
+  kSensorIdVoltageSource,
+  kSensorIdVoltageBattery
 } SensorID;
 
 //This struct saves all Front end commands or information
@@ -171,9 +175,9 @@ typedef struct
 
 } BreathingDinamics;
 
-const uint32_t kMotorDefaultReturnVelBellows = 100; //mm/s 
-const uint32_t kMotorDefaultVelAirChoke = 100;      //mm/s 
-const uint32_t kMotorDefaultVelO2Choke = 100;       //mm/s
+const float kMotorDefaultReturnVelBellows = 100.0; //mm/s 
+const float kMotorDefaultVelAirChoke = 100.0;      //mm/s 
+const float kMotorDefaultVelO2Choke = 100-0;       //mm/s
 
 typedef struct
 {

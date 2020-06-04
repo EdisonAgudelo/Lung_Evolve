@@ -5,6 +5,7 @@
 #define VOLTAGE_UPDATE_PERIOD 1000 //update time each 2 minutes
 #define VOLTAGE_OVERSAMPLING 10 //total average data
 
+#include <stdint.h>
 
 class Voltage {
     private:
