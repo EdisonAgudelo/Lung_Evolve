@@ -120,10 +120,11 @@ extern DATA dataValue;
 #define alarms 0x19
 #define datas 0x1a
 #define sign 0x1b
+#define parameterConfig 0x1c
 
 //signaling id define
-#define ACK 0x1c
-#define NACK 0x1d
+#define ACK 0x1d
+#define NACK 0x1e
 
 extern bool status_send,status_recieve;
 #endif /*DATA_BUS_H*/

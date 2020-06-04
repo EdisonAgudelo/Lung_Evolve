@@ -10,11 +10,11 @@
 //#include <string.h>
 
 STATE_backend state_backend;
-bool status_send,status_recieve;
+bool status_send,status_recieve, error_data_frame;
 
 uint8_t *Buffer=(uint8_t*)calloc(1,sizeof(uint8_t));  //buffer to recieve data from backend serial port, with length 1 byte
-uint8_t *Buffer2=(uint8_t*)calloc(1,sizeof(uint8_t));  //buffer to check crc_8, with length 1 byte
-uint8_t *Buffersend=(uint8_t*)calloc(38,sizeof(uint8_t));  //buffer to check crc_8, with length 1 byte
+//uint8_t *Buffer2=(uint8_t*)calloc(1,sizeof(uint8_t));  //buffer to check crc_8, with length 1 byte
+uint8_t *Buffersend[39];
 int nbytes;
 
 void serial_backend_init(void)
@@ -28,18 +28,38 @@ void serial_backend_init(void)
 bool recieve(void)
 {
     bool done;
+    int recieve_byte;
 
   if(Serial.available())
   {
     Buffer[nbytes-1]=Serial.read();
-    if(Buffer[nbytes-1]==0xff)//stop byte recieved
+    if(nbytes==2)
     {
-      check_data(Buffer,nbytes);
-      nbytes=1;
-      Buffer = (uint8_t*)realloc(Buffer,nbytes*sizeof(uint8_t));
-      Buffer[0]=0;
-      done =true; //if recieving process is done
-    }else //data recieved
+        recieve_byte=3+Buffer[nbytes-1]; // number of bytes until the end byte is recieved
+    }
+    else
+    {
+        //do nothing
+    }
+    if(nbytes == recieve_byte) //if recieve byte is reached
+    {
+        if(Buffer[nbytes-1]==0xff)// if stop byte recieved
+        {
+            check_data(Buffer,nbytes);
+            nbytes=1;
+            Buffer = (uint8_t*)realloc(Buffer,nbytes*sizeof(uint8_t));
+            Buffer[0]=0;
+            done =true; //if recieving process is done
+            error_data_frame=false;
+        }
+        else
+        {
+            error_data_frame=true; //the recieve character was not recieved, something happened with the frame
+            done=true;
+        }
+        
+    }
+    else //data recieved
     {
       nbytes++; //increment number of bytes of the buffer
       Buffer = (uint8_t*)realloc(Buffer,nbytes*sizeof(uint8_t));
@@ -57,22 +77,18 @@ bool recieve(void)
 
 void check_data(uint8_t *Buffer, int nbytes)
 {   
-    int payload_length,length_buffer2;
+    int payload_length,length_buffer;
     bool status;
     uint8_t crc8;
     payload_length=Buffer[1];
-    length_buffer2=2+payload_length;
-    Buffer2 = (uint8_t*)realloc(Buffer2,length_buffer2*sizeof(uint8_t));
+    length_buffer=2+payload_length;
+    //Buffer2 = (uint8_t*)realloc(Buffer2,length_buffer2*sizeof(uint8_t));
     CRC8Configure(0x31, 0x0);
-    for(int i=0;i<length_buffer2;i++)
-    {
-        Buffer2[i]=Buffer[i];
-    }
-    crc8=CRC8Calculate(Buffer2, length_buffer2);
+    crc8=CRC8Calculate(Buffer, length_buffer);
    if(crc8==Buffer[2+payload_length]) //2(->command + payload_length) + payload
     {
         status_recieve=true;
-        get_data(Buffer2,payload_length);
+        get_data(Buffer,payload_length);
         //sendACK(); //confirm data recieved correctly
     }
     else
@@ -211,9 +227,9 @@ void get_data(uint8_t *Buffer, int nbytes)
 void sendDATA(void)
 {
     uint8_t crc_calc,length_buff_send=38;
-    Buffersend = (uint8_t*)realloc(Buffersend,length_buff_send*sizeof(uint8_t));
+    //Buffersend = (uint8_t*)realloc(Buffersend,length_buff_send*sizeof(uint8_t));
     //uint8_t BufferSend[38];
-    Buffersend[0]=0x2;
+    Buffersend[0]=parameterConfig;
     Buffersend[1]=length_buff_send-2;
     Buffersend[2]=cfio2;
     Buffersend[3]=config.fio2;
@@ -254,7 +270,7 @@ void sendDATA(void)
     Buffersend[38]=cfio2;
     CRC8Configure(0x31, 0x0);
     crc_calc=CRC8Calculate(Buffersend, length_buff_send );
-    Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send +1)*sizeof(uint8_t));
+    //Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send +1)*sizeof(uint8_t));
     Buffersend[39]=crc_calc;
 
     for(int i=0;i<length_buff_send+1;i++)
@@ -266,13 +282,13 @@ void sendDATA(void)
 void sendACK(void)
 {
     uint8_t crc_calc,length_buff_send=3;
-    Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send)*sizeof(uint8_t));
-    Buffersend[0] = 0x3;
+    //Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send)*sizeof(uint8_t));
+    Buffersend[0] = ACK;
     Buffersend[1] = 0x1;
     Buffersend[2] = 0x1c;
     CRC8Configure(0x31, 0x0);
     crc_calc=CRC8Calculate(Buffersend, length_buff_send );
-    Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send +1)*sizeof(uint8_t));
+    //Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send +1)*sizeof(uint8_t));
     Buffersend[3] = crc_calc;
 
     for(int i=0;i<length_buff_send +1;i++)
@@ -285,13 +301,13 @@ void sendACK(void)
 void sendNACK(void)
 {
     uint8_t crc_calc,length_buff_send=3;
-    Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send)*sizeof(uint8_t));
-    Buffersend[0] = 0x3;
+    //Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send)*sizeof(uint8_t));
+    Buffersend[0] = NACK;
     Buffersend[1] = 0x1;
     Buffersend[2] = 0x1d;
     CRC8Configure(0x31, 0x0);
     crc_calc=CRC8Calculate(Buffersend, length_buff_send );
-    Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send +1)*sizeof(uint8_t));
+    //Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send +1)*sizeof(uint8_t));
     Buffersend[3] = crc_calc;
 
     for(int i=0;i<length_buff_send +1;i++)
@@ -311,28 +327,45 @@ void backend_management(void)
         done=recieve(); 
         if(done==true)
         {
-            state_backend=kcheckStatus;
-        }else 
+            if(error_data_frame==true)
+            {
+                //envie nack y vaya a revisar la pantalla
+                sendNACK();
+                state_backend=kcheckStatus2;
+            }
+            else
+            {
+                //vaya a el siguiente estado para revisar el crc8
+                state_backend=kcheckStatus1;
+            }   
+            
+        }
+        else 
         {
             state_backend=kcheckScreenUpdate;
         }
         
         break;
-        case kcheckStatus:
+        case kcheckStatus1:
+
             if(status_recieve==true)
-            {
-                sendACK();
-            }else
-            {
-                sendNACK();
-            }
+                {
+                    sendACK();
+                }else
+                {
+                    sendNACK();
+                }
+            state_backend=kcheckStatus2;
+            
+        break;
+        case kcheckStatus2:
             if(status_send==true)
-            {
-                state_backend=kcheckScreenUpdate;
-            }else
-            {
-                state_backend=ksendData;   
-            }   
+                {
+                    state_backend=kcheckScreenUpdate;
+                }else
+                {
+                    state_backend=ksendData;   
+                }   
         break;
         case kcheckScreenUpdate:
         if(update)
