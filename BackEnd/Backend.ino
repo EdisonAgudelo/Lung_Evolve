@@ -11,7 +11,8 @@
 static ErrorType main_error;
 
 //warning variable
-static WarningType main_warning;
+static WarningType main_warning; //saves all generated warnings
+static WarningType main_mask; //enable warnings transmission
 
 //state machine variables
 static MainStates main_state;
@@ -37,6 +38,13 @@ static ControlData control_pressure;
 static ControlData control_air_flow;
 
 //----------Local funcitions---------//
+//this function makes all initialization related to hicop FSM
+void FMSHicopInit(void);
+//this function mange all frontend comunication
+void FMSHicopLoop(void);
+
+////this function makes all initialization related to breathing FSM
+void FMSMainInit(void);
 
 //this function actually is a machine state which only does breathing control action.
 //this functions needs that someone config working parameters to work porperly
@@ -131,29 +139,38 @@ void AnyCallback(void)
 
 
 
-
-
-
-
-
+//general initization
 void setup()
 {
-
-  //variable inizialitacion
-  main_state = kMainInit; //start in idle mode
-  breathing_state = kBreathingOutPause;
-
   main_error.all = 0; //reset all errors;
-  main_error.working_configuration_not_initialized = true;
+  main_warning.all = 0; //reset all warnings
 
-  //reset all warnings
-  main_warning.all = 0;
 
   //hardware initialization
   main_error.init_hardware = !PinInitialization();
 
   //driver initialization
   main_error.init_driver = !DirverInitialization();
+
+  FMSMainInit();
+  FMSHicopInit();
+}
+
+FMSHicopInit();
+{
+  
+}
+
+void FMSMainInit(void)
+{
+  main_mask.all = 0xffffffff; //enable all Warning
+
+  //indicate that memory has random data
+  main_error.working_configuration_not_initialized = true;
+
+  //variable inizialitacion
+  main_state = kMainInit; //start in idle mode
+  breathing_state = kBreathingOutPause;
  
   //set control parameters
   ControlInit(&control_pressure, 1.0, 0.0, 0.0, -1.0);

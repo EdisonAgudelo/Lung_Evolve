@@ -60,23 +60,53 @@ typedef union {
   struct
   {
 
-    bool high_in_volume_tidal : 1;
-    bool low_in_volume_tidal : 1;
+//mechanical ventilator alarms
+    bool apnea_alarm:1;
 
     bool high_breathing_rate : 1;
     bool low_breathing_rate : 1;
 
+    bool high_out_pressure : 1;
+    bool low_out_pressure : 1;
+    
     bool high_in_pressure : 1;
     bool low_in_pressure : 1;
 
-    bool high_out_pressure : 1;
-    bool low_out_pressure : 1;
+    bool high_out_volume_tidal : 1;
+    bool low_out_volume_tidal : 1;
+    bool near_low_out_volume_tidal:1;
+
+    bool high_in_volume_tidal : 1;
+    bool low_in_volume_tidal : 1;
+    bool near_low_in_volume_tidal:1;
+    
+    bool high_volume_leakage:1;
 
     bool high_ie_ratio : 1;
     bool low_ie_ratio : 1;
+
+    bool low_peep:1;
+
+// mechanical problems
+    bool detached_proximal_tube:1;
+    bool detached_oxygen_tube:1;
+
+//electrical problems
+    bool low_battery:1;
+    bool no_battery:1;
+
+    bool no_main_supply:1;
+
+    bool high_temp_bat:1;
+    bool high_temp_motor:1;
+
+    bool system_shutdown:1;
   };
+  bool bits[32];
   uint32_t all;
 } WarningType;
+
+
 
 //motor IDs
 typedef enum
@@ -177,7 +207,7 @@ typedef struct
 
 const float kMotorDefaultReturnVelBellows = 100.0; //mm/s 
 const float kMotorDefaultVelAirChoke = 100.0;      //mm/s 
-const float kMotorDefaultVelO2Choke = 100-0;       //mm/s
+const float kMotorDefaultVelO2Choke = 100.0;       //mm/s
 
 typedef struct
 {
@@ -186,22 +216,99 @@ typedef struct
   uint32_t breathing_rate;
   uint32_t in_pressure;
   uint32_t out_pressure;
-  uint32_t mixture_flow;
+  uint32_t mixture_flow; //% 
+  uint32_t battery_level;
 }MeasureType;
 
 
 
 //////////////////////// HICOP definitions ///////////////////
 
-
+//protocole headers
 typedef enum
 {
-  kHicopHeaderData,
+  kHicopHeaderData = 0x0,
   kHicopHeaderAlarm,
   kHicopHeaderConfig,
   kHicopHeaderFlags
-}HicopHeaders
+}HicopHeaders;
 
+const uint8_t kHicopDataId[]={
+  //uint32_t tidal;
+  0x0,
+  //uint32_t ie_ratio;
+  0x1,
+  //uint32_t breathing_rate;
+  0x2,
+  //uint32_t in_pressure;
+  0x3,
+  //uint32_t out_pressure;
+  0x4,
+  //uint32_t mixture_flow;
+  0x5,
+  //battery_level
+  0x6,
+};
+
+const uint8_t kHicopAlarmId[] = {
+  //bool apnea_alarm:1;
+  0x0,
+  //bool high_breathing_rate : 1;
+  0x1,
+  //bool low_breathing_rate : 1;
+  0x2,
+  //bool high_out_pressure : 1;
+  0x3,
+  //bool low_out_pressure : 1;
+  0x4,
+  // bool high_in_pressure : 1;
+  0x5,
+  // bool low_in_pressure : 1;
+  0x6,
+  //bool high_out_volume_tidal : 1;
+  0x7,
+  //bool low_out_volume_tidal : 1;
+  0x8,
+  //bool near_low_out_volume_tidal:1;
+  0x9,
+  //bool high_in_volume_tidal : 1;
+  0x10,
+  //bool low_in_volume_tidal : 1;
+  0x11,
+  //bool near_low_in_volume_tidal:1;
+  0x12,
+  //bool high_volume_leakage:1;
+  0x13,
+  //bool high_ie_ratio : 1;
+  0x14,
+  //bool low_ie_ratio : 1;
+  0x15,
+  //bool low_peep:1;
+  0x16,
+  //bool detached_proximal_tube:1;
+  0x17,
+  //bool detached_oxygen_tube:1;
+  0x18,
+  //bool low_battery:1;
+  0x19,
+  //bool no_battery:1;
+  0x20,
+  //bool no_main_supply:1;
+  0x21,
+  //bool high_temp_bat:1;
+  0x22,
+  //bool high_temp_motor:1;
+  0x23,
+  //bool ShutDown;
+  0x24
+};
+
+//hicop flags
+
+typedef enum{
+  kHicopNack,
+  kHicopAck
+} HicopFlags;
 
 
 

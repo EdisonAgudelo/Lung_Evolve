@@ -17,6 +17,7 @@
 
 struct HicopManagement
 {
+    uint16_t prev_pointer_last; //do some backup to know how many data was before buffer clean up
     uint16_t pointer_last; //saves the actual buffer pos
     uint32_t time_stamp;
     union {
@@ -67,6 +68,7 @@ bool HicopIsReceptionComplete(void)
 void HicopCleanBufferRx(void)
 {
     //reset buffer pointer
+    g_hicop_rx.prev_pointer_last = g_hicop_rx.pointer_last;
     g_hicop_rx.pointer_last = 0;
 }
 
@@ -156,8 +158,22 @@ bool HicopSendPayload(void)
     //add end byte
     if (HicopWriteBuffer(0xff))
         return false;
+
+    g_hicop_tx.prev_pointer_last=g_hicop_tx.pointer_last;
     HicopSendBuffer();
 
+    return true;
+}
+
+bool HicopResendPayload(void)
+{
+    //make sure tha there was a previous frame
+    if(g_hicop_tx.prev_pointer_last<4)
+        return false;
+
+    g_hicop_tx.pointer_last=g_hicop_tx.prev_pointer_last;
+    
+    HicopSendBuffer();
     return true;
 }
 

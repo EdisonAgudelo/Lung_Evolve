@@ -5,6 +5,9 @@
 
 #include <stdint.h>
 
+//this library is the low level human interface comunitacion protocol
+//it does all frame verfication, reception and transmision task. 
+
 
 //check if other MCU has finish or not 
 bool HicopIsReceptionComplete(void);
@@ -32,6 +35,9 @@ bool HicopAddPayload(uint8_t *payload, uint8_t length);
 
 // send data to other MCU
 bool HicopSendPayload(void);
+
+// if the same buffer will be send again, user should use this aferter the first time.
+bool HicopResendPayload(void);
 
 
 
