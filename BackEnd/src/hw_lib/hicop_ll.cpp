@@ -160,8 +160,9 @@ bool HicopLLSendPayload(void)
     CRC8Configure(HICOP_LL_CRC8_POLY, HICOP_LL_CRC8_INIT);
     if (!HicopLLWriteBuffer(CRC8Calculate(&g_hicop_ll_tx.exchange[0], g_hicop_ll_tx.pointer_last)))
         return false;
+
     //add end byte
-    if (HicopLLWriteBuffer(0xff))
+    if (!HicopLLWriteBuffer(0xff))
         return false;
 
     g_hicop_ll_tx.prev_pointer_last=g_hicop_ll_tx.pointer_last;
@@ -196,9 +197,9 @@ bool HicopLLWriteBuffer(uint8_t data_out)
 
 bool HicopLLSendBuffer(void)
 {
+    
     if (0 == g_hicop_ll_tx.pointer_last)
         return false;
-
     g_hicop_ll_tx.time_stamp = Millis();
     while (g_hicop_ll_tx.pointer_last--)
     {

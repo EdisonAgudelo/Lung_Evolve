@@ -153,7 +153,7 @@ bool DirverInitialization(void)
    /*
   DriverLedInit(&led_red, kHardwareLedRedPin); //config pin and initialize pin
   DriverLedInit(&buzzer, kHardwareBuzzerPin); //config pin and initialize pin
-*/
+*//*
   motor_bellow.Begin();
   motor_valve_o2.Begin();
   motor_valve_air.Begin();
@@ -184,7 +184,7 @@ bool DirverInitialization(void)
   motor_bellow.SetDriverConfig(kMotorBellowSteps, kMotorBellowmmRev, kMotorBellowUSteps);
   motor_valve_o2.SetDriverConfig(kMotorO2Steps, kMotorO2mmRev, kMotorO2USteps);
   motor_valve_air.SetDriverConfig(kMotorAirSteps, kMotorAirmmRev, kMotorAirUSteps);
- 
+ */
   return true;
 }
 
