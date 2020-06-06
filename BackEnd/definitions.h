@@ -224,15 +224,6 @@ typedef struct
 
 //////////////////////// HICOP definitions ///////////////////
 
-//protocole headers
-typedef enum
-{
-  kHicopHeaderData = 0x0,
-  kHicopHeaderAlarm,
-  kHicopHeaderConfig,
-  kHicopHeaderFlags
-}HicopHeaders;
-
 const uint8_t kHicopDataId[]={
   //uint32_t tidal;
   0x0,
@@ -302,13 +293,6 @@ const uint8_t kHicopAlarmId[] = {
   //bool ShutDown;
   0x24
 };
-
-//hicop flags
-
-typedef enum{
-  kHicopNack,
-  kHicopAck
-} HicopFlags;
 
 
 

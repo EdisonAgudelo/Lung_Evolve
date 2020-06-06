@@ -6,17 +6,17 @@
 #include "src/hw_lib/time.h"
 #include "src/hw_lib/hicop.h"
 
-
 //error variable
 static ErrorType main_error;
 
 //warning variable
 static WarningType main_warning; //saves all generated warnings
-static WarningType main_mask; //enable warnings transmission
+static WarningType main_mask;    //enable warnings transmission
 
 //state machine variables
 static MainStates main_state;
 static BreathingStates breathing_state;
+
 
 //breathing config variables
 static BreathingParameters breathing_config =
@@ -38,10 +38,6 @@ static ControlData control_pressure;
 static ControlData control_air_flow;
 
 //----------Local funcitions---------//
-//this function makes all initialization related to hicop FSM
-void FMSHicopInit(void);
-//this function mange all frontend comunication
-void FMSHicopLoop(void);
 
 ////this function makes all initialization related to breathing FSM
 void FMSMainInit(void);
@@ -64,7 +60,7 @@ void WarningActions(void);
 //this function analyzes all config parameters to see if they are valid. if there are valid config, then calculte working parameters
 void ComputeParameters(void);
 
-/*
+/* //sensor test
 uint32_t ref;
 
 void setup()
@@ -136,15 +132,28 @@ void AnyCallback(void)
 }
 */
 
+HicopHeaders test_type = kHicopHeaderData;
+uint8_t data[] = {0xff,0xfe,0x40,0x3,0x0};
+uint8_t len = sizeof(data);
 
+void setup()
+{
+  DirverInitialization();
+  HicopInit();
+  HicopSendData(test_type,data,len);
+}
 
+void loop()
+{
+  HicopLoop();
+}
 
+/*
 //general initization
 void setup()
 {
-  main_error.all = 0; //reset all errors;
+  main_error.all = 0;   //reset all errors;
   main_warning.all = 0; //reset all warnings
-
 
   //hardware initialization
   main_error.init_hardware = !PinInitialization();
@@ -156,10 +165,6 @@ void setup()
   FMSHicopInit();
 }
 
-FMSHicopInit();
-{
-  
-}
 
 void FMSMainInit(void)
 {
@@ -171,7 +176,7 @@ void FMSMainInit(void)
   //variable inizialitacion
   main_state = kMainInit; //start in idle mode
   breathing_state = kBreathingOutPause;
- 
+
   //set control parameters
   ControlInit(&control_pressure, 1.0, 0.0, 0.0, -1.0);
   ControlInit(&control_air_flow, 1.0, 0.0, 0.0, -1.0);
@@ -185,12 +190,7 @@ void loop()
   FMSMainLoop();
   DriverLoops();
 }
-
-
-
-
-
-
+*/
 
 
 
@@ -224,7 +224,7 @@ void MeasureVariables(void)
   //only MeasureVariables all varibles if ventilator is normally working
   if (main_state == kMainBreathing)
   {
-     //always save presure measure, and flow data
+    //always save presure measure, and flow data
     breathing_measure.in_pressure = SensorGetValue(kSensorIdPressureIn);
     breathing_measure.out_pressure = SensorGetValue(kSensorIdPressureOut);
     breathing_measure.mixture_flow = SensorGetValue(kSensorIdAirFlowIn);
@@ -266,7 +266,7 @@ void MeasureVariables(void)
       //integer flow
       dt_time = Millis() - last_dt_ref_time;
       last_dt_ref_time = Millis();
-      integer_tidal +=  breathing_measure.mixture_flow * dt_time;
+      integer_tidal += breathing_measure.mixture_flow * dt_time;
 
       break;
 
@@ -307,7 +307,7 @@ void WarningMonitor(void)
       //at the end of in cicle
       if (breathing_previous_state != breathing_state)
       {
-     
+
         breathing_previous_state = breathing_state;
         //check warnings limits
 
@@ -578,7 +578,7 @@ void FMSMainLoop(void)
         DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
         DriverMotorSetVel(kMotorIdBellows,
                           ControlExecute(&control_pressure,
-                                         ((float)(breathing_dinamic.sensor_pressure_ref -  breathing_measure.in_pressure)) / 1000.0));
+                                         ((float)(breathing_dinamic.sensor_pressure_ref - breathing_measure.in_pressure)) / 1000.0));
       }
       else
       {
@@ -625,11 +625,11 @@ void FMSMainLoop(void)
         switch (breathing_delay.next_state)
         {
         case kBreathingInCicle:
-          if (breathing_config.is_pressure_controled &&  breathing_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
+          if (breathing_config.is_pressure_controled && breathing_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
           }
-          else if (!breathing_config.is_pressure_controled &&  breathing_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
+          else if (!breathing_config.is_pressure_controled && breathing_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
           }
@@ -641,7 +641,7 @@ void FMSMainLoop(void)
           break;
         case kBreathingOutCicle:
 
-          if (breathing_config.is_pressure_controled &&  breathing_measure.out_pressure > breathing_dinamic.sensor_pressure_trigger_esp_value)
+          if (breathing_config.is_pressure_controled && breathing_measure.out_pressure > breathing_dinamic.sensor_pressure_trigger_esp_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
           }

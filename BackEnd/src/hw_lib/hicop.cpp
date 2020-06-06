@@ -1,213 +1,261 @@
 
 
 #include "hicop.h"
-
-#include "low_level/hardware_interface.h"
+#include "hicop_ll.h"
 #include "time.h"
-#include "../fw_lib/crc8.h"
 
-#include <stdint.h>
+#define HICOP_MAX_DATA_LENGTH 250
+#define HICOP_STACK_SIZE 5
+#define HICOP_MAX_RESPONSE_TIME 10 //ms
+#define HICOP_MAX_SEND_TRIES 10    //times
 
-#define HICOP_BUFFER_LENGTH 255
-#define SERIAL_BAUDRATE 115200
-#define HICOP_INVALID_HEADER 0xff
-#define HICOP_MAX_RX_TIME 100 //ms
-#define HICOP_CRC8_POLY 0x31
-#define HICOP_CRC8_INIT 0x00
 
-struct HicopManagement
+
+
+//defines a buffer for tx request
+typedef struct
 {
-    uint16_t prev_pointer_last; //do some backup to know how many data was before buffer clean up
-    uint16_t pointer_last; //saves the actual buffer pos
-    uint32_t time_stamp;
-    union {
+    bool data_sent;                         //says if data was sent or not
+    bool repeat_in_nack;                    //what should do on nack response
+    uint8_t fail_count;                     //saves how many times transmission failed
+    HicopHeaders header_type;               //what kind of header is
+    uint8_t data_count;                     //data lenght
+    uint8_t data[HICOP_MAX_DATA_LENGTH]; //store pending data
+} HicopTxStackType;
 
-        //buffer transaction
-        struct
+typedef struct
+{
+    HicopHeaders header_type;               //what kind of header is
+    uint8_t data_count;                     //data lenght
+    uint8_t data[HICOP_MAX_DATA_LENGTH]; //store received data
+} HicopRxStackType;
+
+typedef struct
+{
+    uint8_t pos_head; //FIFO architecture
+    uint8_t pos_tail;
+    uint8_t stack_pending;
+} HicopStack;
+
+HicopStack g_tx_stack_pointer;
+HicopStack g_rx_stack_pointer;
+HicopTxStackType g_tx_stack_buffer[HICOP_STACK_SIZE];
+HicopRxStackType g_rx_stack_buffer[HICOP_STACK_SIZE];
+
+static void HicopStackRxPush(uint8_t *data, uint8_t lengh, HicopHeaders type);
+static void HicopStackTxPop(void);
+
+void HicopInit(void)
+{
+    HicopLLBegin();
+    g_tx_stack_pointer.pos_head = 0;
+    g_tx_stack_pointer.pos_tail = 0;
+    g_tx_stack_pointer.stack_pending = 0;
+    g_rx_stack_pointer.pos_head = 0;
+    g_rx_stack_pointer.pos_tail = 0;
+    g_rx_stack_pointer.stack_pending = 0;
+}
+
+void HicopLoop(void)
+{
+    //says when a flag is received
+    bool rx_was_flag = false;
+    //saves the value of flag received
+    uint8_t *was_ack;
+    //to avoid infinite ping pong response
+    static uint8_t consecutive_nack = 0;
+    //to take a maximum response time
+    static uint32_t ref_time = 0;
+
+    //if a data is received
+    if (HicopLLIsReceptionComplete())
+    {
+        //check data integrity
+        if (HicopLLIsValidData())
         {
-            uint8_t header; //type of data
-            uint8_t length;
-            uint8_t payload[HICOP_BUFFER_LENGTH - 2];
-        };
-        uint8_t exchange[HICOP_BUFFER_LENGTH]; //general buffer declaration
-    };
+            consecutive_nack = 0; //reset counter
 
-} g_hicop_tx, g_hicop_rx;
-
-static void HicopReceptionEvent(void);
-static bool HicopSendBuffer(void);
-static bool HicopWriteBuffer(uint8_t data_out);
-
-void HicopBegin(void)
-{
-    UartBegin(SERIAL_BAUDRATE);
-    UartConfigCallback(HicopReceptionEvent);
-    g_hicop_rx.pointer_last = 0;
-    g_hicop_tx.pointer_last = 0;
-}
-
-///////////// Rx Methods ////////////
-
-bool HicopIsReceptionComplete(void)
-{
-    //if no data, no reception
-    if (g_hicop_rx.pointer_last == 0)
-        return false;
-
-    //if there is a complete frame
-    if (g_hicop_rx.pointer_last >= (g_hicop_rx.length + 4))
-        return true;
-
-    //if no more data is received
-    if (GetDiffTime(Millis(), g_hicop_rx.time_stamp) > HICOP_MAX_RX_TIME)
-        return true;
-
-    return false;
-}
-
-void HicopCleanBufferRx(void)
-{
-    //reset buffer pointer
-    g_hicop_rx.prev_pointer_last = g_hicop_rx.pointer_last;
-    g_hicop_rx.pointer_last = 0;
-}
-
-uint8_t HicopGetHeader(void)
-{
-    //return header info if there are enough buffer data
-    if (g_hicop_rx.pointer_last < 1)
-        return HICOP_INVALID_HEADER;
-
-    return g_hicop_rx.header;
-}
-
-uint8_t HicopGetLength(void)
-{
-    //return length info if there are enough buffer data
-    if (g_hicop_rx.pointer_last < 2)
-        return 0;
-    return g_hicop_rx.length;
-}
-
-uint8_t *HicopGetPayload(void)
-{
-    //return data on payloda under user responsibility
-    return &g_hicop_rx.payload[0];
-}
-
-bool HicopIsValidData(void)
-{
-    //check if there is data
-    if (g_hicop_rx.pointer_last == 0)
-        return false;
-
-    // check if there is enough data
-    if (!((g_hicop_rx.length + 4) == g_hicop_rx.pointer_last))
-        return false;
-
-    //check if the last character is the expected
-    if (g_hicop_rx.exchange[g_hicop_rx.pointer_last - 1] != 0xff)
-        return false;
-
-    //then check if CRC is OK
-    CRC8Configure(HICOP_CRC8_POLY, HICOP_CRC8_INIT);
-    if (g_hicop_rx.exchange[g_hicop_rx.pointer_last - 2] != CRC8Calculate(&g_hicop_rx.exchange[0], g_hicop_rx.length + 2))
-        return false;
-
-    //if everything is OK
-    return true;
-}
-
-///////////// Tx Methods ////////////
-
-void HicopSetHeader(uint8_t header)
-{
-    //new data will be loaded
-    g_hicop_tx.length = 0;
-    //confing requested header
-    g_hicop_tx.header = header;
-    //update buffer
-    g_hicop_tx.pointer_last = 2;
-}
-
-bool HicopAddPayload(uint8_t *payload, uint8_t length)
-{
-    uint16_t i = 0;
-
-    //do anything
-    if (length == 0)
-        return false;
-
-    while (length--)
-    {
-        if (HicopWriteBuffer(payload[i++]))
-            g_hicop_tx.length++;
+            switch (HicopLLGetHeader())
+            {
+            case kHicopHeaderData:
+            case kHicopHeaderAlarm:
+            case kHicopHeaderConfig:
+                //make a copy of new data on stack
+                HicopStackRxPush(HicopLLGetPayload(), HicopLLGetLength(), (HicopHeaders)HicopLLGetHeader());
+                HicopLLSetHeader(kHicopHeaderFlags);
+                HicopLLAddPayload(kHicopAck);
+                HicopLLSendPayload();
+                return;
+            case kHicopHeaderFlags:
+                rx_was_flag = true;
+                was_ack = HicopLLGetPayload();
+                break;
+            default:
+                break;
+            }
+        }
         else
-            return false; //if no more data can be added
+        {
+            if (consecutive_nack < 5)
+            {
+                consecutive_nack++;
+                HicopLLSetHeader(kHicopHeaderFlags);
+                HicopLLAddPayload(kHicopNack);
+                HicopLLSendPayload();
+                return;
+            }
+        }
     }
 
+    //this function only reach this point if data was no received or rx data is a flag type or if received data
+    //has 5 o more consecutive errors.
+
+    //check if there is pending data
+    if (g_tx_stack_pointer.stack_pending != 0)
+    {
+        //if data has not be sent
+        if (!g_tx_stack_buffer[g_tx_stack_pointer.pos_tail].data_sent)
+        {
+            g_tx_stack_buffer[g_tx_stack_pointer.pos_tail].data_sent = true;
+            HicopLLSetHeader(g_tx_stack_buffer[g_tx_stack_pointer.pos_tail].header_type);
+            HicopLLAddPayload(g_tx_stack_buffer[g_tx_stack_pointer.pos_tail].data, g_tx_stack_buffer[g_tx_stack_pointer.pos_tail].data_count);
+            HicopLLSendPayload();
+            consecutive_nack = 0;
+            ref_time = Millis();
+            return;
+        }
+        //data is waiting for response and arrive a flag
+        else if (rx_was_flag)
+        {
+            if (kHicopAck == *was_ack)
+            {
+                HicopStackTxPop(); //continue with the next one
+                return;
+            }
+        }
+        //if the passing time is to short from data request
+        else if (GetDiffTime(Millis(), ref_time) < HICOP_MAX_RESPONSE_TIME)
+        {
+            //wait a moment please
+            return;
+        }
+
+        //function only reach this point if response is a nack or there is timeout
+
+        //count one error
+        g_tx_stack_buffer[g_tx_stack_pointer.pos_tail].fail_count++;
+
+        //if data should be resend
+        if (g_tx_stack_buffer[g_tx_stack_pointer.pos_tail].repeat_in_nack &&
+            g_tx_stack_buffer[g_tx_stack_pointer.pos_tail].fail_count < HICOP_MAX_SEND_TRIES)
+        {
+            g_tx_stack_buffer[g_tx_stack_pointer.pos_tail].data_sent = false; //request other data send
+        }
+        else
+            HicopStackTxPop(); //continue with the next one
+    }
+}
+
+//----------User methods---------//
+
+bool HicopSendData(HicopHeaders type, uint8_t *data, uint8_t lengh)
+{
+    uint8_t i = 0;
+    //if no space available
+    if (g_tx_stack_pointer.stack_pending > HICOP_STACK_SIZE)
+        return false;
+
+    //if it is the first place on buffer, do not increment pointer
+    if (g_tx_stack_pointer.stack_pending != 0)
+    {
+        g_tx_stack_pointer.pos_head++;
+        if (g_tx_stack_pointer.pos_head >= HICOP_STACK_SIZE)
+            g_tx_stack_pointer.pos_head = 0;
+    }
+
+    //save params
+    g_tx_stack_buffer[g_tx_stack_pointer.pos_head].data_count = lengh;
+    while (lengh--)
+    {
+        g_tx_stack_buffer[g_tx_stack_pointer.pos_head].data[i] = data[i];
+        i++;
+    }
+
+    g_tx_stack_buffer[g_tx_stack_pointer.pos_head].header_type = type;
+
+    g_tx_stack_buffer[g_tx_stack_pointer.pos_head].data_sent = false;
+    g_tx_stack_buffer[g_tx_stack_pointer.pos_head].fail_count = 0;
+
+    if (type == kHicopHeaderAlarm || type == kHicopHeaderConfig)
+        g_tx_stack_buffer[g_tx_stack_pointer.pos_head].repeat_in_nack = true;
+    else
+        g_tx_stack_buffer[g_tx_stack_pointer.pos_head].repeat_in_nack = false;
+
+    //indicate new data
+    g_tx_stack_pointer.stack_pending++;
+
     return true;
 }
 
-bool HicopSendPayload(void)
+bool HicopReadData(HicopHeaders *type, uint8_t *data, uint8_t *lengh)
 {
-    //compute data from de begining to actual date
-    CRC8Configure(HICOP_CRC8_POLY, HICOP_CRC8_INIT);
-    if (!HicopWriteBuffer(CRC8Calculate(&g_hicop_tx.exchange[0], g_hicop_tx.pointer_last)))
+    uint8_t i = 0;
+    if (g_rx_stack_pointer.stack_pending == 0)
         return false;
-    //add end byte
-    if (HicopWriteBuffer(0xff))
-        return false;
-
-    g_hicop_tx.prev_pointer_last=g_hicop_tx.pointer_last;
-    HicopSendBuffer();
-
-    return true;
-}
-
-bool HicopResendPayload(void)
-{
-    //make sure tha there was a previous frame
-    if(g_hicop_tx.prev_pointer_last<4)
-        return false;
-
-    g_hicop_tx.pointer_last=g_hicop_tx.prev_pointer_last;
     
-    HicopSendBuffer();
-    return true;
-}
+    for(i=0;i<g_rx_stack_buffer[g_rx_stack_pointer.pos_tail].data_count;i++)
+        data[i]=g_rx_stack_buffer[g_rx_stack_pointer.pos_tail].data[i];
 
-////////////// Raw Methods ///////////////
+    *type = g_rx_stack_buffer[g_rx_stack_pointer.pos_tail].header_type;
 
-bool HicopWriteBuffer(uint8_t data_out)
-{
-    if (g_hicop_tx.pointer_last >= HICOP_BUFFER_LENGTH)
-        return false;
+    *lengh=g_rx_stack_buffer[g_rx_stack_pointer.pos_tail].data_count;
 
-    g_hicop_tx.exchange[g_hicop_tx.pointer_last++] = data_out;
-
-    return true;
-}
-
-bool HicopSendBuffer(void)
-{
-    if (0 == g_hicop_tx.pointer_last)
-        return false;
-
-    g_hicop_tx.time_stamp = Millis();
-    while (g_hicop_tx.pointer_last--)
+    g_rx_stack_pointer.stack_pending--;
+    if (g_rx_stack_pointer.stack_pending != 0)
     {
-        UartWrite(g_hicop_tx.exchange[g_hicop_tx.pointer_last]);
+        g_rx_stack_pointer.pos_tail++;
+        if (g_rx_stack_pointer.pos_tail >= HICOP_STACK_SIZE)
+            g_rx_stack_pointer.pos_tail = 0;
     }
+
     return true;
 }
 
-static void HicopReceptionEvent(void)
+//----------Raw methods----------//
+
+void HicopStackRxPush(uint8_t *data, uint8_t lengh, HicopHeaders type)
 {
-    g_hicop_rx.time_stamp = Millis();
-    while (UartAvailable())
+    uint8_t i = 0;
+
+    if (g_rx_stack_pointer.stack_pending != 0)
     {
-        g_hicop_rx.exchange[g_hicop_rx.pointer_last++] = UartRead();
+        g_rx_stack_pointer.pos_head++;
+        if (g_rx_stack_pointer.pos_head >= HICOP_STACK_SIZE)
+            g_rx_stack_pointer.pos_head = 0;
     }
+
+    g_rx_stack_buffer[g_rx_stack_pointer.pos_head].data_count = lengh;
+    while (lengh--)
+    {
+        g_rx_stack_buffer[g_rx_stack_pointer.pos_head].data[i] = data[i];
+        i++;
+    }
+
+    g_rx_stack_buffer[g_rx_stack_pointer.pos_head].header_type = type;
+
+    g_rx_stack_pointer.stack_pending++;
 }
 
+void HicopStackTxPop(void)
+{
+    if (0 != g_tx_stack_pointer.stack_pending)
+    {
+        g_tx_stack_pointer.stack_pending--;
+        if (g_tx_stack_pointer.stack_pending != 0)
+        {
+            g_tx_stack_pointer.pos_tail++;
+            if (g_tx_stack_pointer.pos_tail >= HICOP_STACK_SIZE)
+                g_tx_stack_pointer.pos_tail = 0;
+        }
+    }
+}
