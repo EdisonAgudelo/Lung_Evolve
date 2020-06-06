@@ -145,8 +145,9 @@ typedef enum
 } SensorID;
 
 //This struct saves all Front end commands or information
-typedef struct
+typedef union
 {
+  struct{
   //working mode options
   bool is_tunning;            //calibration
   bool is_standby;            //no control
@@ -167,6 +168,9 @@ typedef struct
   uint16_t minimun_in_pressure;  // 0 ~(65*1000) [cmH2O]
   uint16_t minimun_out_pressure; // 0 ~(65*1000) [cmH2O]
   uint16_t minimun_volume_tidal; // 0 ~(6500*10) [mL]
+
+  };
+  uint8_t all[22];
 
 } BreathingParameters;
 
@@ -209,8 +213,9 @@ const float kMotorDefaultReturnVelBellows = 100.0; //mm/s
 const float kMotorDefaultVelAirChoke = 100.0;      //mm/s 
 const float kMotorDefaultVelO2Choke = 100.0;       //mm/s
 
-typedef struct
+typedef union
 {
+  struct{
   uint32_t tidal;
   uint32_t ie_ratio;
   uint32_t breathing_rate;
@@ -218,13 +223,29 @@ typedef struct
   uint32_t out_pressure;
   uint32_t mixture_flow; //% 
   uint32_t battery_level;
+  };
+
+  //for frontend pruporse
+  struct 
+  {
+    uint32_t fast_data[6];
+    uint32_t slow_data[1];
+  };
+  
 }MeasureType;
 
 
 
-//////////////////////// HICOP definitions ///////////////////
+//////////////////////// front end comunication definitions ///////////////////
 
-const uint8_t kHicopDataId[]={
+enum{
+  kTxFastDataPeriod = 40, //ms each kTxDataPeriod ms send data to mcu
+  kTxSlowDataPeriod = 10000 //ms each kTxDataPeriod ms send data to mcu
+};
+
+const uint8_t kTxBufferLength = 0xff;
+
+const uint8_t kTxFastDataId[]={
   //uint32_t tidal;
   0x0,
   //uint32_t ie_ratio;
@@ -237,11 +258,22 @@ const uint8_t kHicopDataId[]={
   0x4,
   //uint32_t mixture_flow;
   0x5,
+
+};
+
+const uint8_t kTxSlowDataId[]=
+{
   //battery_level
   0x6,
 };
 
-const uint8_t kHicopAlarmId[] = {
+typedef struct 
+{
+  uint32_t fast_data;
+  uint32_t slow_data;
+} TxDataTimeRef;
+
+const uint8_t kTxAlarmId[] = {
   //bool apnea_alarm:1;
   0x0,
   //bool high_breathing_rate : 1;

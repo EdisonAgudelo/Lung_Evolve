@@ -10,22 +10,20 @@
 static ErrorType main_error;
 
 //warning variable
-static WarningType main_warning; //saves all generated warnings
-static WarningType main_mask;    //enable warnings transmission
+static WarningType main_warning;      //saves all generated warnings
+static WarningType main_warning_mask; //enable warnings transmission
+static WarningType frontend_warning_copy;
 
 //state machine variables
 static MainStates main_state;
 static BreathingStates breathing_state;
 
-
 //breathing config variables
-static BreathingParameters breathing_config =
-    {
-        .is_tunning = false,
-        .is_standby = true,
-        .is_pressure_controled = true,
-        .is_assisted = false,
-};
+static BreathingParameters breathing_config;
+
+//this data is filled when a new config arrive from front end MCU.
+static BreathingParameters breathing_config_request;
+static bool breathing_config_change = false;
 
 //breathing on run parameters (more specific config)
 static BreathingDinamics breathing_dinamic;
@@ -60,95 +58,11 @@ void WarningActions(void);
 //this function analyzes all config parameters to see if they are valid. if there are valid config, then calculte working parameters
 void ComputeParameters(void);
 
-/* //sensor test
-uint32_t ref;
+//this function init front end comunication
+void FrontEndCommunicationInit(void);
+//this function send and receive important data from front end MCU
+void FrontEndCommunicationLoop(void);
 
-void setup()
-{
-  Serial.begin(115200);
-  DirverInitialization();
-  ref=Millis();
-  
-}
-
-void loop()
-{
-  if(GetDiffTime(Millis(),ref)>100)
-  {
-    ref = Millis();
-    Serial.print("pressure: ");
-    Serial.println(SensorGetValue(0));
-  }
-
-  DriverLoops();
-}
-*/
-
-// Motor testing
-
-/*
-
-void AnyCallback(void);
-
-uint32_t ref =0 ;
-float ref2 =0.0;
-void setup()
-{
-  
-  //DirverInitialization();
-  
-  PinInitialization();
-  DirverInitialization();
-  DriverMotorMoveTo(kMotorIdBellows, 25);
-  DriverMotorSetVel(kMotorIdBellows, 20);
-  
-  Serial.begin(115200);
-
-  //PWMConfigFrecuency(1, kHardwarePWMMotor1);
-
-  ref = Millis();
-}
-
-
-void loop()
-{
-  
-  if(GetDiffTime(Millis(),ref)>100)
-  {
-    ref = Millis();
-    Serial.print("ok vel: ");
-    Serial.println((DriverMotorActualPos(kMotorIdBellows)-ref2)/0.1);
-    ref2 = DriverMotorActualPos(kMotorIdBellows);
-    DriverMotorMoveTo(kMotorIdBellows, 0);
-  }
-
-  DriverLoops();
-}
-
-void AnyCallback(void)
-{
-  Serial.print(Micros());
-  Serial.println(" ok\n");
-}
-*/
-
-HicopHeaders test_type = kHicopHeaderData;
-uint8_t data[] = {0xff,0xfe,0x40,0x3,0x0};
-uint8_t len = sizeof(data);
-
-void setup()
-{
-  DirverInitialization();
-  HicopInit();
-  HicopSendData(test_type,data,len);
-}
-
-void loop()
-{
-  HicopLoop();
-}
-
-/*
 //general initization
 void setup()
 {
@@ -162,13 +76,12 @@ void setup()
   main_error.init_driver = !DirverInitialization();
 
   FMSMainInit();
-  FMSHicopInit();
+  FrontEndCommunicationInit();
 }
-
 
 void FMSMainInit(void)
 {
-  main_mask.all = 0xffffffff; //enable all Warning
+  main_warning_mask.all = 0xffffffff; //enable all Warning
 
   //indicate that memory has random data
   main_error.working_configuration_not_initialized = true;
@@ -177,9 +90,22 @@ void FMSMainInit(void)
   main_state = kMainInit; //start in idle mode
   breathing_state = kBreathingOutPause;
 
+  breathing_config.is_tunning = false,
+  breathing_config.is_standby = true,
+  breathing_config.is_pressure_controled = true,
+  breathing_config.is_assisted = false,
+
   //set control parameters
-  ControlInit(&control_pressure, 1.0, 0.0, 0.0, -1.0);
+      ControlInit(&control_pressure, 1.0, 0.0, 0.0, -1.0);
   ControlInit(&control_air_flow, 1.0, 0.0, 0.0, -1.0);
+}
+
+void FrontEndCommunicationInit(void)
+{
+  //init comunication protocol layer
+  HicopInit();
+  //init front end coppy to detect when any warning change state
+  frontend_warning_copy.all = main_warning.all & main_warning_mask.all;
 }
 
 void loop()
@@ -189,11 +115,8 @@ void loop()
   WarningActions();
   FMSMainLoop();
   DriverLoops();
+  FrontEndCommunicationLoop();
 }
-*/
-
-
-
 
 void ComputeParameters(void)
 {
@@ -201,8 +124,18 @@ void ComputeParameters(void)
   //TODO: make necesary actions to calculte breathing_dinamic parameters
   //if somo error config exist
   //     main_error.working_configuration_not_initialized = true;
-
-  main_error.working_configuration_not_initialized = false;
+  if (breathing_config_change)
+  {
+    //here is where config parameters request is proecess
+    breathing_config_change = false;
+    main_error.working_configuration_not_initialized = false;
+  }
+  //if ventilator is breathing, only ignore function
+  else if (main_state != kMainBreathing)
+  {
+    
+    main_error.working_configuration_not_initialized = true;
+  }
 }
 
 void MeasureVariables(void)
@@ -413,13 +346,14 @@ void FMSMainLoop(void)
       DriverValveOpenTo(kValveIdManifold, kValveFullClose);
     }
 
+    //compute working parameters
+    ComputeParameters();
+
     //----------transition events---------//
 
     if (!breathing_config.is_standby)
     {
-      //compute working parameters
-      ComputeParameters();
-
+      
       //make sure that all required parameters are initialized;
       if (!main_error.working_configuration_not_initialized) //this is for patient safety
       {
@@ -433,7 +367,7 @@ void FMSMainLoop(void)
       }
       else
       {
-        //no parameters were found :(!
+        //no parameters were found or valid :(!
       }
     }
 
@@ -531,6 +465,8 @@ void FMSMainLoop(void)
       //just see if ventilator should stop. This transition triggers
       //is only analyzed here for patient safety
 
+      //compute working parameters and check if there is new working parameters
+      ComputeParameters();
       if (breathing_config.is_standby)
       {
         DriverValveOpenTo(kValveIdExhalation, kValveFullClose);
@@ -554,7 +490,8 @@ void FMSMainLoop(void)
       DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
       DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
       //hold Blows position
-      DriverMotorMoveTo(kMotorIdBellows, DriverMotorActualPos(kMotorIdBellows));
+      //DriverMotorMoveTo(kMotorIdBellows, DriverMotorActualPos(kMotorIdBellows));
+      DriverMotorSetVel(kMotorIdBellows, 0.0);
 
       //enter to in puase delay and then jump to in cicle
       FMSDelaySet(&breathing_delay, breathing_dinamic.breathing_in_puase_time, kBreathingOutCicle);
@@ -585,7 +522,7 @@ void FMSMainLoop(void)
         //flow controled
 
         //version 1
-#if 0
+#if 1
         DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
         DriverMotorSetVel(kMotorIdBellows,
                           ControlExecute(&control_air_flow,
@@ -715,3 +652,183 @@ void FMSDelaySet(FMSDelay *object, uint32_t delay_time, int nex_state)
   object->next_state = nex_state;
   *(object->actual_state) = object->delay_state;
 }
+
+void FrontEndCommunicationLoop(void)
+{
+  static TxDataTimeRef last_update_time = {0, 0};
+
+  WarningType main_warning_masked;
+
+  uint8_t transfer_buffer[kTxBufferLength];
+  uint8_t transfer_pointer = 0;
+  uint16_t i;
+  HicopHeaders rx_flag;
+
+  main_warning_masked.all = main_warning.all & main_warning_mask.all;
+
+  //warnings have a high priority to send to front end MCU
+  if (frontend_warning_copy.all != main_warning_masked.all)
+  {
+    //build message
+    for (i = 0; i < 32; i++) //warning variable is a 32 bits register
+    {
+      //find which flags changed state
+      if (frontend_warning_copy.bits[i] != main_warning_masked.bits[i])
+      {
+        transfer_buffer[transfer_pointer++] = kTxAlarmId[i];
+        transfer_buffer[transfer_pointer++] = main_warning_masked.bits[i];
+      }
+    }
+    //save changes
+    frontend_warning_copy.all = main_warning_masked.all;
+
+    //send data
+    HicopSendData(kHicopHeaderAlarm, transfer_buffer, transfer_pointer);
+  }
+  //data has lowe priority
+  else
+  {
+    //check if it is time to send fast data
+    if (GetDiffTime(Millis(), last_update_time.fast_data) >= kTxFastDataPeriod)
+    {
+      last_update_time.fast_data = Millis();
+
+      //check if there is an interesting data to send depending of machine state
+      if (main_state == kMainBreathing)
+      {
+        for (i = 0; i < sizeof(kTxFastDataId); i++)
+        {
+          transfer_buffer[transfer_pointer++] = kTxFastDataId[i];
+          transfer_buffer[transfer_pointer++] = (uint8_t)(breathing_measure.fast_data[i] / 1000);
+        }
+      }
+    }
+    //check if it is time to send low data
+    if (GetDiffTime(Millis(), last_update_time.slow_data) >= kTxSlowDataPeriod)
+    {
+      last_update_time.slow_data = Millis();
+
+      for (i = 0; i < sizeof(kTxSlowDataId); i++)
+      {
+        transfer_buffer[transfer_pointer++] = kTxSlowDataId[i];
+        transfer_buffer[transfer_pointer++] = (uint8_t)(breathing_measure.slow_data[i] / 1000);
+      }
+    }
+
+    if (transfer_pointer != 0)
+      HicopSendData(kHicopHeaderData, transfer_buffer, transfer_pointer);
+  }
+
+  HicopLoop();
+
+  //read if there some commands
+  if (HicopReadData(&rx_flag, transfer_buffer, &transfer_pointer))
+  {
+    switch (rx_flag)
+    {
+    case kHicopHeaderConfig:
+      //update parameters
+      while (transfer_pointer--)
+      {
+        breathing_config_request.all[transfer_pointer] = transfer_buffer[transfer_pointer];
+      }
+      breathing_config_change = true;
+      break;
+
+    default:
+      //do nothing
+      break;
+    }
+  }
+}
+
+/* //sensor test
+uint32_t ref;
+
+void setup()
+{
+  Serial.begin(115200);
+  DirverInitialization();
+  ref=Millis();
+  
+}
+
+void loop()
+{
+  if(GetDiffTime(Millis(),ref)>100)
+  {
+    ref = Millis();
+    Serial.print("pressure: ");
+    Serial.println(SensorGetValue(0));
+  }
+
+  DriverLoops();
+}
+*/
+
+// Motor testing
+
+/*
+
+void AnyCallback(void);
+
+uint32_t ref =0 ;
+float ref2 =0.0;
+void setup()
+{
+  
+  //DirverInitialization();
+  
+  PinInitialization();
+  DirverInitialization();
+  DriverMotorMoveTo(kMotorIdBellows, 25);
+  DriverMotorSetVel(kMotorIdBellows, 20);
+  
+  Serial.begin(115200);
+
+  //PWMConfigFrecuency(1, kHardwarePWMMotor1);
+
+  ref = Millis();
+}
+
+
+void loop()
+{
+  
+  if(GetDiffTime(Millis(),ref)>100)
+  {
+    ref = Millis();
+    Serial.print("ok vel: ");
+    Serial.println((DriverMotorActualPos(kMotorIdBellows)-ref2)/0.1);
+    ref2 = DriverMotorActualPos(kMotorIdBellows);
+    DriverMotorMoveTo(kMotorIdBellows, 0);
+  }
+
+  DriverLoops();
+}
+
+void AnyCallback(void)
+{
+  Serial.print(Micros());
+  Serial.println(" ok\n");
+}
+*/
+
+//for comunication layer test
+/*
+HicopHeaders test_type = kHicopHeaderAlarm;
+uint8_t data[] = {0xff,0xfe,0x40,0x3,0x0};
+uint8_t len = sizeof(data);
+
+void setup()
+{
+  DirverInitialization();
+  HicopInit();
+  HicopSendData(test_type,data,len);
+}
+
+void loop()
+{
+  HicopLoop();
+  DriverLoops();
+}*/
