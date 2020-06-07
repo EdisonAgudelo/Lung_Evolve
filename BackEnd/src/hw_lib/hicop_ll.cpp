@@ -11,14 +11,14 @@
 #define HICOP_LL_BUFFER_LENGTH 255
 #define SERIAL_BAUDRATE 115200
 #define HICOP_LL_INVALID_HEADER 0xff
-#define HICOP_LL_MAX_RX_TIME 100 //ms
+#define HICOP_LL_MAX_RX_TIME 10 //mss
 #define HICOP_LL_CRC8_POLY 0x31
 #define HICOP_LL_CRC8_INIT 0x00
 
 struct HicopLLManagement
 {
     uint16_t prev_pointer_last; //do some backup to know how many data was before buffer clean up
-    uint16_t pointer_last; //saves the actual buffer pos
+    uint16_t pointer_last;      //saves the actual buffer pos
     uint32_t time_stamp;
     union {
 
@@ -51,7 +51,7 @@ void HicopLLBegin(void)
 bool HicopLLIsReceptionComplete(void)
 {
     //if no data, no reception
-    if (g_hicop_ll_rx.pointer_last <4)
+    if (g_hicop_ll_rx.pointer_last < 4)
         return false;
 
     //if there is a complete frame
@@ -98,7 +98,7 @@ uint8_t *HicopLLGetPayload(void)
 bool HicopLLIsValidData(void)
 {
     //check if there is data
-    if (g_hicop_ll_rx.pointer_last <4)
+    if (g_hicop_ll_rx.pointer_last < 4)
         return false;
 
     // check if there is enough data
@@ -165,7 +165,7 @@ bool HicopLLSendPayload(void)
     if (!HicopLLWriteBuffer(0xff))
         return false;
 
-    g_hicop_ll_tx.prev_pointer_last=g_hicop_ll_tx.pointer_last;
+    g_hicop_ll_tx.prev_pointer_last = g_hicop_ll_tx.pointer_last;
     HicopLLSendBuffer();
 
     return true;
@@ -174,11 +174,11 @@ bool HicopLLSendPayload(void)
 bool HicopLLResendPayload(void)
 {
     //make sure tha there was a previous frame
-    if(g_hicop_ll_tx.prev_pointer_last<4)
+    if (g_hicop_ll_tx.prev_pointer_last < 4)
         return false;
 
-    g_hicop_ll_tx.pointer_last=g_hicop_ll_tx.prev_pointer_last;
-    
+    g_hicop_ll_tx.pointer_last = g_hicop_ll_tx.prev_pointer_last;
+
     HicopLLSendBuffer();
     return true;
 }
@@ -197,13 +197,15 @@ bool HicopLLWriteBuffer(uint8_t data_out)
 
 bool HicopLLSendBuffer(void)
 {
-    
+    uint16_t i = 0;
+
     if (0 == g_hicop_ll_tx.pointer_last)
         return false;
+
     g_hicop_ll_tx.time_stamp = Millis();
     while (g_hicop_ll_tx.pointer_last--)
     {
-        UartWrite(g_hicop_ll_tx.exchange[g_hicop_ll_tx.pointer_last]);
+        UartWrite(g_hicop_ll_tx.exchange[i++]);
     }
     return true;
 }
@@ -216,4 +218,3 @@ static void HicopLLReceptionEvent(void)
         g_hicop_ll_rx.exchange[g_hicop_ll_rx.pointer_last++] = UartRead();
     }
 }
-

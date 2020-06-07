@@ -7,7 +7,7 @@
 
 #define HICOP_MAX_DATA_LENGTH 250
 #define HICOP_STACK_SIZE 5
-#define HICOP_MAX_RESPONSE_TIME 10 //ms
+#define HICOP_MAX_RESPONSE_TIME 100 //ms
 #define HICOP_MAX_SEND_TRIES 10    //times
 
 //defines a buffer for tx request
