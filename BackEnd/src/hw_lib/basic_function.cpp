@@ -8,6 +8,7 @@
 #include "drivers/driver_diff_pressure.h"
 #include "drivers/driver_voltage.h"
 #include "drivers/driver_temp.h"
+#include "drivers/driver_water_flowmeter.h"
 
 #include "time.h"
 
@@ -28,6 +29,7 @@ const float kMotorAirmmRev = (1/63.8); //review
 //------- Flow sensor parameters ------//
 
 const uint8_t kFlowI2CAddrs = 64; //review
+const float kCountsPerSLM = 5.0; //review
 
 
 //------- Temp sensor parameters -------//
@@ -60,6 +62,7 @@ Stepper motor_valve_air(kHardwareStepMotor3, kHardwareDirMotor3, kHardwarePWMMot
 
 Flowmeter flow_in(kHardI2C, kFlowI2CAddrs);
 Flowmeter flow_out(kSoftI2C, kFlowI2CAddrs);
+WFlowmeter flow_mixture(kHardwareCounterFlow1, kCountsPerSLM);
 
 DiffPressure pressure_in(kHardwareDiffPressure1);
 DiffPressure pressure_out(kHardwareDiffPressure1);
@@ -73,7 +76,7 @@ Temp temp_bat(kHardwareTemp2);
 
 Stepper *motor[]={&motor_bellow, &motor_valve_o2, &motor_valve_air};
 void *Sensor[]={(void *)&flow_in,(void *)&flow_out, (void *)&pressure_in, (void *)&pressure_out,
-                (void *)&temp_motor, (void *)&temp_bat, (void *)&voltage_source, (void *)&voltage_bat};
+                (void *)&temp_motor, (void *)&temp_bat, (void *)&voltage_source, (void *)&voltage_bat, (void *)&flow_mixture};
 const int valve[]={kHardwareRele1, kHardwareRele2, kHardwareRele3, kHardwareRele4};
 
 
@@ -119,7 +122,9 @@ long int SensorGetValue(int sensor_id)
     return (uint32_t) (((Temp *)Sensor[sensor_id])->GetTemp()*1000.0);
   if(sensor_id<8)
     return (uint32_t) (((Voltage *)Sensor[sensor_id])->GetVoltage()*1000.0);
-
+  if(sensor_id<9)
+    return (uint32_t) (((WFlowmeter *)Sensor[sensor_id])->GetFlow()*1000.0);
+    
     return 0;
 }
 
@@ -160,6 +165,7 @@ bool DirverInitialization(void)
 
   flow_in.Begin();
   flow_out.Begin();
+  flow_mixture.Begin();
 
   pressure_in.Begin();
   pressure_out.Begin();
@@ -199,7 +205,8 @@ bool DriverLoops(void)
   motor_valve_air.Loop();
 
   flow_in.Loop();
-  flow_out.Loop(); //restore
+  flow_out.Loop(); 
+  flow_mixture.Loop();
 
   pressure_in.Loop();
   pressure_out.Loop();

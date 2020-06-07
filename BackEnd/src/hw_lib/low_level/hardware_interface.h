@@ -9,7 +9,10 @@
 #include <stdint.h>
 #include <Arduino.h>
 
+//---------- counter 2 -------//
+const int kHardwareCounterFlow1=0;
 //------------pwm id ------------//
+
 const int kHardwarePWMMotor1 = 1;
 const int kHardwarePWMMotor2 = 3;
 const int kHardwarePWMMotor3 = 4;

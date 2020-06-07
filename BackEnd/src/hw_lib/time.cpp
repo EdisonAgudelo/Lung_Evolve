@@ -63,19 +63,26 @@ uint32_t Micros(void)
 
 void Delay(uint32_t delay_milliseconds)
 {
-    /* uint32_t time=Millis();
-    uint8_t i = 0;
+    uint32_t time=Millis();
+    volatile uint8_t i = 0;
     while(GetDiffTime(Millis(),time)<delay_milliseconds){
         i++;
-    }*/
-    delay(delay_milliseconds);
+    }
+    //delay(delay_milliseconds);
 }
 
 void uDelay(uint32_t dalay_microseconds)
 {
-    /*uint32_t time=Micros();
-    while(GetDiffTime(Micros(),time)<dalay_microseconds);*/
-    do
+    volatile uint8_t i;
+    uint32_t time=Micros();
+    
+    dalay_microseconds*=0.9;
+    while(GetDiffTime(Micros(),time)<dalay_microseconds)
+    {
+        i++;
+    };
+
+   /* do
     {
         if (dalay_microseconds >= 0xff)
         {
@@ -88,6 +95,7 @@ void uDelay(uint32_t dalay_microseconds)
             dalay_microseconds = 0;
         }
     } while (0!=dalay_microseconds);
+    */
 }
 
 void TimeVirtualISRBegin(void)

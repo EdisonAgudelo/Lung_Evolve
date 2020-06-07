@@ -141,7 +141,8 @@ typedef enum
   kSensorIdTempMotor,
   kSensorIdTempBattery,
   kSensorIdVoltageSource,
-  kSensorIdVoltageBattery
+  kSensorIdVoltageBattery,
+  kSensorIdAirFlowMixture
 } SensorID;
 
 //This struct saves all Front end commands or information

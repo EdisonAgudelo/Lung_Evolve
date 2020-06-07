@@ -15,8 +15,9 @@
 //library version for arduino mega
 
 /*
-  timer 5 woriking for millis and micros aplication
+  Timer 5 woriking for millis and micros aplication
   Timer 1 , 3, 4 is for custom pwm genarator
+  Timer 0 is used by flowmeter
 */
 
 void (*timer1m_callback)(void)=nullptr;
@@ -366,7 +367,53 @@ bool PWMIsPendingInterrupt(int pwm_id)
   return g_pending_interrupt[pwm_id];
 }
 
+
+void CounterBegin(int counter_id)
+{
+  switch (counter_id)
+  {
+  case 0:
+    TCCR0A = 0x2; // mode 2, all pins in normal operation
+    TCCR0B = 0x7; // External clock source in rising edge
+
+    OCR0A = 0xfe;
+
+    TIMSK0 = 0x2; //generate interrupt on compare match
+    break;
+
+  default:
+    //not able to work 
+    break;
+  }
+}
+
+uint32_t CounterGetValue(int counter_id)
+{
+  uint32_t temp=0;
+  switch (counter_id)
+  {
+  case 0:
+    temp = TCNT0;
+    TCNT0 = 0;
+    temp +=g_overflow_count[counter_id]*0xfe;
+    g_overflow_count[counter_id] = 0;
+    break;
+  
+  default:
+    break;
+  }
+      
+  return temp;
+}
+
 /////////////////// ISR /////////////////
+
+ISR(TIMER0_COMPA_vect)
+{
+  TCNT0 = 0;
+  g_overflow_count[0]++;
+}
+
 
 ISR(TIMER1_OVF_vect)
 {
