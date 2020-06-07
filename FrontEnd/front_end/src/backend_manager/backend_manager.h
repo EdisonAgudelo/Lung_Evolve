@@ -12,6 +12,7 @@ typedef enum
     krecieve=0,
     kcheckStatus1,
     kcheckStatus2,
+    kcheckStatus3,
     kcheckScreenUpdate,
     ksendData
 }STATE_backend;

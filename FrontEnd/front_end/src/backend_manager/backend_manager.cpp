@@ -10,11 +10,11 @@
 //#include <string.h>
 
 STATE_backend state_backend;
-bool status_send,status_recieve, error_data_frame;
+bool status_send,status_recieve, error_data_frame, send;
 
 uint8_t *Buffer=(uint8_t*)calloc(1,sizeof(uint8_t));  //buffer to recieve data from backend serial port, with length 1 byte
 //uint8_t *Buffer2=(uint8_t*)calloc(1,sizeof(uint8_t));  //buffer to check crc_8, with length 1 byte
-uint8_t *Buffersend[39];
+uint8_t Buffersend[41];
 int nbytes;
 
 void serial_backend_init(void)
@@ -128,9 +128,9 @@ void get_data(uint8_t *Buffer, int nbytes)
             {
                 alarms_struct.HighVte=Buffer[i+1];
             }
-            if(Buffer[i]==kLowVte)
+            if(Buffer[i]==kLowVti)
             {
-                alarms_struct.LowVte=Buffer[i+1];
+                alarms_struct.LowVti=Buffer[i+1];
             }
             if(Buffer[i]==kNearToLowVte)
             {
@@ -272,11 +272,13 @@ void sendDATA(void)
     crc_calc=CRC8Calculate(Buffersend, length_buff_send );
     //Buffersend = (uint8_t*)realloc(Buffersend,(length_buff_send +1)*sizeof(uint8_t));
     Buffersend[39]=crc_calc;
+    Buffersend[40]=0xff;
 
     for(int i=0;i<length_buff_send+1;i++)
     {
         Serial.write(Buffersend[i]);
     }
+    
 }
 
 void sendACK(void)
@@ -322,6 +324,90 @@ void backend_management(void)
 {
     bool done;
     switch(state_backend)
+    {
+        case krecieve:
+        done=recieve(); 
+        if(done==true) //si terminó de recibir la trama
+        {
+            state_backend=kcheckStatus1; //vaya a chequear
+        }
+        else //si no ha terminado de recibir
+        {
+            state_backend=kcheckScreenUpdate; //revise si hay algún update en la pantalla
+        }
+    
+        break;
+        case kcheckStatus1:
+           if(error_data_frame==true) //si no se recibió la trama correctamente
+           {
+            sendNACK();
+            state_backend=kcheckScreenUpdate;   
+           }
+           else
+           { 
+                if(send)
+                {
+                    state_backend=kcheckStatus2;
+                    send=false;
+                }
+                else
+                {
+                    state_backend=kcheckStatus3;
+                }
+           }
+              
+        break;
+
+        case kcheckStatus2:
+            if(status_send==true)
+            {
+                state_backend=kcheckScreenUpdate;
+            }
+            else
+            {
+                state_backend=ksendData;   
+            }   
+              
+        break;
+
+        case kcheckStatus3:
+            if(status_recieve==true)
+            {
+                sendACK();
+            }
+            else
+            {
+                sendNACK();
+            }
+            state_backend=kcheckScreenUpdate;
+            
+        break;
+
+        case kcheckScreenUpdate:
+            if(update)
+            {
+                state_backend=ksendData;
+            }
+            else
+            {
+                state_backend=krecieve;
+            }
+         
+        break;
+        case ksendData:
+            sendDATA();
+            update=false;
+            state_backend=krecieve;
+            send=true;
+        break;
+        default:
+        state_backend=krecieve;
+        break;
+    
+    }
+
+
+   /* switch(state_backend)
     {
         case krecieve:
         done=recieve(); 
@@ -387,7 +473,7 @@ void backend_management(void)
         state_backend=krecieve;
         break;
     
-    }
+    }*/
     
     
     

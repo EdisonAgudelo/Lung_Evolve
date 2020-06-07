@@ -11,7 +11,7 @@ typedef struct
     bool LowInspP;
     bool HighInspP;
     bool HighVte;
-    bool LowVte;
+    bool LowVti;
     bool NearToLowVte;
     bool HighVti;
     bool ProximalTube;
@@ -35,7 +35,7 @@ extern ALARMS alarms_struct;
  #define kLowInspP 0x3
  #define kHighInspP 0x4
  #define kHighVte 0x5
- #define kLowVte 0x6
+ #define kLowVti 0x6
  #define kNearToLowVte 0x7
  #define kHighVti 0x8
  #define kProximalTube 0x9

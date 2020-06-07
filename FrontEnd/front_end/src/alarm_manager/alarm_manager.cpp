@@ -47,7 +47,7 @@ void check_state_alarm(void)
         AS.HighAlarmState=0;     
     }
     
-    if(alarms_struct.ApneaAlarm || alarms_struct.HighBreathRate || alarms_struct.LowVte || alarms_struct.HighVti || alarms_struct.BackUpOn || alarms_struct.UnderPeep==true)
+    if(alarms_struct.ApneaAlarm || alarms_struct.HighBreathRate || alarms_struct.LowVti || alarms_struct.HighVti || alarms_struct.BackUpOn || alarms_struct.UnderPeep==true)
     {
         AS.MediumAlarmState=1;     
     }
