@@ -21,7 +21,8 @@ const bool kStepEnable = kHigh;
 
 enum{
     kSteeperISRTypeTravelEnd,
-    kSteeperISRTypeTimeOut
+    kSteeperISRTypeTimeOut,
+    KSteeperISRTypeResetTimeRef
 };
 
 typedef enum {
@@ -86,7 +87,7 @@ class Stepper
 
         static stepper_callback pin_isr[STEPPER_MAX_COUNT];
         static stepper_callback timeout_isr[STEPPER_MAX_COUNT];
-
+        
         //private methods
         void CalculateDistance(void);
         void CalculateTime(void);
@@ -133,11 +134,6 @@ void Pin3ISR(void);
 void TimeOut1ISR(void);
 void TimeOut2ISR(void);
 void TimeOut3ISR(void);
-
-
-
-
-
 
 
 

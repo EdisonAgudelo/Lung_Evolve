@@ -1,14 +1,16 @@
 
 #define PIN_EN 7
+#define PIN_DIR 8
 #define PIN_STEP 2
 
 uint32_t time_ref;
-uint32_t cuentas=0;
+int32_t cuentas=0;
 
 void setup() {
   // put your setup code here, to run once:
   pinMode(PIN_EN, INPUT);
   pinMode(PIN_STEP, INPUT);
+  pinMode(PIN_DIR, INPUT);
   Serial.begin(115200);
   time_ref = millis();
   attachInterrupt(digitalPinToInterrupt(PIN_STEP), count, RISING);
@@ -28,5 +30,5 @@ void loop() {
 
 void count(void)
 {
-  cuentas++;
+  cuentas+=digitalRead(PIN_DIR)?1:-1;
 }

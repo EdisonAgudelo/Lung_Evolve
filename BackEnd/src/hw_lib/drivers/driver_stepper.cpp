@@ -297,6 +297,8 @@ void Stepper::Loop(void)
                 //set interrupt for stop motor in the correct moment
                 TimeVirtualISRAdd(id, timeout_isr[id], estimate_time - STEPPER_TIME_GAP); //stop me in the estimated time
 
+                Serial.println(step_period);
+
                 //if there is not more time,  trigger stop
                 if (0 >= (estimate_time-STEPPER_TIME_GAP))
                     SoftStop();
@@ -408,25 +410,25 @@ void Stepper::CalculateDistance(void)
         switch (state)
         {
         case kStepperStateFoward:
-
+/*
             if (!PWMIsPendingInterrupt(pwm_id))
             {
                 PWMRequestInterrupt(pwm_id);
                 pos_actual++;
-            }
-            pos_actual += (int32_t)((enlapsed_time ) / step_period);
+            }*/
+            pos_actual += (int32_t)(enlapsed_time / step_period);
             //pos_actual += contador1();
 
             break;
         case kStepperStateBackward:
-
+/*
             if (!PWMIsPendingInterrupt(pwm_id))
             {
                 PWMRequestInterrupt(pwm_id);
                 pos_actual--;
             }
-
-            pos_actual -= ((enlapsed_time ) / step_period);
+*/
+            pos_actual -= (int32_t)(enlapsed_time / step_period);
             
             break;
         default:
@@ -459,7 +461,7 @@ void Stepper::CalculateTime(void)
         if (delta_distance < 0)
             estimate_time = 0;
         else
-            estimate_time =((int32_t)(((double)delta_distance)*(((double)step_period)/1000.0)));
+            estimate_time =(int32_t)(((double)delta_distance)*(step_period)/1000.0);
     }
 }
 

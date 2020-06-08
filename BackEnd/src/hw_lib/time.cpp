@@ -82,7 +82,7 @@ uint32_t Micros(void)
 
 double MicrosDouble(void)
 {
-    double Core_timer = Timer1msCount();
+    double Core_timer = (double)Timer1msCount();
     return (((double)g_milliseconds) * 1000.0 + (Core_timer * 1000.0) /((double) TIME_SISTICK_PERIOD));
 }
 

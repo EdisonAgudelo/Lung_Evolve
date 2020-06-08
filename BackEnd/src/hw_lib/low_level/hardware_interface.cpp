@@ -282,7 +282,7 @@ double PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
     OCR1BL = (compare_value)&0x00ff;        //config calculated compare value
 
     TIMSK1 = 0x0; //no generate any interrupt
-
+    //TIMSK1 = 0x1; //no generate any interrupt
     break;
 
   case 3:
@@ -332,6 +332,7 @@ double PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
 bool PWMRequestInterrupt(int pwm_id)
 {
   g_pending_interrupt[pwm_id] = true;
+
   switch (pwm_id)
   {
   case 1:
@@ -388,7 +389,12 @@ uint32_t CounterGetValue(int counter_id)
     temp +=g_overflow_count[counter_id]*0xfe;
     g_overflow_count[counter_id] = 0;
     break;
-  
+
+  case 1:
+    temp = g_overflow_count[counter_id];
+    g_overflow_count[counter_id] = 0;
+  break;
+
   default:
     break;
   }
@@ -410,6 +416,11 @@ ISR(TIMER1_OVF_vect)
   TIMSK1 &= ~(0x1); //turn off interrupt
   g_pending_interrupt[1] = false;
 }
+/*
+ISR(TIMER1_OVF_vect)
+{
+  g_overflow_count[1]++;
+}*/
 
 ISR(TIMER3_OVF_vect)
 {

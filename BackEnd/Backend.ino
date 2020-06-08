@@ -784,8 +784,8 @@ void setup()
   
   PinInitialization();
   DirverInitialization();
-  DriverMotorMoveTo(kMotorIdBellows, 6000);
-  DriverMotorSetVel(kMotorIdBellows, 3000);
+  DriverMotorMoveTo(kMotorIdBellows, 60000);
+  DriverMotorSetVel(kMotorIdBellows, 6000);
   
   Serial.begin(115200);
 
@@ -805,7 +805,7 @@ void loop()
     //Serial.println((DriverMotorActualPos(kMotorIdBellows)-ref2)/0.1);
     Serial.println(DriverMotorActualPos(kMotorIdBellows));
     ref2 = DriverMotorActualPos(kMotorIdBellows);
-    //DriverMotorMoveTo(kMotorIdBellows, 0);
+    DriverMotorMoveTo(kMotorIdBellows, 0);
   }
 
   DriverLoops();
