@@ -3,6 +3,11 @@
 #include "screen_manager.h"
 #include <SoftwareSerial.h>
 
+//serial to backend pins
+#define SFRONT_END_TX 7
+#define SFRONT_END_RX 6
+
+
 SoftwareSerial SFrontEnd (SFRONT_END_TX,SFRONT_END_RX);
 //buffer_screen buff;
 CONFIGURATION config;
@@ -12,6 +17,8 @@ DATA dataValue;
 byte data[NUM_BYTES]; 
 int ScreenStates;
 bool update;
+
+
 
 void serial_screen_init(void)
 {
@@ -252,6 +259,7 @@ void b68PushCallback(void *ptr)
 void b69PushCallback(void *ptr)
 {
   ScreenStates=kpage18;
+  /*
       Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
       Serial.print(dataValue.peep);  // This is the value you want to send to that object and atribute mentioned before.
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
@@ -281,6 +289,7 @@ void b69PushCallback(void *ptr)
       Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
       Serial.write(0xff);
       Serial.write(0xff);
+      */
 }
 
 void b70PushCallback(void *ptr)
@@ -318,14 +327,15 @@ void bt1PopCallback(void *ptr)
 
 //***************************** End of events when a button is pressed or released********************************
 
-
 void screen_management(void)
 {
     /*
     *si estoy en pagina tal que hago
     *si estoy en pagina de monitor que envío
     */
+
     nexLoop(nex_listen_list);
+   /* 
    if(ScreenStates==kpage19)
    {
      //revisar si hay alarmas prioritarias y aun hay vacante, envíe alarma para mostrar
@@ -432,13 +442,15 @@ void screen_management(void)
      {
        
      }
-     
+     */
     //Serial.print("n3.val=");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
     //Serial.print(counter);  // This is the value you want to send to that object and atribute mentioned before.
     //Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
     //Serial.write(0xff);
     //Serial.write(0xff);
-   }
+}
+  
+
 
 /*
    switch (ScreenStates)
@@ -506,10 +518,11 @@ void screen_management(void)
 void recieveData(int dataLength)
 {
   //Serial.write(buff->fio2);
+
  if (Serial.available())
  {
   Serial.readBytes(data,dataLength);
-   for(int i = 0;i < dataLength;i++)
+/*   for(int i = 0;i < dataLength;i++)
    {
       if(data[i]==kfio2)
       {
@@ -556,9 +569,9 @@ void recieveData(int dataLength)
       }
 
     }
-    
+    */
   }
-  clear_buffer(dataLength);
+  //clear_buffer(dataLength);
 }
 
 void clear_buffer(int nbytes)

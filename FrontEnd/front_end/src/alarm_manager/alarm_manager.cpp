@@ -10,6 +10,13 @@
 *   this function gives the initial values to the struct that carries the
 *   alarm states information
 */
+
+
+
+
+
+
+
 void init_alarm_maganement(void) 
 {
     AS.HighAlarmState=false;
@@ -37,8 +44,8 @@ void alarm_management_loop(void)
 */
 void check_state_alarm(void)
 {
-    if(alarms_struct.LowInspP || alarms_struct.HighInspP || alarms_struct.VteNotAchived || alarms_struct.VteOv || alarms_struct.PatientLeaks || 
-        alarms_struct.ShutDown || alarms_struct.LowBattery || alarms_struct.NoBattery | alarms_struct.HighTemp | alarms_struct.NoOxygen == true)
+    if(alarms_struct.low_in_pressure || alarms_struct.high_in_pressure || alarms_struct.low_out_volume_tidal || alarms_struct.high_out_volume_tidal || alarms_struct.high_volume_leakage || 
+        alarms_struct.system_shutdown || alarms_struct.low_battery || alarms_struct.no_battery || alarms_struct.high_temp_motor || alarms_struct.high_temp_bat|| alarms_struct.detached_oxygen_tube || alarms_struct.detached_proximal_tube == true)
     {
         AS.HighAlarmState=1;     
     }
@@ -47,7 +54,7 @@ void check_state_alarm(void)
         AS.HighAlarmState=0;     
     }
     
-    if(alarms_struct.ApneaAlarm || alarms_struct.HighBreathRate || alarms_struct.LowVti || alarms_struct.HighVti || alarms_struct.BackUpOn || alarms_struct.UnderPeep==true)
+    if(alarms_struct.apnea_alarm || alarms_struct.high_breathing_rate || alarms_struct.low_breathing_rate || alarms_struct.high_in_volume_tidal || alarms_struct.no_main_supply || alarms_struct.low_peep==true)
     {
         AS.MediumAlarmState=1;     
     }

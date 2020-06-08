@@ -4,7 +4,7 @@
 #include "../data_bus/data_bus.h"
 #include "../hardware/hardware_front.h"
 
-#define TIME_ON_BUZZER 2000
+
 
 
 typedef struct 

@@ -61,12 +61,12 @@ typedef struct
 
 
 
-#define NUM_BYTES1 19 //for volume control
+#define NUM_BYTES1 18 //for volume control
 //#define NUM_BYTES2  10//for pressure control
 //#define NUM_BYTES3  11//for assistive control
 //#define NUM_BYTES4  12//for alarm configuration
 
-const int NUM_BYTES=19;
+const int NUM_BYTES=18;
 
 extern bool update;
 

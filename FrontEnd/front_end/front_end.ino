@@ -9,7 +9,7 @@
 void setup()
 {
   serial_screen_init();
-  serial_backend_init();
+  backend_init();
 	init_hardware_front();
   init_screen_management();
 }

@@ -7,7 +7,6 @@
 
 
 
-
 /*Nextion NOMBRE_OBJETO = Next_TIPO_OBJETO(PAGINA,ID,"NOMBRE_OBJETO")*/
 
 //Objects window 0//////////////////////////////////////////////
