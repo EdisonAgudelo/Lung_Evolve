@@ -64,6 +64,7 @@ void FrontEndCommunicationInit(void);
 void FrontEndCommunicationLoop(void);
 
 //general initization
+/*
 void setup()
 {
   main_error.all = 0;   //reset all errors;
@@ -77,7 +78,7 @@ void setup()
 
   FMSMainInit();
   FrontEndCommunicationInit();
-}
+}*/
 
 void FMSMainInit(void)
 {
@@ -107,7 +108,7 @@ void FrontEndCommunicationInit(void)
   //init front end coppy to detect when any warning change state
   frontend_warning_copy.all = main_warning.all & main_warning_mask.all;
 }
-
+/*
 void loop()
 {
   MeasureVariables();
@@ -116,7 +117,7 @@ void loop()
   FMSMainLoop();
   DriverLoops();
   FrontEndCommunicationLoop();
-}
+}*/
 
 void ComputeParameters(void)
 {
@@ -146,13 +147,12 @@ void MeasureVariables(void)
   static uint32_t last_espiration_ref_time = 0;
   static uint32_t last_dt_ref_time = 0;
 
-  static uint32_t inspiration_time = 1000; //to avoid 0 division
-  static uint32_t espiration_time = 2000;
+  static uint32_t inspiration_time = 1000; // any value to avoid 0 division
+  static uint32_t espiration_time = 2000; //any value
   static uint32_t dt_time = 0;
-
+  static uint32_t integer_tidal;
   //other type variables
   static BreathingStates breathing_previous_state = breathing_state;
-  static uint32_t integer_tidal = 0;
 
   //only MeasureVariables all varibles if ventilator is normally working
   if (main_state == kMainBreathing)
@@ -177,11 +177,12 @@ void MeasureVariables(void)
         //measure
         breathing_measure.ie_ratio = (espiration_time) / inspiration_time;
         breathing_measure.breathing_rate = 60000 / (espiration_time + inspiration_time);
-        breathing_measure.tidal = integer_tidal / inspiration_time;
+        breathing_measure.tidal = breathing_measure.patient_volume / inspiration_time;
       }
       break;
 
     case kBreathingInCicle:
+
       //at the end of out cicle
       if (breathing_previous_state != breathing_state)
       {
@@ -770,7 +771,7 @@ void loop()
 
 // Motor testing
 
-/*
+
 
 void AnyCallback(void);
 
@@ -783,8 +784,8 @@ void setup()
   
   PinInitialization();
   DirverInitialization();
-  DriverMotorMoveTo(kMotorIdBellows, 25);
-  DriverMotorSetVel(kMotorIdBellows, 20);
+  DriverMotorMoveTo(kMotorIdBellows, 6000);
+  DriverMotorSetVel(kMotorIdBellows, 3000);
   
   Serial.begin(115200);
 
@@ -801,9 +802,10 @@ void loop()
   {
     ref = Millis();
     Serial.print("ok vel: ");
-    Serial.println((DriverMotorActualPos(kMotorIdBellows)-ref2)/0.1);
+    //Serial.println((DriverMotorActualPos(kMotorIdBellows)-ref2)/0.1);
+    Serial.println(DriverMotorActualPos(kMotorIdBellows));
     ref2 = DriverMotorActualPos(kMotorIdBellows);
-    DriverMotorMoveTo(kMotorIdBellows, 0);
+    //DriverMotorMoveTo(kMotorIdBellows, 0);
   }
 
   DriverLoops();
@@ -814,7 +816,7 @@ void AnyCallback(void)
   Serial.print(Micros());
   Serial.println(" ok\n");
 }
-*/
+
 
 //for comunication layer test
 /*

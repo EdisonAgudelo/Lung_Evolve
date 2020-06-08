@@ -38,7 +38,7 @@ void Stepper::Begin(void)
     pos_change_request = false;
 
     state = kStepperStateStop;
-    step_period = 1000; //any value to avoid 0 division
+    step_period = 1000.0; //any value to avoid 0 division
 
     brake_distance = 0;
 
@@ -169,6 +169,7 @@ void Stepper::SoftStop(void)
                 return; //a hard stop was execute
                 break;
             }
+            Serial.print(pos_actual); Serial.print(" "); Serial.println(missed_steps);
 
             missed_steps = missed_steps < 0 ? 0 : missed_steps;
 
@@ -176,16 +177,16 @@ void Stepper::SoftStop(void)
             while (0 != missed_steps-- && (0 > pin_end || !PinReadDigital(pin_end)))
             {
                 PinSetDigital(pin_step, kStepLevel);
-                uDelay(step_period / 2000);
+                uDelay(step_period / 2.0);
                 PinSetDigital(pin_step, !kStepLevel);
-                uDelay(step_period / 2000);
+                uDelay(step_period / 2.0);
             }
 
             //if while ends due to end switch
             if (0 <= pin_end && PinReadDigital(pin_end))
                 pos_target = pos_actual; //force  position
             else{
-                pos_target -= pos_adj;
+               // pos_target -= pos_adj;
                 pos_actual = pos_target; //force  position
             }
             //disable driver
@@ -297,7 +298,7 @@ void Stepper::Loop(void)
                 TimeVirtualISRAdd(id, timeout_isr[id], estimate_time - STEPPER_TIME_GAP); //stop me in the estimated time
 
                 //if there is not more time,  trigger stop
-                if (0 > estimate_time)
+                if (0 >= (estimate_time-STEPPER_TIME_GAP))
                     SoftStop();
             }
 
@@ -313,8 +314,8 @@ void Stepper::Loop(void)
             {
                 pos_change_request = false; //end request
                 pos_target = pos_request;
-                pos_adj = ((pos_target-pos_actual) * STEPPER_FINE_ADJ) /STEPPER_FINE_ADJ_DIV;
-                pos_target += pos_adj;
+                //pos_adj = ((pos_target-pos_actual) * STEPPER_FINE_ADJ) /STEPPER_FINE_ADJ_DIV;
+                //pos_target += pos_adj;
             }
 
             //check if this driver can jump to foward
@@ -400,8 +401,8 @@ void Stepper::SetPos(int32_t _pos)
 void Stepper::CalculateDistance(void)
 {
     
-    uint32_t enlapsed_time = GetDiffTime(Micros(), count_prev_time);
-    count_prev_time = Micros();
+    double enlapsed_time = GetDiffTimeUs(MicrosDouble(), count_prev_time);
+    count_prev_time = MicrosDouble();
 
     if (0 != vel_actual)
         switch (state)
@@ -413,7 +414,7 @@ void Stepper::CalculateDistance(void)
                 PWMRequestInterrupt(pwm_id);
                 pos_actual++;
             }
-            pos_actual += (enlapsed_time * 1000) / step_period;
+            pos_actual += (int32_t)((enlapsed_time ) / step_period);
             //pos_actual += contador1();
 
             break;
@@ -425,7 +426,7 @@ void Stepper::CalculateDistance(void)
                 pos_actual--;
             }
 
-            pos_actual -= ((enlapsed_time * 1000) / step_period);
+            pos_actual -= ((enlapsed_time ) / step_period);
             
             break;
         default:
@@ -458,7 +459,7 @@ void Stepper::CalculateTime(void)
         if (delta_distance < 0)
             estimate_time = 0;
         else
-            estimate_time =((int32_t)(((double)delta_distance)*(((double)step_period)/1000000.0)));
+            estimate_time =((int32_t)(((double)delta_distance)*(((double)step_period)/1000.0)));
     }
 }
 

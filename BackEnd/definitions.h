@@ -226,6 +226,7 @@ typedef union
   float in_pressure; //cmH2O
   float out_pressure;//cmH2O
   float patient_flow; //slm
+  float patient_volume; //CC
 
   float battery_level;//%
 

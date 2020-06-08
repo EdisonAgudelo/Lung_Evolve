@@ -1,10 +1,9 @@
 
 #define PIN_EN 7
-#define PIN_STEP 8
+#define PIN_STEP 2
 
 uint32_t time_ref;
 uint32_t cuentas=0;
-bool level=false;
 
 void setup() {
   // put your setup code here, to run once:
@@ -12,26 +11,22 @@ void setup() {
   pinMode(PIN_STEP, INPUT);
   Serial.begin(115200);
   time_ref = millis();
+  attachInterrupt(digitalPinToInterrupt(PIN_STEP), count, RISING);
 }
 
 void loop() {
 
-  if(digitalRead(PIN_EN))
+  if(!digitalRead(PIN_EN))
   {
-    if(digitalRead(PIN_STEP)!=level)
+    if(millis()-time_ref>1000)
     {
-      level = digitalRead(PIN_STEP);
-      cuentas++;
+      time_ref = millis();
+      Serial.println(cuentas);
     }
   }
-  else
-  {
-      // put your main code here, to run repeatedly:
-  if(millis()-time_ref>1000)
-  {
-    time_ref = millis();
-    Serial.println(cuentas/2);
-  }
-    level = false;
-  }
+}
+
+void count(void)
+{
+  cuentas++;
 }

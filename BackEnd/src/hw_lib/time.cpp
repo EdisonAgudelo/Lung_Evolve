@@ -38,6 +38,18 @@ uint32_t GetDiffTime(uint32_t actual, uint32_t prev)
     }
 }
 
+double GetDiffTimeUs(double actual, double prev)
+{
+    if (actual >= prev)
+    {
+        return (actual - prev);
+    }
+    else
+    { //when resgiter overflow
+        return (((double)0xffffffff)/(1000000.0) - (prev - actual));
+    }
+}
+
 static void TimerRoutineCallback(void)
 {
     uint8_t i;
@@ -66,6 +78,12 @@ uint32_t Micros(void)
 {
     uint16_t Core_timer = Timer1msCount();
     return (g_milliseconds * 1000 + (Core_timer * 1000) / TIME_SISTICK_PERIOD);
+}
+
+double MicrosDouble(void)
+{
+    double Core_timer = Timer1msCount();
+    return (((double)g_milliseconds) * 1000.0 + (Core_timer * 1000.0) /((double) TIME_SISTICK_PERIOD));
 }
 
 void Delay(uint32_t delay_milliseconds)

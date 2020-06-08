@@ -93,7 +93,7 @@ bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght);
 
 
 //Timer/counter/PWM functions functions
-uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id);
+double PWMConfigFrecuency(uint32_t frecuency, int pwm_id);
 
 void CounterBegin(int counter_id);
 

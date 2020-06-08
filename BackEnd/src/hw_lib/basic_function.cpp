@@ -83,7 +83,7 @@ const int valve[]={kHardwareRele1, kHardwareRele2, kHardwareRele3, kHardwareRele
 
 bool DriverMotorMoveTo(int motor_id, float line_pos)
 {
-  motor[motor_id]->SetPosmm(line_pos);
+  motor[motor_id]->SetPos(line_pos);
   return true;
 }
 
@@ -142,13 +142,13 @@ bool SensorGetAlarm(int sensor_id)
 
 bool DriverMotorSetVel(int motor_id, float motor_vel)
 {
-  motor[motor_id]->SetVelmm(motor_vel);
+  motor[motor_id]->SetVel(motor_vel);
   return true;
 }
 
 float DriverMotorActualPos(int motor_id)
 {
-  return motor[motor_id]->GetPosmm();
+  return motor[motor_id]->GetPos();
 }
 
 bool DirverInitialization(void)
@@ -159,7 +159,7 @@ bool DirverInitialization(void)
   DriverLedInit(&led_red, kHardwareLedRedPin); //config pin and initialize pin
   DriverLedInit(&buzzer, kHardwareBuzzerPin); //config pin and initialize pin
 
-  motor_bellow.Begin();
+  motor_bellow.Begin();/*
   motor_valve_o2.Begin();
   motor_valve_air.Begin();
 
@@ -185,12 +185,12 @@ bool DirverInitialization(void)
 
   motor_bellow.SetLimitPin(kHardwareSwitchBMotor1, kHardwareSwitchFMotor1);
   motor_valve_o2.SetLimitPin(kHardwareSwitchBMotor2, kHardwareSwitchFMotor2);
-  motor_valve_air.SetLimitPin(kHardwareSwitchBMotor3, kHardwareSwitchFMotor3);
+  motor_valve_air.SetLimitPin(kHardwareSwitchBMotor3, kHardwareSwitchFMotor3);*/ 
  
-  motor_bellow.SetDriverConfig(kMotorBellowSteps, kMotorBellowmmRev, kMotorBellowUSteps);
+  motor_bellow.SetDriverConfig(kMotorBellowSteps, kMotorBellowmmRev, kMotorBellowUSteps);/*
   motor_valve_o2.SetDriverConfig(kMotorO2Steps, kMotorO2mmRev, kMotorO2USteps);
   motor_valve_air.SetDriverConfig(kMotorAirSteps, kMotorAirmmRev, kMotorAirUSteps);
- 
+ */
   return true;
 }
 
@@ -201,7 +201,8 @@ bool DriverLoops(void)
   DriverLedLoop(&buzzer);
   // restore
   motor_bellow.Loop(); //much faster than a for
-  motor_valve_o2.Loop();
+  /*
+  motor_valve_o2.Loop(); 
   motor_valve_air.Loop();
 
   flow_in.Loop();
@@ -215,5 +216,5 @@ bool DriverLoops(void)
   temp_motor.Loop();
 
   voltage_bat.Loop();
-  voltage_source.Loop();
+  voltage_source.Loop();*/
 }

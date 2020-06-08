@@ -17,7 +17,7 @@
 const bool kStepForward = kHigh;
 const bool kStepBackward = kLow;
 const bool kStepLevel = kHigh;
-const bool kStepEnable = kLow;
+const bool kStepEnable = kHigh;
 
 enum{
     kSteeperISRTypeTravelEnd,
@@ -61,8 +61,8 @@ class Stepper
 
         StepperDriverStates state;
 
-        uint32_t count_prev_time; //us  //this save the las revision of timer counts
-        uint32_t step_period; //ns
+        double count_prev_time; //us  //this save the las revision of timer counts
+        double step_period; //ns
 
         uint32_t update_prev_time; //this is for update vel rate.
 

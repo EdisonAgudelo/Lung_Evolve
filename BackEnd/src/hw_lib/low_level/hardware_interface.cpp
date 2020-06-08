@@ -237,15 +237,15 @@ void Timer1msISR(void (*callback)(void))
   TIMSK5 = 0x2; // intterrupt in compare match A
 }
 
-uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
+double PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
 {
   uint8_t i;
 
   const uint16_t preescaler[] = {1, 8, 64, 256, 1024};
   uint16_t compare_value;
-  uint32_t pwm_period;
-  uint32_t A;
-  uint32_t B;
+  double pwm_period;
+  double A;
+  double B;
 
   cli();
 
@@ -260,9 +260,9 @@ uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
     }
   }
 
-  A = (((uint32_t)compare_value) * 10000);
-  B = ((uint32_t)F_CPU) / (100 * ((uint32_t)preescaler[i]));
-  pwm_period = (uint32_t)(1000.0 * (((float)A) / ((float)B)));
+  A = (double)(compare_value+1);
+  B = (double)(F_CPU / preescaler[i]);
+  pwm_period = 1000000.0*A/B;
 
   g_pending_interrupt[pwm_id] = false;
 
@@ -277,7 +277,7 @@ uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
     OCR1AH = (compare_value >> 8) & 0x00ff; //config calculated compare value
     OCR1AL = (compare_value)&0x00ff;        //config calculated compare value
 
-    compare_value /= 4;                     //on period is equal to 1/5 of total time
+    compare_value /= 2;                     //on period is equal to 1/2 of total time
     OCR1BH = (compare_value >> 8) & 0x00ff; //config calculated compare value
     OCR1BL = (compare_value)&0x00ff;        //config calculated compare value
 
@@ -294,7 +294,7 @@ uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
     OCR3AH = (compare_value >> 8) & 0x00ff; //config calculated compare value
     OCR3AL = (compare_value)&0x00ff;        //config calculated compare value
 
-    compare_value /= 4;                     //on period is equal to 1/5 of total time
+    compare_value /= 2;                     //on period is equal to 1/2 of total time
     OCR3BH = (compare_value >> 8) & 0x00ff; //config calculated compare value
     OCR3BL = (compare_value)&0x00ff;        //config calculated compare value
 
@@ -311,7 +311,7 @@ uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
     OCR4AH = (compare_value >> 8) & 0x00ff; //config calculated compare value
     OCR4AL = (compare_value)&0x00ff;        //config calculated compare value
 
-    compare_value /= 4;                     //on period is equal to 1/5 of total time
+    compare_value /= 2;                     //on period is equal to 1/2 of total time
     OCR4BH = (compare_value >> 8) & 0x00ff; //config calculated compare value
     OCR4BL = (compare_value)&0x00ff;        //config calculated compare value
 

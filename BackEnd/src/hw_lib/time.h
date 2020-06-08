@@ -8,11 +8,15 @@
 //it gets the enlapsed time between two time references. This avoid issues related to uint32_t counter over flow 
 uint32_t GetDiffTime(uint32_t actual, uint32_t prev);
 
+double GetDiffTimeUs(double actual, double prev);
+
 //it retuns the enlapsed time from the system power on in milliseconds. It has a maximum values of 49 days before counter reset. 
 uint32_t Millis(void);
 
 //it retuns the enlapsed time from the system power on in microseconds. It has a maximum values of 1 hour before counter reset. 
 uint32_t Micros(void);
+
+double MicrosDouble(void);
 
 //It stucks main fw flow during a fixed time
 void uDelay(uint32_t dalay_microseconds);
