@@ -1,14 +1,14 @@
 //#include <Nextion.h>
 #include "screen_objetcs.h"
 #include "screen_manager.h"
-#include <SoftwareSerial.h>
+//#include <SoftwareSerial.h>
 
 //serial to backend pins
-#define SFRONT_END_TX 7
-#define SFRONT_END_RX 6
+//#define SFRONT_END_TX 7
+//#define SFRONT_END_RX 6
 
 
-SoftwareSerial SFrontEnd (SFRONT_END_TX,SFRONT_END_RX);
+
 //buffer_screen buff;
 CONFIGURATION config;
 Alarm_state AS;
@@ -18,11 +18,14 @@ byte data[NUM_BYTES];
 int ScreenStates;
 bool update;
 
-
+//SoftwareSerial SFrontEnd (SFRONT_END_TX,SFRONT_END_RX);
 
 void serial_screen_init(void)
 {
-  SFrontEnd.begin(9600);
+  
+  //SFrontEnd.begin(9600);
+  Serial2.begin(9600);
+  Serial.print("init");
 }
 
 void init_screen_management(void)
@@ -37,8 +40,8 @@ void init_screen_management(void)
 
 void handlers (void)
 {
-  b1.attachPush(b1PushCallback);  
-  b2.attachPush(b2PushCallback);  
+  b1.attachPush(b1PushCallback,&b1);  
+  b2.attachPush(b2PushCallback,&b2);  
   b3.attachPush(b3PushCallback);  
   b4.attachPush(b4PushCallback);  
   b5.attachPush(b5PushCallback);  
@@ -84,12 +87,14 @@ void handlers (void)
 void b1PushCallback(void *ptr)  
 {
   ScreenStates=kpage1;
+  Serial.print("evento");
   
 } 
 
 void b2PushCallback(void *ptr)
 {
   ScreenStates=kpage3;
+  Serial.print("evento");
 }
 
 void b3PushCallback(void *ptr)

@@ -13,9 +13,8 @@
 
 
 //duty cycle front end peripherals 
-#define DUTY_LEDY 128
-#define DUTY_LEDR 128
-#define DUTY_BUZZER 128
+
+const int DUTY_BUZZER= 128;
 
 
 DriverLed RED_led;
