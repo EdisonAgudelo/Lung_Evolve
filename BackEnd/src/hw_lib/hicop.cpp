@@ -5,10 +5,10 @@
 #include "time.h"
 #include "low_level/hardware_interface.h"
 
-#define HICOP_MAX_DATA_LENGTH 250
-#define HICOP_STACK_SIZE 5
-#define HICOP_MAX_RESPONSE_TIME 100 //ms
-#define HICOP_MAX_SEND_TRIES 10    //times
+#define HICOP_MAX_DATA_LENGTH 250 // don't move, but it talks about maximum transmission lenght
+#define HICOP_STACK_SIZE 5  //FIFO length 
+#define HICOP_MAX_RESPONSE_TIME 100 //ms. Which is other mcu maximum response time
+#define HICOP_MAX_SEND_TRIES 10    //how many times hicop protocol will try to resend a failed transmission
 
 //defines a buffer for tx request
 typedef struct

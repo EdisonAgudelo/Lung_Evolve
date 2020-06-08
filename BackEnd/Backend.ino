@@ -90,13 +90,13 @@ void FMSMainInit(void)
   main_state = kMainInit; //start in idle mode
   breathing_state = kBreathingOutPause;
 
-  breathing_config.is_tunning = false,
-  breathing_config.is_standby = true,
-  breathing_config.is_pressure_controled = true,
-  breathing_config.is_assisted = false,
+  breathing_config.is_tunning = false;
+  breathing_config.is_standby = true;
+  breathing_config.is_volume_controled = true;
+  breathing_config.is_assisted = false;
 
   //set control parameters
-      ControlInit(&control_pressure, 1.0, 0.0, 0.0, -1.0);
+  ControlInit(&control_pressure, 1.0, 0.0, 0.0, -1.0);
   ControlInit(&control_air_flow, 1.0, 0.0, 0.0, -1.0);
 }
 
@@ -133,7 +133,7 @@ void ComputeParameters(void)
   //if ventilator is breathing, only ignore function
   else if (main_state != kMainBreathing)
   {
-    
+
     main_error.working_configuration_not_initialized = true;
   }
 }
@@ -160,7 +160,8 @@ void MeasureVariables(void)
     //always save presure measure, and flow data
     breathing_measure.in_pressure = SensorGetValue(kSensorIdPressureIn);
     breathing_measure.out_pressure = SensorGetValue(kSensorIdPressureOut);
-    breathing_measure.mixture_flow = SensorGetValue(kSensorIdAirFlowIn);
+    breathing_measure.mixture_flow = SensorGetValue(kSensorIdAirFlowMixture);
+    breathing_measure.patient_flow = SensorGetValue(kSensorIdAirFlowIn)+SensorGetValue(kSensorIdAirFlowOut); 
 
     switch (breathing_state)
     {
@@ -174,8 +175,8 @@ void MeasureVariables(void)
         inspiration_time = last_inspiration_ref_time - last_espiration_ref_time;
 
         //measure
-        breathing_measure.ie_ratio = (espiration_time * 1000) / inspiration_time;
-        breathing_measure.breathing_rate = 60000000 / (espiration_time + inspiration_time);
+        breathing_measure.ie_ratio = (espiration_time) / inspiration_time;
+        breathing_measure.breathing_rate = 60000 / (espiration_time + inspiration_time);
         breathing_measure.tidal = integer_tidal / inspiration_time;
       }
       break;
@@ -189,17 +190,18 @@ void MeasureVariables(void)
         espiration_time = last_espiration_ref_time - last_inspiration_ref_time;
 
         //measure
-        breathing_measure.ie_ratio = (espiration_time * 1000) / inspiration_time;
-        breathing_measure.breathing_rate = 60000000 / (espiration_time + inspiration_time);
+        breathing_measure.ie_ratio = (espiration_time) / inspiration_time;
+        breathing_measure.breathing_rate = 60000 / (espiration_time + inspiration_time);
 
         last_dt_ref_time = Millis(); //reset dt;
+        breathing_measure.patient_leakage = integer_tidal;
         integer_tidal = 0;           //reset integer
       }
 
       //integer flow
       dt_time = Millis() - last_dt_ref_time;
       last_dt_ref_time = Millis();
-      integer_tidal += breathing_measure.mixture_flow * dt_time;
+      integer_tidal += breathing_measure.patient_flow * dt_time;
 
       break;
 
@@ -353,7 +355,7 @@ void FMSMainLoop(void)
 
     if (!breathing_config.is_standby)
     {
-      
+
       //make sure that all required parameters are initialized;
       if (!main_error.working_configuration_not_initialized) //this is for patient safety
       {
@@ -508,7 +510,7 @@ void FMSMainLoop(void)
       DriverValveOpenTo(kValveIdManifold, kValveFullClose);
 
       //selection of control type
-      if (breathing_config.is_pressure_controled)
+      if (!breathing_config.is_volume_controled)
       {
         //presure controlled
 
@@ -526,7 +528,7 @@ void FMSMainLoop(void)
         DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
         DriverMotorSetVel(kMotorIdBellows,
                           ControlExecute(&control_air_flow,
-                                         ((float)(breathing_dinamic.sensor_air_flow_ref -  breathing_measure.mixture_flow)) / 10.0));
+                                         ((float)(breathing_dinamic.sensor_air_flow_ref - breathing_measure.mixture_flow)) / 10.0));
 #else
         //version 2
         DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
@@ -562,11 +564,11 @@ void FMSMainLoop(void)
         switch (breathing_delay.next_state)
         {
         case kBreathingInCicle:
-          if (breathing_config.is_pressure_controled && breathing_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
+          if (!breathing_config.is_volume_controled && breathing_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
           }
-          else if (!breathing_config.is_pressure_controled && breathing_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
+          else if (breathing_config.is_volume_controled && breathing_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
           }
@@ -578,13 +580,13 @@ void FMSMainLoop(void)
           break;
         case kBreathingOutCicle:
 
-          if (breathing_config.is_pressure_controled && breathing_measure.out_pressure > breathing_dinamic.sensor_pressure_trigger_esp_value)
+          if (!breathing_config.is_volume_controled && breathing_measure.out_pressure > breathing_dinamic.sensor_pressure_trigger_esp_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
           }
           //this case should be tested
 #if 0
-          else if (!breathing_config.is_pressure_controled &&  breathing_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_esp_value)
+          else if (breathing_config.is_volume_controled &&  breathing_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_esp_value)
           {
             breathing_state = breathing_delay.next_state;
           }

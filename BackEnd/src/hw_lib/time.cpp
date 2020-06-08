@@ -19,6 +19,13 @@ struct TimeStack
 
 } time_virtual_stack[TIME_MAX_VIRTUAL_ISR];
 
+volatile bool time_out = false;
+
+static void StopDelay(void)
+{
+    time_out = true;
+}
+
 uint32_t GetDiffTime(uint32_t actual, uint32_t prev)
 {
     if (actual >= prev)
@@ -63,10 +70,12 @@ uint32_t Micros(void)
 
 void Delay(uint32_t delay_milliseconds)
 {
-    uint32_t time=Millis();
-    volatile uint8_t i = 0;
-    while(GetDiffTime(Millis(),time)<delay_milliseconds){
-        i++;
+    time_out = false;
+    TimeVirtualISRAdd(3,StopDelay,delay_milliseconds);
+    while(1)
+    {
+        if(time_out)
+            break;
     }
     //delay(delay_milliseconds);
 }

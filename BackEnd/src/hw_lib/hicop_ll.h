@@ -29,10 +29,10 @@ uint8_t *HicopLLGetPayload(void);
 // check if data integrity 
 bool HicopLLIsValidData(void);
 
-// start a new tx
+// start a new tx frame
 void HicopLLSetHeader(uint8_t header);
 
-// add data to tx
+// add data to tx frame
 bool HicopLLAddPayload(uint8_t *payload, uint8_t length);
 bool HicopLLAddPayload(uint8_t payload);
 

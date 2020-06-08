@@ -9,8 +9,9 @@
 #include <stdint.h>
 #include <Arduino.h>
 
-//---------- counter 2 -------//
+//---------- counter Id -------//
 const int kHardwareCounterFlow1=0;
+
 //------------pwm id ------------//
 
 const int kHardwarePWMMotor1 = 1;
@@ -24,6 +25,8 @@ const int kHardwareBuzzerPin = 3; // review
 
 //driver enable pin
 const int kHardwareEnMotor1 = 4;  // review
+const int kHardwareEnMotor2 = -1;  // review
+const int kHardwareEnMotor3 = -1;  // review
 
 //driver step or pulse pin
 const int kHardwareStepMotor1 = 12;
@@ -77,41 +80,22 @@ const uint8_t kHardI2C = 0;
 // --------- HW parameter ---------//
 
 const uint16_t kACDResolution = 0x3ff;
-
+const float kBoardVoltage = 5.0;
 
 //--------- Functions interface --------//
 
+//i2c functions
 bool I2CBegin(int id);
 bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght);
 bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght);
 
 
-//configuration functions 
+
+
+//Timer/counter/PWM functions functions
 uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id);
 
-void PinConfigRisingIRS(int pin, void (*callback)(void));
-
-void PinConfigDigital(int pin, bool dir);
-
-void PinConfigAnalog(int pin);
-
 void CounterBegin(int counter_id);
-
-void UartConfigCallback(void (*callback)(void));
-void UartBegin(uint32_t baudrate);
-bool UartAvailable(void);
-void UartWrite(uint8_t data);
-uint8_t UartRead(void);
-
-
-//read digital level of a given pin
-bool PinReadDigital(int pin);
-
-//perform adc opration to get a "analog" value
-uint16_t PinReadAnalog(int pin);
-
-// drives an specific pint ro HIGH or low
-void PinSetDigital(int pin, bool level);
 
 //return true if PWM has a pending interrupt
 bool PWMIsPendingInterrupt(int pwm_id);
@@ -125,14 +109,34 @@ void Timer1msISR(void (*callback)(void));
 //this return de actual count of timer who is generating 1ms interrupt
 uint16_t Timer1msCount(void);
 
-//disable all interrupts
-void HardwareDisableISR(void);
-
-//enable all interrupts
-void HardwareEnableISR(void);
-
 //this function return the actual value of a counter
 uint32_t CounterGetValue(int counter_id);
+
+
+
+//GPIO functions
+void PinConfigRisingIRS(int pin, void (*callback)(void));
+void PinConfigDigital(int pin, bool dir);
+void PinConfigAnalog(int pin);
+
+//read digital level of a given pin
+bool PinReadDigital(int pin);
+
+//perform adc opration to get a "analog" value
+uint16_t PinReadAnalog(int pin);
+
+// drives an specific pint ro HIGH or low
+void PinSetDigital(int pin, bool level);
+
+
+
+//Uart Functions
+void UartConfigCallback(void (*callback)(void));
+void UartBegin(uint32_t baudrate);
+bool UartAvailable(void);
+void UartWrite(uint8_t data);
+uint8_t UartRead(void);
+
 
 
 #endif

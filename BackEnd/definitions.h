@@ -128,14 +128,14 @@ typedef enum
 } ValveIDs;
 
 //some valve constants definitions
-const bool kValveFullOpen = 1;
-const bool kValveFullClose = 0;
+const bool kValveFullOpen = true;
+const bool kValveFullClose = false;
 
 //sensor IDs
 typedef enum
 {
-  kSensorIdAirFlowIn,
-  SensorIdAirFlowOut,
+  kSensorIdAirFlowIn = 0x0,
+  kSensorIdAirFlowOut,
   kSensorIdPressureIn,
   kSensorIdPressureOut,
   kSensorIdTempMotor,
@@ -152,26 +152,29 @@ typedef union
   //working mode options
   bool is_tunning;            //calibration
   bool is_standby;            //no control
-  bool is_pressure_controled; // control por volumen o por presion
+  bool is_volume_controled;   //control by volumen or pressure
   bool is_assisted;           //true: ventilator should wait for patient trigger or false: wait for time trigger
+  bool is_power_off;          //Kill power source
 
-  //reference values
-  uint8_t FiO2;            // 21 - (100) [%]
-  uint16_t in_presure;     // 0 ~(65*1000) [cmH2O]
-  uint16_t volume_tidal;   // 0 ~(65*1000) [L/min]
-  uint16_t breathing_rate; //6*1000 ~ 40*1000 [breaths/min]
-  uint16_t ie_ratio;       //1:(1*1000) ~ 1:(3*1000)
+  //reference values 
+  uint8_t FiO2;               // 21 - (100) [%]
+  uint8_t in_presure;        // 0 ~(65) [cmH2O]
+  uint16_t volume_tidal;      // 200 ~(650) [mL]
+  uint8_t breathing_rate;    //6 ~ 40 [breaths/min]
+  uint8_t ie_ratio;          //1:(1) ~ 1:(3)
 
   //warnings
-  uint16_t maximun_in_pressure;  // 0 ~(65*1000) [cmH2O]
-  uint16_t maximun_out_pressure; // 0 ~(65*1000) [cmH2O]
-  uint16_t maximun_volume_tidal; // 0 ~(6500*10) [mL]
-  uint16_t minimun_in_pressure;  // 0 ~(65*1000) [cmH2O]
-  uint16_t minimun_out_pressure; // 0 ~(65*1000) [cmH2O]
-  uint16_t minimun_volume_tidal; // 0 ~(6500*10) [mL]
-
+  uint8_t maximun_in_pressure;  // 0 ~(65) [cmH2O]
+  uint8_t maximun_out_pressure; // 0 ~(65) [cmH2O]
+  uint16_t maximun_volume_tidal; // 0 ~(650) [mL]
+  uint8_t minimun_in_pressure;  // 0 ~(65) [cmH2O]
+  uint8_t minimun_out_pressure; // 0 ~(65) [cmH2O]
+  uint16_t minimun_volume_tidal; // 0 ~(650) [mL]
+  uint8_t minimun_peep;         // 0 ~(20) [cmH2O]
+  uint8_t maximun_apnea_time;   // 0 ~(30) [s]
   };
-  uint8_t all[22];
+
+  uint8_t all[17];
 
 } BreathingParameters;
 
@@ -182,16 +185,16 @@ const float kMaximun_deviation_ie_ratio = 0.05;       //[]
 typedef struct
 {
   //velocities
-  uint32_t motor_return_vel_bellows;            //mm/s
-  uint32_t motor_foward_const_flow_vel_bellows; //used when flow control is selected
+  float motor_return_vel_bellows;            //mm/s
+ // float motor_foward_const_flow_vel_bellows; //used when flow control is selected
 
   //control ref
-  uint16_t sensor_air_flow_ref; //control reference for flow controlled mode
-  uint16_t sensor_pressure_ref; //control reference for pressure controlled mode
+  float sensor_air_flow_ref; //control reference for flow controlled mode
+  float sensor_pressure_ref; //control reference for pressure controlled mode
 
   //valve position
-  uint32_t motor_position_o2_choke;  //valve postion to control O2 flow through pneumatic system
-  uint32_t motor_position_air_choke; //valve postion to control O2 flow through pneumatic system
+  float motor_position_o2_choke;  //valve postion to control O2 flow through pneumatic system
+  float motor_position_air_choke; //valve postion to control O2 flow through pneumatic system
 
   //times
   uint32_t breathing_in_puase_time;
@@ -203,10 +206,10 @@ typedef struct
   uint32_t motor_open_time_air_choke; //this time denotes the needed time  to reach FiO2%
 
   //triggers
-  uint32_t sensor_pressure_trigger_ins_value; //maximun pressure value to trigger an inspiration cicle
-  uint32_t sensor_pressure_trigger_esp_value; //maximun pressure value to trigger an espiration cicle
-  uint32_t sensor_flow_trigger_ins_value;     //minimun flow value to trigger an inspiration cicle
-  uint32_t sensor_flow_trigger_esp_value;     //minimun flow value to trigger an espiration cicle
+  float sensor_pressure_trigger_ins_value; //maximun pressure value to trigger an inspiration cicle
+  float sensor_pressure_trigger_esp_value; //maximun pressure value to trigger an espiration cicle
+  float sensor_flow_trigger_ins_value;     //minimun flow value to trigger an inspiration cicle
+  float sensor_flow_trigger_esp_value;     //minimun flow value to trigger an espiration cicle
 
 } BreathingDinamics;
 
@@ -217,20 +220,30 @@ const float kMotorDefaultVelO2Choke = 100.0;       //mm/s
 typedef union
 {
   struct{
-  uint32_t tidal;
-  uint32_t ie_ratio;
-  uint32_t breathing_rate;
-  uint32_t in_pressure;
-  uint32_t out_pressure;
-  uint32_t mixture_flow; //% 
-  uint32_t battery_level;
+  float tidal; //CC
+  float ie_ratio; //1:x
+  float breathing_rate; //bpm
+  float in_pressure; //cmH2O
+  float out_pressure;//cmH2O
+  float patient_flow; //slm
+
+  float battery_level;//%
+
+  float mixture_flow; //slm 
+  float patient_leakage;
+  float motor_temp;
+  float battery_temp;
+  float source_volatge;
+  float battery_voltage;
   };
 
   //for frontend pruporse
   struct 
   {
-    uint32_t fast_data[6];
-    uint32_t slow_data[1];
+    float fast_data[6];
+    float slow_data[1];
+    float anonymous_data[4];
+
   };
   
 }MeasureType;
@@ -247,17 +260,17 @@ enum{
 const uint8_t kTxBufferLength = 0xff;
 
 const uint8_t kTxFastDataId[]={
-  //uint32_t tidal;
+  // tidal;
   0x0,
-  //uint32_t ie_ratio;
+  // ie_ratio;
   0x1,
-  //uint32_t breathing_rate;
+  // breathing_rate;
   0x2,
-  //uint32_t in_pressure;
+  // in_pressure;
   0x3,
-  //uint32_t out_pressure;
+  // out_pressure;
   0x4,
-  //uint32_t mixture_flow;
+  // patient_flow;
   0x5,
 
 };

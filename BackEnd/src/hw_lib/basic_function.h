@@ -11,15 +11,12 @@
 //----------Driver varibles----------//
 extern DriverLed led_red;
 extern DriverLed buzzer;
-//extern Stepper motor_flow;
-//extern Stepper motor_valve_o2;
-//extern Stepper motor_valve_air;
 
 //this function bring a especific motor to a know position
-//return 0 is no succes o 1 if action was totaly complete
+//return 0 is no succes o 1 if action was totally complete
 bool DriverMotorMoveTo(int motor_id, float line_pos);
 
-//this function set the lin vel or rotation vel of motor
+//this function set the linear motor vel 
 //return 0 is no succes o 1 if action was totaly complete
 bool DriverMotorSetVel(int motor_id, float motor_vel);
 
@@ -31,8 +28,11 @@ bool PinInitialization(void);
 //return 0 if there are some error else return 1
 bool DriverValveOpenTo(int valve_id, bool valve_position);
 
-//return filtered pressure in cmH20*1000 or air flow in L/min*1000
-long int SensorGetValue(int sensor_id);
+//return filtered sensor values
+float SensorGetValue(int sensor_id);
+
+//this function returns true if sensor is out of safe operation area
+bool SensorGetAlarm(int sensor_id);
 
 //return actual motor position
 float DriverMotorActualPos(int motor_id);

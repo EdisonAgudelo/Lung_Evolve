@@ -57,15 +57,15 @@ DriverLed led_red;
 DriverLed buzzer;
 
 Stepper motor_bellow(kHardwareStepMotor1, kHardwareDirMotor1, kHardwareEnMotor1, kHardwarePWMMotor1);
-Stepper motor_valve_o2(kHardwareStepMotor2, kHardwareDirMotor2, kHardwarePWMMotor2);
-Stepper motor_valve_air(kHardwareStepMotor3, kHardwareDirMotor3, kHardwarePWMMotor3);
+Stepper motor_valve_o2(kHardwareStepMotor2, kHardwareDirMotor2, kHardwareEnMotor2, kHardwarePWMMotor2);
+Stepper motor_valve_air(kHardwareStepMotor3, kHardwareDirMotor3, kHardwareEnMotor3, kHardwarePWMMotor3);
 
 Flowmeter flow_in(kHardI2C, kFlowI2CAddrs);
 Flowmeter flow_out(kSoftI2C, kFlowI2CAddrs);
 WFlowmeter flow_mixture(kHardwareCounterFlow1, kCountsPerSLM);
 
 DiffPressure pressure_in(kHardwareDiffPressure1);
-DiffPressure pressure_out(kHardwareDiffPressure1);
+DiffPressure pressure_out(kHardwareDiffPressure2);
 
 Voltage voltage_bat(kHardwareVoltage1, kVoltageAttenuationBattery);
 Voltage voltage_source(kHardwareVoltage2, kVoltageAttenuationSource);
@@ -111,19 +111,19 @@ bool DriverValveOpenTo(int valve_id, bool valve_position)
   return true;
 }
 
-//return filtered pressure in cmH20*1000 or air flow in mL/min*1000
-long int SensorGetValue(int sensor_id)
+//return filtered sensor values
+float SensorGetValue(int sensor_id)
 {
   if(sensor_id<2)
-    return (uint32_t) (((Flowmeter *)Sensor[sensor_id])->GetFlow()*1000.0);
+    return ((Flowmeter *)Sensor[sensor_id])->GetFlow();
   if(sensor_id<4)
-    return (uint32_t) (((DiffPressure *)Sensor[sensor_id])->GetDiffPressure()*1000.0);
+    return ((DiffPressure *)Sensor[sensor_id])->GetDiffPressure();
   if(sensor_id<6)
-    return (uint32_t) (((Temp *)Sensor[sensor_id])->GetTemp()*1000.0);
+    return ((Temp *)Sensor[sensor_id])->GetTemp();
   if(sensor_id<8)
-    return (uint32_t) (((Voltage *)Sensor[sensor_id])->GetVoltage()*1000.0);
+    return ((Voltage *)Sensor[sensor_id])->GetVoltage();
   if(sensor_id<9)
-    return (uint32_t) (((WFlowmeter *)Sensor[sensor_id])->GetFlow()*1000.0);
+    return ((WFlowmeter *)Sensor[sensor_id])->GetFlow();
     
     return 0;
 }
@@ -155,10 +155,10 @@ bool DirverInitialization(void)
 {
 
   TimeVirtualISRBegin();
-   /*
+   
   DriverLedInit(&led_red, kHardwareLedRedPin); //config pin and initialize pin
   DriverLedInit(&buzzer, kHardwareBuzzerPin); //config pin and initialize pin
-*/
+
   motor_bellow.Begin();
   motor_valve_o2.Begin();
   motor_valve_air.Begin();

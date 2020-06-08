@@ -329,16 +329,6 @@ uint32_t PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
   return pwm_period;
 }
 
-inline void HardwareDisableISR(void)
-{
-  cli();
-}
-
-inline void HardwareEnableISR(void)
-{
-  sei();
-}
-
 bool PWMRequestInterrupt(int pwm_id)
 {
   g_pending_interrupt[pwm_id] = true;
