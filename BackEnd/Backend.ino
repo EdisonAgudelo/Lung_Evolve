@@ -126,37 +126,71 @@ void ComputeParameters(void)
 {
   uint8_t i;
 
-  //TODO: make necesary actions to calculte breathing_dinamic parameters
-  //if somo error config exist
-  //     main_error.working_configuration_not_initialized = true;
+  //this temporal variables is used to make first caculos a check if time result are sound.
+  //If everything is ok, transfer this values to breathing dinamics
+
+  int32_t breathing_in_puase_time;
+  int32_t breathing_in_time;
+  int32_t breathing_out_puase_time;
+  int32_t breathing_out_time;
+
+  //TODO: make necesary actions to calculte chocke valves position
 
   //if there is new config pending
   if (breathing_config_change)
   {
     breathing_config_change = false;
-    //here is where config parameters request is proecessed
 
-    //transfer all new parameters
-    for (i = 0; i < sizeof(breathing_config.all); i++)
-      breathing_config.all[i] = breathing_config_request.all[i];
+    //////////////here is where config parameters request is proecessed///////////////
+
+    //transfer flags
+    breathing_config.all[0] = breathing_config_request.all[0];
 
     //calculate new breathing dinamics
-    breathing_dinamic.breathing_in_puase_time = breathing_config.pause_time * 1000;
-    breathing_dinamic.breathing_in_time = 60000 / (breathing_config.breathing_rate * (breathing_config.ie_ratio + 1));
-    breathing_dinamic.breathing_out_puase_time = breathing_config.apnea_time * 1000;
-    breathing_dinamic.breathing_out_time = (60000 * breathing_config.ie_ratio) / (breathing_config.breathing_rate * (breathing_config.ie_ratio + 1));
+    breathing_in_puase_time = ((int32_t)breathing_config_request.pause_time) * 1000;
+    breathing_in_time = 60000 / (((int32_t)breathing_config_request.breathing_rate) * (((int32_t)breathing_config_request.ie_ratio) + 1));
+    breathing_out_puase_time = ((int32_t)breathing_config_request.apnea_time) * 1000;
+    breathing_out_time = (60000 * ((int32_t)breathing_config_request.ie_ratio)) / (((int32_t)breathing_config_request.breathing_rate) * (((int32_t)breathing_config_request.ie_ratio) + 1));
+
+    breathing_out_time -= breathing_out_puase_time;
+
+    if (breathing_out_time <= 0)
+    {
+      //calculus are no valid. End execution
+      main_error.working_configuration_not_initialized = true;
+      return;
+    }
 
     //if breathig is controled
     if (!breathing_config.is_assisted)
     {
-      breathing_dinamic.breathing_in_time -= breathing_dinamic.breathing_in_puase_time;
-      breathing_dinamic.breathing_out_time -= breathing_dinamic.breathing_out_puase_time;
+      breathing_in_time -= breathing_in_puase_time;
+
+      if (breathing_in_time <= 0)
+      {
+        //calculus are no valid. End execution
+        main_error.working_configuration_not_initialized = true;
+        return;
+      }
     }
     else
     {
-      //breathing_dinamic.breathing_in_puase_time and breathing_dinamic.breathing_out_puase_time
-      //are used to determine maximum pause times, so it no should be used on inspiration or espirarion time calculation
+      //breathing_dinamic.breathing_in_puase_time
+      //is used to determine maximum pause time, so it no should be used on inspiration  time calculation
     }
+
+    //transfer all new parameters
+    for (i = 1; i < sizeof(breathing_config.all); i++)
+      breathing_config.all[i] = breathing_config_request.all[i];
+
+
+    // transfer main calculations
+    breathing_dinamic.breathing_in_puase_time = breathing_in_puase_time;
+    breathing_dinamic.breathing_in_time = breathing_in_time;
+    breathing_dinamic.breathing_out_puase_time = breathing_out_puase_time;
+    breathing_dinamic.breathing_out_time = breathing_out_time;
+
+    //check other data
 
     //in the worst case, motors should travel all available distance
     breathing_dinamic.motor_return_vel_bellows = (kMotorMaxPos * 1000.0) / (((float)breathing_dinamic.breathing_out_time) * 0.9); //mm/s
@@ -166,29 +200,28 @@ void ComputeParameters(void)
     else
       breathing_dinamic.sensor_pressure_ref = breathing_config.in_presure;
 
-     breathing_dinamic.sensor_pressure_trigger_ins_value = (float)breathing_config.minimun_peep - (float)breathing_config.trigger_value; 
-     breathing_dinamic.sensor_pressure_trigger_esp_value;
-     breathing_dinamic.sensor_flow_trigger_ins_value;    
-     breathing_dinamic.sensor_flow_trigger_esp_value;    
-
-    /*
-  
-  //valve position
-  float motor_position_o2_choke;  //valve position to control O2 flow through pneumatic system
-  float motor_position_air_choke; //valve position to control O2 flow through pneumatic system
 
 
+    //espiration trigger is no supported rigth now
 
-  uint32_t motor_open_time_o2_choke;  //this time denotes the needed time  to reach FiO2%
-  uint32_t motor_open_time_air_choke; //this time denotes the needed time  to reach FiO2%
+    breathing_dinamic.sensor_pressure_trigger_ins_value = (float)breathing_config.minimun_peep - (float)breathing_config.trigger_value;
+    //breathing_dinamic.sensor_pressure_trigger_esp_value;
+    breathing_dinamic.sensor_flow_trigger_ins_value = (float)breathing_config.trigger_value; //flow deviation
+    //breathing_dinamic.sensor_flow_trigger_esp_value;
 
-  //triggers
- 
-*/
+    
+    
+    //----------review----------//
+    
+    breathing_dinamic.motor_position_o2_choke = ((float)breathing_config.FiO2 - kMinimunFiO2) * kConstantO2Choke;   //valve position to control O2 flow through pneumatic system
+    breathing_dinamic.motor_position_air_choke = ((float)breathing_config.FiO2 - kMinimunFiO2) * kConstantAirChoke; //valve position to control O2 flow through pneumatic system
+    
+    //--------------------------//
+
 
     main_error.working_configuration_not_initialized = false;
   }
-  //if ventilator is waithing parameters
+  //if ventilator is waithing parameters and nothing happen
   else if (main_state == kMainIdle)
   {
     main_error.working_configuration_not_initialized = true;
@@ -334,11 +367,11 @@ void WarningMonitor(void)
         main_warning.high_in_volume_tidal = system_measure.tidal > breathing_config.maximun_volume_tidal ? true : false;
         main_warning.low_in_volume_tidal = system_measure.tidal < breathing_config.minimun_volume_tidal ? true : false;
 
-        main_warning.high_breathing_rate = system_measure.breathing_rate > breathing_config.breathing_rate * (1.0 + kMaximun_deviation_breathing_rate) ? true : false;
-        main_warning.low_breathing_rate = system_measure.breathing_rate < breathing_config.breathing_rate * (1.0 - kMaximun_deviation_breathing_rate) ? true : false;
+        main_warning.high_breathing_rate = system_measure.breathing_rate > breathing_config.breathing_rate * (1.0 + kMaximunDeviationBreathingRate) ? true : false;
+        main_warning.low_breathing_rate = system_measure.breathing_rate < breathing_config.breathing_rate * (1.0 - kMaximunDeviationBreathingRate) ? true : false;
 
-        main_warning.high_ie_ratio = system_measure.ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximun_deviation_ie_ratio) ? true : false;
-        main_warning.low_ie_ratio = system_measure.ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximun_deviation_ie_ratio) ? true : false;
+        main_warning.high_ie_ratio = system_measure.ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximunDeviationIeRatio) ? true : false;
+        main_warning.low_ie_ratio = system_measure.ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximunDeviationIeRatio) ? true : false;
       }
       break;
 
@@ -349,11 +382,11 @@ void WarningMonitor(void)
         breathing_previous_state = breathing_state;
 
         //check warnings limits
-        main_warning.high_breathing_rate = system_measure.breathing_rate > breathing_config.breathing_rate * (1.0 + kMaximun_deviation_breathing_rate) ? true : false;
-        main_warning.low_breathing_rate = system_measure.breathing_rate < breathing_config.breathing_rate * (1.0 - kMaximun_deviation_breathing_rate) ? true : false;
+        main_warning.high_breathing_rate = system_measure.breathing_rate > breathing_config.breathing_rate * (1.0 + kMaximunDeviationBreathingRate) ? true : false;
+        main_warning.low_breathing_rate = system_measure.breathing_rate < breathing_config.breathing_rate * (1.0 - kMaximunDeviationBreathingRate) ? true : false;
 
-        main_warning.high_ie_ratio = system_measure.ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximun_deviation_ie_ratio) ? true : false;
-        main_warning.low_ie_ratio = system_measure.ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximun_deviation_ie_ratio) ? true : false;
+        main_warning.high_ie_ratio = system_measure.ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximunDeviationIeRatio) ? true : false;
+        main_warning.low_ie_ratio = system_measure.ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximunDeviationIeRatio) ? true : false;
       }
 
       break;
@@ -503,6 +536,7 @@ void FMSMainLoop(void)
       DriverMotorMoveTo(kMotorIdBellows, kMotorMinPos);
       DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_return_vel_bellows);
 
+    #if 0
       //close oxigen valve in first period
       if ((Millis() - breathing_state_ref_time) < breathing_dinamic.motor_open_time_air_choke)
       {
@@ -521,6 +555,13 @@ void FMSMainLoop(void)
         DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
         DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
       }
+  #else
+     DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
+        DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
+  #endif      
+
+     
+
 
       //----------transition events---------//
 
@@ -664,7 +705,7 @@ void FMSMainLoop(void)
 
           break;
         case kBreathingOutCicle:
-
+/*
           if (!breathing_config.is_volume_controled && system_measure.out_pressure > breathing_dinamic.sensor_pressure_trigger_esp_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
@@ -680,6 +721,7 @@ void FMSMainLoop(void)
           {
             //no trigger from patient
           }
+          */
           break;
 
         default:
@@ -853,9 +895,11 @@ void loop()
 }
 */
 
+/*
+
 // Motor testing
 
-/*
+
 void AnyCallback(void);
 
 uint32_t ref =0 ;
@@ -867,8 +911,8 @@ void setup()
   
   PinInitialization();
   DirverInitialization();
-  DriverMotorMoveTo(kMotorIdBellows, 60000);
-  DriverMotorSetVel(kMotorIdBellows, 1000);
+  DriverMotorMoveTo(kMotorIdBellows, 0.5);
+  DriverMotorSetVel(kMotorIdBellows, 0.5);
   
   Serial.begin(115200);
 

@@ -187,9 +187,11 @@ typedef union
 
 } BreathingParameters;
 
-const float kMaximun_deviation_breathing_rate = 0.3; //[]
-const float kMaximun_deviation_ie_ratio = 0.1;       //[]
-
+const float kMaximunDeviationBreathingRate = 0.3; //[]
+const float kMaximunDeviationIeRatio = 0.1;       //[]
+const float kMinimunFiO2 = 21.0;
+const float kConstantO2Choke = 1/(100.0-21.0);
+const float kConstantAirChoke = 1/(100.0-21.0);
 //This struct saves all working parameters, most of them are on execution calculated
 typedef struct
 {
@@ -211,14 +213,15 @@ typedef struct
   uint32_t breathing_out_puase_time;
   uint32_t breathing_out_time;
 
-  uint32_t motor_open_time_o2_choke;  //this time denotes the needed time  to reach FiO2%
-  uint32_t motor_open_time_air_choke; //this time denotes the needed time  to reach FiO2%
+  //pinch val
+//  uint32_t motor_open_time_o2_choke;  //this time denotes the needed time  to reach FiO2%
+//  uint32_t motor_open_time_air_choke; //this time denotes the needed time  to reach FiO2%
 
   //triggers
   float sensor_pressure_trigger_ins_value; //maximun pressure value to trigger an inspiration cicle
-  float sensor_pressure_trigger_esp_value; //maximun pressure value to trigger an espiration cicle
+  //float sensor_pressure_trigger_esp_value; //maximun pressure value to trigger an espiration cicle
   float sensor_flow_trigger_ins_value;     //minimun flow value to trigger an inspiration cicle
-  float sensor_flow_trigger_esp_value;     //minimun flow value to trigger an espiration cicle
+  //float sensor_flow_trigger_esp_value;     //minimun flow value to trigger an espiration cicle
 
 } BreathingDinamics;
 
