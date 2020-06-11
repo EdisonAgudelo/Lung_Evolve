@@ -2,7 +2,7 @@
 #define _DRIVER_VOLTAGE_H_
 
 
-#define VOLTAGE_UPDATE_PERIOD 1000 //update time each 2 minutes
+#define VOLTAGE_UPDATE_PERIOD 1000 //update voltage each second
 #define VOLTAGE_OVERSAMPLING 10 //total average data
 
 #include <stdint.h>

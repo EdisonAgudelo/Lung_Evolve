@@ -260,7 +260,7 @@ double PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
     }
   }
 
-  A = (double)(compare_value+1);
+  A = (double)(compare_value);
   B = (double)(F_CPU / preescaler[i]);
   pwm_period = 1000000.0*A/B;
 

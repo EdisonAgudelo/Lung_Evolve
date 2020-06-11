@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define W_FLOWMETER_UPDATE_RATE 50 //ms
+#define W_FLOWMETER_UPDATE_RATE 200 //ms
 
 
 class WFlowmeter

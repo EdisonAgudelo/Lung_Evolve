@@ -4,15 +4,17 @@
 #include "src/hw_lib/basic_function.h"
 #include "src/fw_lib/control.h"
 #include "src/hw_lib/time.h"
-#include "src/hw_lib/hicop.h"
+
+#define HICOP_USE_ARDUINO
+#include "src/hicop_lib/hicop.h"
 
 //error variable
 static ErrorType main_error;
 
 //warning variable
-static WarningType main_warning;      //saves all generated warnings
-static WarningType main_warning_mask; //enable warnings transmission
-static WarningType frontend_warning_copy;
+static WarningType main_warning;          //saves all generated warnings
+static WarningType main_warning_mask;     //enable warnings transmission
+static WarningType frontend_warning_copy; //to detect changes
 
 //state machine variables
 static MainStates main_state;
@@ -29,7 +31,7 @@ static bool breathing_config_change = false;
 static BreathingDinamics breathing_dinamic;
 
 //working measurenmet
-static MeasureType breathing_measure;
+static MeasureType system_measure;
 
 //control variables
 static ControlData control_pressure;
@@ -52,7 +54,7 @@ void MeasureVariables(void);
 //take any action in respect
 void WarningMonitor(void);
 
-//this function Takes warning flags and does some kind of acctions, also it does a better flag proecessing
+//this function Takes warning flags and does some kind of actions, also it does a better flag processing
 void WarningActions(void);
 
 //this function analyzes all config parameters to see if they are valid. if there are valid config, then calculte working parameters
@@ -60,11 +62,12 @@ void ComputeParameters(void);
 
 //this function init front end comunication
 void FrontEndCommunicationInit(void);
+
 //this function send and receive important data from front end MCU
 void FrontEndCommunicationLoop(void);
 
 //general initization
-/*
+
 void setup()
 {
   main_error.all = 0;   //reset all errors;
@@ -78,7 +81,7 @@ void setup()
 
   FMSMainInit();
   FrontEndCommunicationInit();
-}*/
+}
 
 void FMSMainInit(void)
 {
@@ -88,15 +91,15 @@ void FMSMainInit(void)
   main_error.working_configuration_not_initialized = true;
 
   //variable inizialitacion
-  main_state = kMainInit; //start in idle mode
-  breathing_state = kBreathingOutPause;
+  main_state = kMainInit;               //start in idle mode
+  breathing_state = kBreathingOutPause; //default state
 
   breathing_config.is_tunning = false;
   breathing_config.is_standby = true;
   breathing_config.is_volume_controled = true;
   breathing_config.is_assisted = false;
 
-  //set control parameters
+  //set PID control parameters
   ControlInit(&control_pressure, 1.0, 0.0, 0.0, -1.0);
   ControlInit(&control_air_flow, 1.0, 0.0, 0.0, -1.0);
 }
@@ -108,7 +111,7 @@ void FrontEndCommunicationInit(void)
   //init front end coppy to detect when any warning change state
   frontend_warning_copy.all = main_warning.all & main_warning_mask.all;
 }
-/*
+
 void loop()
 {
   MeasureVariables();
@@ -117,24 +120,77 @@ void loop()
   FMSMainLoop();
   DriverLoops();
   FrontEndCommunicationLoop();
-}*/
+}
 
 void ComputeParameters(void)
 {
+  uint8_t i;
 
   //TODO: make necesary actions to calculte breathing_dinamic parameters
   //if somo error config exist
   //     main_error.working_configuration_not_initialized = true;
+
+  //if there is new config pending
   if (breathing_config_change)
   {
-    //here is where config parameters request is proecess
     breathing_config_change = false;
+    //here is where config parameters request is proecessed
+
+    //transfer all new parameters
+    for (i = 0; i < sizeof(breathing_config.all); i++)
+      breathing_config.all[i] = breathing_config_request.all[i];
+
+    //calculate new breathing dinamics
+    breathing_dinamic.breathing_in_puase_time = breathing_config.pause_time * 1000;
+    breathing_dinamic.breathing_in_time = 60000 / (breathing_config.breathing_rate * (breathing_config.ie_ratio + 1));
+    breathing_dinamic.breathing_out_puase_time = breathing_config.apnea_time * 1000;
+    breathing_dinamic.breathing_out_time = (60000 * breathing_config.ie_ratio) / (breathing_config.breathing_rate * (breathing_config.ie_ratio + 1));
+
+    //if breathig is controled
+    if (!breathing_config.is_assisted)
+    {
+      breathing_dinamic.breathing_in_time -= breathing_dinamic.breathing_in_puase_time;
+      breathing_dinamic.breathing_out_time -= breathing_dinamic.breathing_out_puase_time;
+    }
+    else
+    {
+      //breathing_dinamic.breathing_in_puase_time and breathing_dinamic.breathing_out_puase_time
+      //are used to determine maximum pause times, so it no should be used on inspiration or espirarion time calculation
+    }
+
+    //in the worst case, motors should travel all available distance
+    breathing_dinamic.motor_return_vel_bellows = (kMotorMaxPos * 1000.0) / (((float)breathing_dinamic.breathing_out_time) * 0.9); //mm/s
+
+    if (breathing_config.is_volume_controled)
+      breathing_dinamic.sensor_air_flow_ref = breathing_config.volume_tidal;
+    else
+      breathing_dinamic.sensor_pressure_ref = breathing_config.in_presure;
+
+     breathing_dinamic.sensor_pressure_trigger_ins_value = (float)breathing_config.minimun_peep - (float)breathing_config.trigger_value; 
+     breathing_dinamic.sensor_pressure_trigger_esp_value;
+     breathing_dinamic.sensor_flow_trigger_ins_value;    
+     breathing_dinamic.sensor_flow_trigger_esp_value;    
+
+    /*
+  
+  //valve position
+  float motor_position_o2_choke;  //valve position to control O2 flow through pneumatic system
+  float motor_position_air_choke; //valve position to control O2 flow through pneumatic system
+
+
+
+  uint32_t motor_open_time_o2_choke;  //this time denotes the needed time  to reach FiO2%
+  uint32_t motor_open_time_air_choke; //this time denotes the needed time  to reach FiO2%
+
+  //triggers
+ 
+*/
+
     main_error.working_configuration_not_initialized = false;
   }
-  //if ventilator is breathing, only ignore function
-  else if (main_state != kMainBreathing)
+  //if ventilator is waithing parameters
+  else if (main_state == kMainIdle)
   {
-
     main_error.working_configuration_not_initialized = true;
   }
 }
@@ -148,20 +204,42 @@ void MeasureVariables(void)
   static uint32_t last_dt_ref_time = 0;
 
   static uint32_t inspiration_time = 1000; // any value to avoid 0 division
-  static uint32_t espiration_time = 2000; //any value
+  static uint32_t espiration_time = 2000;  //any value
   static uint32_t dt_time = 0;
-  static uint32_t integer_tidal;
   //other type variables
   static BreathingStates breathing_previous_state = breathing_state;
 
-  //only MeasureVariables all varibles if ventilator is normally working
+  static DataTimeRef measure_ref_time = {0, 0};
+
+  //check if slow data has new values
+  if (GetDiffTime(Millis(), measure_ref_time.slow_data) > kSlowDataPeriod)
+  {
+
+    measure_ref_time.slow_data = Millis();
+
+    //update values
+    system_measure.battery_voltage = SensorGetValue(kSensorIdVoltageBattery);
+    system_measure.battery_temp = SensorGetValue(kSensorIdTempBattery);
+    system_measure.source_volatge = SensorGetValue(kSensorIdVoltageSource);
+    system_measure.motor_temp = SensorGetValue(kSensorIdTempMotor);
+
+    //calculate values
+
+    //assumed linear discharger SoC (actually it isn't true but this is only a estimation)
+    system_measure.battery_level = (system_measure.battery_voltage - kBatMinVoltage) * kBatDischargerConversion;
+
+    if (system_measure.battery_level < 0.0)
+      system_measure.battery_level = 0.0;
+  }
+
+  //only Measure breathing variables if ventilator is breathing mode
   if (main_state == kMainBreathing)
   {
     //always save presure measure, and flow data
-    breathing_measure.in_pressure = SensorGetValue(kSensorIdPressureIn);
-    breathing_measure.out_pressure = SensorGetValue(kSensorIdPressureOut);
-    breathing_measure.mixture_flow = SensorGetValue(kSensorIdAirFlowMixture);
-    breathing_measure.patient_flow = SensorGetValue(kSensorIdAirFlowIn)+SensorGetValue(kSensorIdAirFlowOut); 
+    system_measure.in_pressure = SensorGetValue(kSensorIdPressureIn);
+    system_measure.out_pressure = SensorGetValue(kSensorIdPressureOut);
+    system_measure.mixture_flow = SensorGetValue(kSensorIdAirFlowMixture);
+    system_measure.patient_flow = SensorGetValue(kSensorIdAirFlowIn) + SensorGetValue(kSensorIdAirFlowOut);
 
     switch (breathing_state)
     {
@@ -175,9 +253,11 @@ void MeasureVariables(void)
         inspiration_time = last_inspiration_ref_time - last_espiration_ref_time;
 
         //measure
-        breathing_measure.ie_ratio = (espiration_time) / inspiration_time;
-        breathing_measure.breathing_rate = 60000 / (espiration_time + inspiration_time);
-        breathing_measure.tidal = breathing_measure.patient_volume / inspiration_time;
+        system_measure.ie_ratio = (espiration_time) / inspiration_time;
+        system_measure.breathing_rate = 60000 / (espiration_time + inspiration_time);
+
+        //maximum value is tidal reference
+        system_measure.tidal = system_measure.patient_volume;
       }
       break;
 
@@ -191,18 +271,17 @@ void MeasureVariables(void)
         espiration_time = last_espiration_ref_time - last_inspiration_ref_time;
 
         //measure
-        breathing_measure.ie_ratio = (espiration_time) / inspiration_time;
-        breathing_measure.breathing_rate = 60000 / (espiration_time + inspiration_time);
+        system_measure.ie_ratio = (espiration_time) / inspiration_time;
+        system_measure.breathing_rate = 60000 / (espiration_time + inspiration_time);
 
-        last_dt_ref_time = Millis(); //reset dt;
-        breathing_measure.patient_leakage = integer_tidal;
-        integer_tidal = 0;           //reset integer
+        //residual volume (probably positive) at the end of espiration cicle is
+        //all leakage volume
+        system_measure.patient_leakage = system_measure.patient_volume;
+
+        //reset integer to avoid error accumulation
+        last_dt_ref_time = Millis();       //reset dt;
+        system_measure.patient_volume = 0; //reset integer
       }
-
-      //integer flow
-      dt_time = Millis() - last_dt_ref_time;
-      last_dt_ref_time = Millis();
-      integer_tidal += breathing_measure.patient_flow * dt_time;
 
       break;
 
@@ -210,6 +289,11 @@ void MeasureVariables(void)
 
       break;
     }
+
+    //integer flow
+    dt_time = GetDiffTime(Millis(), last_dt_ref_time);
+    last_dt_ref_time = Millis();
+    system_measure.patient_volume += system_measure.patient_flow * dt_time;
   }
 }
 
@@ -247,14 +331,14 @@ void WarningMonitor(void)
         breathing_previous_state = breathing_state;
         //check warnings limits
 
-        main_warning.high_in_volume_tidal = breathing_measure.tidal > breathing_config.maximun_volume_tidal ? true : false;
-        main_warning.low_in_volume_tidal = breathing_measure.tidal < breathing_config.minimun_volume_tidal ? true : false;
+        main_warning.high_in_volume_tidal = system_measure.tidal > breathing_config.maximun_volume_tidal ? true : false;
+        main_warning.low_in_volume_tidal = system_measure.tidal < breathing_config.minimun_volume_tidal ? true : false;
 
-        main_warning.high_breathing_rate = breathing_measure.breathing_rate > breathing_config.breathing_rate * (1.0 + kMaximun_deviation_breathing_rate) ? true : false;
-        main_warning.low_breathing_rate = breathing_measure.breathing_rate < breathing_config.breathing_rate * (1.0 - kMaximun_deviation_breathing_rate) ? true : false;
+        main_warning.high_breathing_rate = system_measure.breathing_rate > breathing_config.breathing_rate * (1.0 + kMaximun_deviation_breathing_rate) ? true : false;
+        main_warning.low_breathing_rate = system_measure.breathing_rate < breathing_config.breathing_rate * (1.0 - kMaximun_deviation_breathing_rate) ? true : false;
 
-        main_warning.high_ie_ratio = breathing_measure.ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximun_deviation_ie_ratio) ? true : false;
-        main_warning.low_ie_ratio = breathing_measure.ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximun_deviation_ie_ratio) ? true : false;
+        main_warning.high_ie_ratio = system_measure.ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximun_deviation_ie_ratio) ? true : false;
+        main_warning.low_ie_ratio = system_measure.ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximun_deviation_ie_ratio) ? true : false;
       }
       break;
 
@@ -265,11 +349,11 @@ void WarningMonitor(void)
         breathing_previous_state = breathing_state;
 
         //check warnings limits
-        main_warning.high_breathing_rate = breathing_measure.breathing_rate > breathing_config.breathing_rate * (1.0 + kMaximun_deviation_breathing_rate) ? true : false;
-        main_warning.low_breathing_rate = breathing_measure.breathing_rate < breathing_config.breathing_rate * (1.0 - kMaximun_deviation_breathing_rate) ? true : false;
+        main_warning.high_breathing_rate = system_measure.breathing_rate > breathing_config.breathing_rate * (1.0 + kMaximun_deviation_breathing_rate) ? true : false;
+        main_warning.low_breathing_rate = system_measure.breathing_rate < breathing_config.breathing_rate * (1.0 - kMaximun_deviation_breathing_rate) ? true : false;
 
-        main_warning.high_ie_ratio = breathing_measure.ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximun_deviation_ie_ratio) ? true : false;
-        main_warning.low_ie_ratio = breathing_measure.ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximun_deviation_ie_ratio) ? true : false;
+        main_warning.high_ie_ratio = system_measure.ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximun_deviation_ie_ratio) ? true : false;
+        main_warning.low_ie_ratio = system_measure.ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximun_deviation_ie_ratio) ? true : false;
       }
 
       break;
@@ -282,14 +366,14 @@ void WarningMonitor(void)
     // only analize warnings in respective cicle
     if (breathing_previous_state == kBreathingOutCicle)
     {
-      main_warning.high_out_pressure = breathing_measure.out_pressure > breathing_config.maximun_out_pressure ? true : false;
-      main_warning.low_out_pressure = breathing_measure.out_pressure < breathing_config.minimun_out_pressure ? true : false;
+      main_warning.high_out_pressure = system_measure.out_pressure > breathing_config.maximun_out_pressure ? true : false;
+      main_warning.low_out_pressure = system_measure.out_pressure < breathing_config.minimun_out_pressure ? true : false;
     }
     else //(breathing_previous_state == kBreathinginCicle)
     {
       //check warnings
-      main_warning.high_in_pressure = breathing_measure.in_pressure > breathing_config.maximun_in_pressure ? true : false;
-      main_warning.low_in_pressure = breathing_measure.in_pressure < breathing_config.minimun_in_pressure ? true : false;
+      main_warning.high_in_pressure = system_measure.in_pressure > breathing_config.maximun_in_pressure ? true : false;
+      main_warning.low_in_pressure = system_measure.in_pressure < breathing_config.minimun_in_pressure ? true : false;
     }
   }
   else
@@ -518,7 +602,7 @@ void FMSMainLoop(void)
         DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
         DriverMotorSetVel(kMotorIdBellows,
                           ControlExecute(&control_pressure,
-                                         ((float)(breathing_dinamic.sensor_pressure_ref - breathing_measure.in_pressure)) / 1000.0));
+                                         ((float)(breathing_dinamic.sensor_pressure_ref - system_measure.in_pressure)) / 1000.0));
       }
       else
       {
@@ -529,7 +613,7 @@ void FMSMainLoop(void)
         DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
         DriverMotorSetVel(kMotorIdBellows,
                           ControlExecute(&control_air_flow,
-                                         ((float)(breathing_dinamic.sensor_air_flow_ref - breathing_measure.mixture_flow)) / 10.0));
+                                         ((float)(breathing_dinamic.sensor_air_flow_ref - system_measure.mixture_flow)) / 10.0));
 #else
         //version 2
         DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
@@ -565,11 +649,11 @@ void FMSMainLoop(void)
         switch (breathing_delay.next_state)
         {
         case kBreathingInCicle:
-          if (!breathing_config.is_volume_controled && breathing_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
+          if (!breathing_config.is_volume_controled && system_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
           }
-          else if (breathing_config.is_volume_controled && breathing_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
+          else if (breathing_config.is_volume_controled && system_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
           }
@@ -581,13 +665,13 @@ void FMSMainLoop(void)
           break;
         case kBreathingOutCicle:
 
-          if (!breathing_config.is_volume_controled && breathing_measure.out_pressure > breathing_dinamic.sensor_pressure_trigger_esp_value)
+          if (!breathing_config.is_volume_controled && system_measure.out_pressure > breathing_dinamic.sensor_pressure_trigger_esp_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
           }
           //this case should be tested
 #if 0
-          else if (breathing_config.is_volume_controled &&  breathing_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_esp_value)
+          else if (breathing_config.is_volume_controled &&  system_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_esp_value)
           {
             breathing_state = breathing_delay.next_state;
           }
@@ -658,7 +742,7 @@ void FMSDelaySet(FMSDelay *object, uint32_t delay_time, int nex_state)
 
 void FrontEndCommunicationLoop(void)
 {
-  static TxDataTimeRef last_update_time = {0, 0};
+  static DataTimeRef last_update_time = {0, 0};
 
   WarningType main_warning_masked;
 
@@ -692,7 +776,7 @@ void FrontEndCommunicationLoop(void)
   else
   {
     //check if it is time to send fast data
-    if (GetDiffTime(Millis(), last_update_time.fast_data) >= kTxFastDataPeriod)
+    if (GetDiffTime(Millis(), last_update_time.fast_data) >= kFastDataPeriod)
     {
       last_update_time.fast_data = Millis();
 
@@ -702,19 +786,19 @@ void FrontEndCommunicationLoop(void)
         for (i = 0; i < sizeof(kTxFastDataId); i++)
         {
           transfer_buffer[transfer_pointer++] = kTxFastDataId[i];
-          transfer_buffer[transfer_pointer++] = (uint8_t)(breathing_measure.fast_data[i] / 1000);
+          transfer_buffer[transfer_pointer++] = (uint8_t)(system_measure.fast_data[i] / 1000);
         }
       }
     }
     //check if it is time to send low data
-    if (GetDiffTime(Millis(), last_update_time.slow_data) >= kTxSlowDataPeriod)
+    if (GetDiffTime(Millis(), last_update_time.slow_data) >= kSlowDataPeriod)
     {
       last_update_time.slow_data = Millis();
 
       for (i = 0; i < sizeof(kTxSlowDataId); i++)
       {
         transfer_buffer[transfer_pointer++] = kTxSlowDataId[i];
-        transfer_buffer[transfer_pointer++] = (uint8_t)(breathing_measure.slow_data[i] / 1000);
+        transfer_buffer[transfer_pointer++] = (uint8_t)(system_measure.slow_data[i] / 1000);
       }
     }
 
@@ -771,8 +855,7 @@ void loop()
 
 // Motor testing
 
-
-
+/*
 void AnyCallback(void);
 
 uint32_t ref =0 ;
@@ -785,7 +868,7 @@ void setup()
   PinInitialization();
   DirverInitialization();
   DriverMotorMoveTo(kMotorIdBellows, 60000);
-  DriverMotorSetVel(kMotorIdBellows, 6000);
+  DriverMotorSetVel(kMotorIdBellows, 1000);
   
   Serial.begin(115200);
 
@@ -802,10 +885,10 @@ void loop()
   {
     ref = Millis();
     Serial.print("ok vel: ");
-    //Serial.println((DriverMotorActualPos(kMotorIdBellows)-ref2)/0.1);
-    Serial.println(DriverMotorActualPos(kMotorIdBellows));
+    Serial.println((DriverMotorActualPos(kMotorIdBellows)-ref2)/0.1);
+    //Serial.println(DriverMotorActualPos(kMotorIdBellows));
     ref2 = DriverMotorActualPos(kMotorIdBellows);
-    DriverMotorMoveTo(kMotorIdBellows, 0);
+    //DriverMotorMoveTo(kMotorIdBellows, 0);
   }
 
   DriverLoops();
@@ -816,7 +899,7 @@ void AnyCallback(void)
   Serial.print(Micros());
   Serial.println(" ok\n");
 }
-
+*/
 
 //for comunication layer test
 /*
@@ -834,5 +917,6 @@ void setup()
 void loop()
 {
   HicopLoop();
-  DriverLoops();
-}*/
+ // DriverLoops();
+}
+*/

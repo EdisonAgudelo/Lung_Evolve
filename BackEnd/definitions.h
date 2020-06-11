@@ -157,29 +157,38 @@ typedef union
   bool is_power_off;          //Kill power source
 
   //reference values 
-  uint8_t FiO2;               // 21 - (100) [%]
-  uint8_t in_presure;        // 0 ~(65) [cmH2O]
-  uint16_t volume_tidal;      // 200 ~(650) [mL]
-  uint8_t breathing_rate;    //6 ~ 40 [breaths/min]
-  uint8_t ie_ratio;          //1:(1) ~ 1:(3)
+  bool trigger_source;        //pressure true or flow false
+  
+  bool reserved1[2];          //no has especial meaning
+
+  uint8_t trigger_value;      //1 ~ 3 slm or -3 ~ -5 cmh20
+  uint8_t FiO2;               // 21 - 100 [%]
+  uint8_t in_presure;         // 0 ~ 65 [cmH2O]
+  uint16_t volume_tidal;      // 200 ~ 650 [mL]
+  uint8_t breathing_rate;     //6 ~ 40 [breaths/min]
+  uint8_t ie_ratio;           //1:1 ~ 1:3 
+  
+  uint8_t apnea_time;         // 0 ~ 30 [s]
+  uint8_t pause_time;         // 0 ~ 30 [s]
 
   //warnings
-  uint8_t maximun_in_pressure;  // 0 ~(65) [cmH2O]
-  uint8_t maximun_out_pressure; // 0 ~(65) [cmH2O]
-  uint16_t maximun_volume_tidal; // 0 ~(650) [mL]
-  uint8_t minimun_in_pressure;  // 0 ~(65) [cmH2O]
-  uint8_t minimun_out_pressure; // 0 ~(65) [cmH2O]
-  uint16_t minimun_volume_tidal; // 0 ~(650) [mL]
-  uint8_t minimun_peep;         // 0 ~(20) [cmH2O]
-  uint8_t maximun_apnea_time;   // 0 ~(30) [s]
+  uint8_t maximun_in_pressure;  // 0 ~ 65 [cmH2O]
+  uint8_t minimun_in_pressure;  // 0 ~ 65 [cmH2O]
+  uint8_t maximun_out_pressure; // 0 ~ 65 [cmH2O]
+  uint8_t minimun_out_pressure; // 0 ~ 65 [cmH2O]
+  uint16_t maximun_volume_tidal; // 0 ~ 650  [mL]
+  uint16_t minimun_volume_tidal; // 0 ~ 650  [mL]
+  uint8_t minimun_peep;         // 0 ~ 20 [cmH2O]
+  uint16_t maximum_leakage;      //0-600 [mL]
+
   };
 
-  uint8_t all[17];
+  uint8_t all[21];
 
 } BreathingParameters;
 
-const float kMaximun_deviation_breathing_rate = 0.05; //[]
-const float kMaximun_deviation_ie_ratio = 0.05;       //[]
+const float kMaximun_deviation_breathing_rate = 0.3; //[]
+const float kMaximun_deviation_ie_ratio = 0.1;       //[]
 
 //This struct saves all working parameters, most of them are on execution calculated
 typedef struct
@@ -193,10 +202,10 @@ typedef struct
   float sensor_pressure_ref; //control reference for pressure controlled mode
 
   //valve position
-  float motor_position_o2_choke;  //valve postion to control O2 flow through pneumatic system
-  float motor_position_air_choke; //valve postion to control O2 flow through pneumatic system
+  float motor_position_o2_choke;  //valve position to control O2 flow through pneumatic system
+  float motor_position_air_choke; //valve position to control O2 flow through pneumatic system
 
-  //times
+  //timing
   uint32_t breathing_in_puase_time;
   uint32_t breathing_in_time;
   uint32_t breathing_out_puase_time;
@@ -217,76 +226,85 @@ const float kMotorDefaultReturnVelBellows = 100.0; //mm/s
 const float kMotorDefaultVelAirChoke = 100.0;      //mm/s 
 const float kMotorDefaultVelO2Choke = 100.0;       //mm/s
 
+//this struct saves all measured data
 typedef union
 {
   struct{
-  float tidal; //CC
-  float ie_ratio; //1:x
-  float breathing_rate; //bpm
-  float in_pressure; //cmH2O
-  float out_pressure;//cmH2O
-  float patient_flow; //slm
-  float patient_volume; //CC
+  float in_pressure; //cmH2O x
+  float out_pressure;//cmH2O x
+  float patient_flow; //slm x
+  float patient_volume; //instantaneous value x
 
-  float battery_level;//%
+  float tidal; //L x
+  float breathing_rate; //bpm x
+  float ie_ratio; //1:x x
+  float battery_level;//% 
+  float patient_leakage; //L x
 
-  float mixture_flow; //slm 
-  float patient_leakage;
-  float motor_temp;
-  float battery_temp;
-  float source_volatge;
-  float battery_voltage;
+  float mixture_flow; //slm x
+  float motor_temp; // °C x
+  float battery_temp; // °C x
+  float source_volatge; // V x
+  float battery_voltage; // V x
   };
 
   //for frontend pruporse
   struct 
   {
-    float fast_data[6];
-    float slow_data[1];
+    float fast_data[4];
+    float slow_data[3];
     float anonymous_data[4];
 
   };
+
+  float all[14];
   
 }MeasureType;
+
+const float kBatMinVoltage = 10.5; //V
+const float kBatMaxVolatge = 13.4; //
+
+const float kBatDischargerConversion = 100.0/(kBatMaxVolatge - kBatMinVoltage); // %/V
 
 
 
 //////////////////////// front end comunication definitions ///////////////////
 
 enum{
-  kTxFastDataPeriod = 40, //ms each kTxDataPeriod ms send data to mcu
-  kTxSlowDataPeriod = 10000 //ms each kTxDataPeriod ms send data to mcu
+  kFastDataPeriod = 40, //ms each kTxDataPeriod ms send data to mcu
+  kSlowDataPeriod = 5000 //ms each kTxDataPeriod ms send data to mcu
 };
 
+//temporal buffer used to build a receive all frames from other mcu
 const uint8_t kTxBufferLength = 0xff;
 
 const uint8_t kTxFastDataId[]={
   // tidal;
   0x0,
-  // ie_ratio;
-  0x1,
-  // breathing_rate;
-  0x2,
   // in_pressure;
-  0x3,
+  0x1,
   // out_pressure;
-  0x4,
+  0x2,
   // patient_flow;
-  0x5,
-
+  0x3
 };
 
 const uint8_t kTxSlowDataId[]=
 {
+  // breathing_rate;
+  0x4,
+  // ie_ratio;
+  0x5,
   //battery_level
-  0x6,
+  0x6
+
 };
 
 typedef struct 
 {
   uint32_t fast_data;
   uint32_t slow_data;
-} TxDataTimeRef;
+} DataTimeRef;
 
 const uint8_t kTxAlarmId[] = {
   //bool apnea_alarm:1;

@@ -95,9 +95,10 @@ void Stepper::SetLimitPin(int _pin_limit_backward, int _pin_limit_forward)
 void Stepper::HardStop(void)
 {
     hard_stop_flag = true;
-    //check if it is posible to change parameter an avoid sinc errors
+    //don not excute if there is a soft stop running
     if (!soft_stop_flag)
-    { //don not excute if there is a soft stop running
+    {
+        //check if it is posible to change parameter an avoid sinc errors
         if (!no_change_param)
         {
             //calculate the distance traveled since last update
@@ -115,10 +116,8 @@ void Stepper::HardStop(void)
             if (0 <= pin_enable)
                 PinSetDigital(pin_enable, !kStepEnable);
 
- 
-
             //detach timer interrupt
-            TimeVirtualISRAdd(id, nullptr, 0); 
+            TimeVirtualISRAdd(id, nullptr, 0);
 
             //update state
             state = kStepperStateStop;
@@ -142,17 +141,26 @@ void Stepper::SoftStop(void)
     if (!hard_stop_flag)
     {
         soft_stop_flag = true;
-        //check if it is posible to change parameter to avoid sinc errors
+
+        //hard_stop will not enter here
+
+        //check if can move parameter
         if (!no_change_param)
         {
-
             vel_actual = 0;
 
-            //calculate the distance traveled since last update
-            CalculateDistance();
+            //if soft stop is executed from other non interrupt source
+            if (!soft_stop_request)
+            {
 
-            //disconet pwm output
-            PinSetDigital(pin_step, !kStepLevel);
+                //disconet pwm output
+                PinSetDigital(pin_step, !kStepLevel);
+                //calculate the distance traveled since last update
+                CalculateDistance();
+            }
+
+            //clear any soft request
+            soft_stop_request = false;
 
             switch (state)
             {
@@ -169,9 +177,12 @@ void Stepper::SoftStop(void)
                 return; //a hard stop was execute
                 break;
             }
-            Serial.print(pos_actual); Serial.print(" "); Serial.println(missed_steps);
+            /*
+            Serial.print(pos_actual);
+            Serial.print(" ");
+            Serial.println(missed_steps);*/
 
-            missed_steps = missed_steps < 0 ? 0 : missed_steps;
+            missed_steps = (missed_steps - STEPPER_FINE_ADJ) < 0 ? 0 : (missed_steps - STEPPER_FINE_ADJ);
 
             //try to get reach position
             while (0 != missed_steps-- && (0 > pin_end || !PinReadDigital(pin_end)))
@@ -185,8 +196,9 @@ void Stepper::SoftStop(void)
             //if while ends due to end switch
             if (0 <= pin_end && PinReadDigital(pin_end))
                 pos_target = pos_actual; //force  position
-            else{
-               // pos_target -= pos_adj;
+            else
+            {
+                // pos_target -= pos_adj;
                 pos_actual = pos_target; //force  position
             }
             //disable driver
@@ -204,9 +216,9 @@ void Stepper::Loop(void)
     uint32_t remain_distance;
     bool update_param;
 
-    if(soft_stop_request){
-        soft_stop_request = false;
-        SoftStop();
+    if (soft_stop_request)
+    {
+        SoftStop(); //this function clear soft_stop_request flag
     }
 
     if (STEPPER_UPDATE_PERIOD <= GetDiffTime(Millis(), update_prev_time))
@@ -227,8 +239,8 @@ void Stepper::Loop(void)
 
         case kStepperStateBackward:
             remain_distance = pos_target < pos_actual ? (uint32_t)(pos_actual - pos_target) : 0;
-            
-            StepperStateBoth:
+
+        StepperStateBoth:
             update_param = false;
 
             // check if motor is close to target position and it is moving
@@ -272,8 +284,7 @@ void Stepper::Loop(void)
                 update_param = true;
 
                 //recalculate brake distance
-                brake_distance = (vel_actual * vel_actual) / ((int32_t)(acc_value*2*((uint32_t)1000/STEPPER_UPDATE_PERIOD)));
-
+                brake_distance = (vel_actual * vel_actual) / ((int32_t)(acc_value * 2 * ((uint32_t)1000 / STEPPER_UPDATE_PERIOD)));
             }
 
             //if actual vel reach 0 value stop driver.
@@ -289,7 +300,7 @@ void Stepper::Loop(void)
                 //step_period = 1000000000 / vel_actual;
 
                 //uptade pwm frecuency and attach pin, compute step period
-                step_period=PWMConfigFrecuency((uint32_t)vel_actual, pwm_id);
+                step_period = PWMConfigFrecuency((uint32_t)vel_actual, pwm_id);
 
                 //compute with this velocity how much time it will require to reach pos target
                 CalculateTime();
@@ -297,10 +308,10 @@ void Stepper::Loop(void)
                 //set interrupt for stop motor in the correct moment
                 TimeVirtualISRAdd(id, timeout_isr[id], estimate_time - STEPPER_TIME_GAP); //stop me in the estimated time
 
-                Serial.println(step_period);
+                // Serial.println(step_period);
 
                 //if there is not more time,  trigger stop
-                if (0 >= (estimate_time-STEPPER_TIME_GAP))
+                if (0 >= (estimate_time - STEPPER_TIME_GAP))
                     SoftStop();
             }
 
@@ -309,15 +320,13 @@ void Stepper::Loop(void)
         case kStepperStateStop:
             // check if user set a position
 
-            brake_distance=0;
+            brake_distance = 0;
 
             //check if an pos request is active
             if (pos_change_request)
             {
                 pos_change_request = false; //end request
                 pos_target = pos_request;
-                //pos_adj = ((pos_target-pos_actual) * STEPPER_FINE_ADJ) /STEPPER_FINE_ADJ_DIV;
-                //pos_target += pos_adj;
             }
 
             //check if this driver can jump to foward
@@ -375,6 +384,16 @@ void Stepper::ISRHandle(int type)
         break;
 
     case kSteeperISRTypeTimeOut:
+
+        //detach pwm output
+        PinSetDigital(pin_step, !kStepLevel);
+
+        //avoid hard stop execution
+        soft_stop_flag = true;
+
+        CalculateDistance();
+
+        //request a full soft stop
         soft_stop_request = true;
         break;
 
@@ -402,7 +421,7 @@ void Stepper::SetPos(int32_t _pos)
 
 void Stepper::CalculateDistance(void)
 {
-    
+
     double enlapsed_time = GetDiffTimeUs(MicrosDouble(), count_prev_time);
     count_prev_time = MicrosDouble();
 
@@ -410,7 +429,7 @@ void Stepper::CalculateDistance(void)
         switch (state)
         {
         case kStepperStateFoward:
-/*
+            /*
             if (!PWMIsPendingInterrupt(pwm_id))
             {
                 PWMRequestInterrupt(pwm_id);
@@ -421,7 +440,7 @@ void Stepper::CalculateDistance(void)
 
             break;
         case kStepperStateBackward:
-/*
+            /*
             if (!PWMIsPendingInterrupt(pwm_id))
             {
                 PWMRequestInterrupt(pwm_id);
@@ -429,12 +448,11 @@ void Stepper::CalculateDistance(void)
             }
 */
             pos_actual -= (int32_t)(enlapsed_time / step_period);
-            
+
             break;
         default:
             break;
         }
-
 }
 
 void Stepper::CalculateTime(void)
@@ -461,7 +479,7 @@ void Stepper::CalculateTime(void)
         if (delta_distance < 0)
             estimate_time = 0;
         else
-            estimate_time =(int32_t)(((double)delta_distance)*(step_period)/1000.0);
+            estimate_time = (int32_t)(((double)delta_distance) * (step_period) / 1000.0);
     }
 }
 
@@ -477,24 +495,23 @@ int32_t Stepper::GetPos(void)
 
 float Stepper::GetPosmm(void)
 {
-    return pos_actual/steps_per_mm;
+    return pos_actual / steps_per_mm;
 }
-
 
 void Stepper::SetVelmm(float _vel_mm_s)
 {
-    SetVel((int32_t)(_vel_mm_s*steps_per_mm));
+    SetVel((int32_t)(_vel_mm_s * steps_per_mm));
 }
 
 void Stepper::SetPosmm(float _pos_mm)
 {
-    SetPos((int32_t)(_pos_mm*steps_per_mm));
+    SetPos((int32_t)(_pos_mm * steps_per_mm));
 }
 
 void Stepper::SetDriverConfig(uint16_t _steps_per_rev, float _mm_per_rev, uint8_t _u_steps)
 {
-    u_steps=_u_steps;
-    steps_per_mm = (_steps_per_rev * _u_steps) / _mm_per_rev; 
+    u_steps = _u_steps;
+    steps_per_mm = (_steps_per_rev * _u_steps) / _mm_per_rev;
 }
 
 /////////////// define n PinXISR acording to STEPPER_MAX_COUNT ////////////

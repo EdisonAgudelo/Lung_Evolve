@@ -1,3 +1,6 @@
 [submodule "other_libraries"]
 	path = other_libraries
 	url = https://github.com/itead/ITEADLIB_Arduino_Nextion
+[submodule "BackEnd/src/hicop_lib"]
+	path = BackEnd/src/hicop_lib
+	url = https://github.com/EdisonAgudelo/Hicop.git
