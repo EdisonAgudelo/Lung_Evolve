@@ -14,18 +14,18 @@
 
 //--------motor parameters-------//
 
-//const uint8_t kMotorBellowUSteps = 16; //review
-const uint8_t kMotorBellowUSteps = 8; //review
+const uint8_t kMotorBellowUSteps = 16; //review
+//const uint8_t kMotorBellowUSteps = 8; //review
 const uint8_t kMotorO2USteps = 8; //review
 const uint8_t kMotorAirUSteps = 8; //review
 
-//const uint16_t kMotorBellowSteps = 200; //review
-const uint16_t kMotorBellowSteps = 32; //review
+const uint16_t kMotorBellowSteps = 200; //review
+//const uint16_t kMotorBellowSteps = 32; //review
 const uint16_t kMotorO2Steps = 32; //review
 const uint16_t kMotorAirSteps = 32; //review
 
-//const float kMotorBellowmmRev = 1; //review
-const float kMotorBellowmmRev = (1.27/63.8); //review
+const float kMotorBellowmmRev = 100.0; //review
+//const float kMotorBellowmmRev = (1.27/63.8); //review
 const float kMotorO2mmRev = (1.27/63.8); //review
 const float kMotorAirmmRev = (1.27/63.8); //review
 

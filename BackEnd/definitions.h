@@ -61,50 +61,53 @@ typedef union {
   {
 
 //mechanical ventilator alarms
-    bool apnea_alarm:1;
+    bool apnea:1; //x
 
-    bool high_breathing_rate : 1;
-    bool low_breathing_rate : 1;
+    bool high_breathing_rate : 1; //x
+    bool low_breathing_rate : 1; //x
 
-    bool high_out_pressure : 1;
-    bool low_out_pressure : 1;
+    bool high_out_pressure : 1; //x
+    bool low_out_pressure : 1; //x
     
-    bool high_in_pressure : 1;
-    bool low_in_pressure : 1;
+    bool high_in_pressure : 1; //x
+    bool low_in_pressure : 1; //x
 
-    bool high_out_volume_tidal : 1;
-    bool low_out_volume_tidal : 1;
-    bool near_low_out_volume_tidal:1;
-
-    bool high_in_volume_tidal : 1;
-    bool low_in_volume_tidal : 1;
-    bool near_low_in_volume_tidal:1;
+    bool high_in_volume_tidal : 1; //x
+    bool low_in_volume_tidal : 1; //x
+    bool near_low_in_volume_tidal:1; //x
     
-    bool high_volume_leakage:1;
+    bool high_volume_leakage:1; //x
 
-    bool high_ie_ratio : 1;
-    bool low_ie_ratio : 1;
+    bool high_ie_ratio : 1; //x
+    bool low_ie_ratio : 1; //x
 
-    bool low_peep:1;
+    bool low_peep:1; //x
 
 // mechanical problems
-    bool detached_proximal_tube:1;
-    bool detached_oxygen_tube:1;
+    bool detached_proximal_tube:1; //review
+    bool detached_oxygen_tube:1; //review
 
 //electrical problems
-    bool low_battery:1;
-    bool no_battery:1;
+    bool low_battery:1; //x
+    bool no_battery:1; //x
 
-    bool no_main_supply:1;
+    bool no_main_supply:1; //x
 
-    bool high_temp_bat:1;
-    bool high_temp_motor:1;
+    bool high_temp_bat:1; //x
+    bool high_temp_motor:1; //x
 
-    bool system_shutdown:1;
+    bool system_shutdown:1; //review
   };
   bool bits[32];
   uint32_t all;
 } WarningType;
+
+const uint32_t kWarningMaskBreathingFlags = 0x3ff; //no include mechanical or electrical flags
+
+const float kWarningNearToLowFactor = 0.1;
+
+const float kWarningMaximunBreathingRateFactor = 0.3; //[]
+const float kWarningMaximunIeRatioFactor = 0.1;       //[]
 
 
 
@@ -116,6 +119,7 @@ typedef enum
   kMotorIdAirChoke
 } MotorIDs;
 
+//review
 const float kMotorMaxPos = 280.0; // mm. In this position, valve is full open
 const float kMotorMinPos = 5.0;   // mm. In this position, valve is closed
 
@@ -168,8 +172,8 @@ typedef union
   uint8_t breathing_rate;     //6 ~ 40 [breaths/min]
   uint8_t ie_ratio;           //1:1 ~ 1:3 
   
-  uint8_t apnea_time;         // 0 ~ 30 [s]
-  uint8_t pause_time;         // 0 ~ 30 [s]
+  uint32_t apnea_time;         // 0 ~ 30000 [ms]
+  uint32_t pause_time;         // 0 ~ 30000 [ms]
 
   //warnings
   uint8_t maximun_in_pressure;  // 0 ~ 65 [cmH2O]
@@ -187,8 +191,6 @@ typedef union
 
 } BreathingParameters;
 
-const float kMaximunDeviationBreathingRate = 0.3; //[]
-const float kMaximunDeviationIeRatio = 0.1;       //[]
 const float kMinimunFiO2 = 21.0;
 const float kConstantO2Choke = 1/(100.0-21.0);
 const float kConstantAirChoke = 1/(100.0-21.0);
@@ -213,9 +215,6 @@ typedef struct
   uint32_t breathing_out_puase_time;
   uint32_t breathing_out_time;
 
-  //pinch val
-//  uint32_t motor_open_time_o2_choke;  //this time denotes the needed time  to reach FiO2%
-//  uint32_t motor_open_time_air_choke; //this time denotes the needed time  to reach FiO2%
 
   //triggers
   float sensor_pressure_trigger_ins_value; //maximun pressure value to trigger an inspiration cicle
@@ -249,6 +248,7 @@ typedef union
   float battery_temp; // °C x
   float source_volatge; // V x
   float battery_voltage; // V x
+  uint32_t apnea_time; //ms
   };
 
   //for frontend pruporse
@@ -266,6 +266,8 @@ typedef union
 
 const float kBatMinVoltage = 10.5; //V
 const float kBatMaxVolatge = 13.4; //
+const float kLowBatThreshold = 10.0; //%
+const float kNoBatThreshold = 6.0; //v
 
 const float kBatDischargerConversion = 100.0/(kBatMaxVolatge - kBatMinVoltage); // %/V
 

@@ -43,10 +43,10 @@ static ControlData control_air_flow;
 void FMSMainInit(void);
 
 //this function actually is a machine state which only does breathing control action.
-//this functions needs that someone config working parameters to work porperly
+//this function needs that someone config working parameters to work porperly
 void FMSMainLoop(void);
 
-//this funcion measure o calculte all physical variables
+//this funcion measures o calcultes all physical variables
 void MeasureVariables(void);
 
 //this funcition watch all important variables and makes warnings through WarningType varible which is
@@ -57,13 +57,13 @@ void WarningMonitor(void);
 //this function Takes warning flags and does some kind of actions, also it does a better flag processing
 void WarningActions(void);
 
-//this function analyzes all config parameters to see if they are valid. if there are valid config, then calculte working parameters
+//this function analyzes all config parameters to see if they are valid. if there are valid config, therefore calculte working parameters
 void ComputeParameters(void);
 
 //this function init front end comunication
 void FrontEndCommunicationInit(void);
 
-//this function send and receive important data from front end MCU
+//this function sends and receive important data from front end MCU
 void FrontEndCommunicationLoop(void);
 
 //general initization
@@ -183,7 +183,6 @@ void ComputeParameters(void)
     for (i = 1; i < sizeof(breathing_config.all); i++)
       breathing_config.all[i] = breathing_config_request.all[i];
 
-
     // transfer main calculations
     breathing_dinamic.breathing_in_puase_time = breathing_in_puase_time;
     breathing_dinamic.breathing_in_time = breathing_in_time;
@@ -200,8 +199,6 @@ void ComputeParameters(void)
     else
       breathing_dinamic.sensor_pressure_ref = breathing_config.in_presure;
 
-
-
     //espiration trigger is no supported rigth now
 
     breathing_dinamic.sensor_pressure_trigger_ins_value = (float)breathing_config.minimun_peep - (float)breathing_config.trigger_value;
@@ -209,15 +206,12 @@ void ComputeParameters(void)
     breathing_dinamic.sensor_flow_trigger_ins_value = (float)breathing_config.trigger_value; //flow deviation
     //breathing_dinamic.sensor_flow_trigger_esp_value;
 
-    
-    
     //----------review----------//
-    
+
     breathing_dinamic.motor_position_o2_choke = ((float)breathing_config.FiO2 - kMinimunFiO2) * kConstantO2Choke;   //valve position to control O2 flow through pneumatic system
     breathing_dinamic.motor_position_air_choke = ((float)breathing_config.FiO2 - kMinimunFiO2) * kConstantAirChoke; //valve position to control O2 flow through pneumatic system
-    
-    //--------------------------//
 
+    //--------------------------//
 
     main_error.working_configuration_not_initialized = false;
   }
@@ -243,6 +237,7 @@ void MeasureVariables(void)
   static BreathingStates breathing_previous_state = breathing_state;
 
   static DataTimeRef measure_ref_time = {0, 0};
+  static uint32_t apnea_ref_time = 0;
 
   //check if slow data has new values
   if (GetDiffTime(Millis(), measure_ref_time.slow_data) > kSlowDataPeriod)
@@ -258,7 +253,7 @@ void MeasureVariables(void)
 
     //calculate values
 
-    //assumed linear discharger SoC (actually it isn't true but this is only a estimation)
+    //assumed linear V vs SoC (actually it isn't true but this is only a estimation)
     system_measure.battery_level = (system_measure.battery_voltage - kBatMinVoltage) * kBatDischargerConversion;
 
     if (system_measure.battery_level < 0.0)
@@ -292,6 +287,9 @@ void MeasureVariables(void)
         //maximum value is tidal reference
         system_measure.tidal = system_measure.patient_volume;
       }
+
+      apnea_ref_time = Millis();
+
       break;
 
     case kBreathingInCicle:
@@ -306,6 +304,8 @@ void MeasureVariables(void)
         //measure
         system_measure.ie_ratio = (espiration_time) / inspiration_time;
         system_measure.breathing_rate = 60000 / (espiration_time + inspiration_time);
+
+        system_measure.apnea_time = GetDiffTime(Millis(), apnea_ref_time);
 
         //residual volume (probably positive) at the end of espiration cicle is
         //all leakage volume
@@ -349,8 +349,23 @@ void WarningActions(void)
 void WarningMonitor(void)
 {
   static BreathingStates breathing_previous_state = breathing_state;
+  static DataTimeRef monitor_ref_time = {0, 0};
 
-  //only check warnings if ventilator is working
+  //update other system warnings
+  if (GetDiffTime(Millis(), monitor_ref_time.slow_data) > kSlowDataPeriod)
+  {
+    monitor_ref_time.slow_data = Millis();
+
+    main_warning.low_battery = system_measure.battery_level < kLowBatThreshold;
+    main_warning.no_battery = system_measure.battery_voltage < kNoBatThreshold; //
+
+    main_warning.no_main_supply = system_measure.battery_voltage >= system_measure.source_volatge;
+
+    main_warning.high_temp_bat = SensorGetAlarm(kSensorIdTempBattery);
+    main_warning.high_temp_motor = SensorGetAlarm(kSensorIdTempMotor);
+  }
+
+  //only check breathing warnings if ventilator is working
   if (main_state == kMainBreathing)
   {
     switch (breathing_state)
@@ -364,15 +379,43 @@ void WarningMonitor(void)
         breathing_previous_state = breathing_state;
         //check warnings limits
 
-        main_warning.high_in_volume_tidal = system_measure.tidal > breathing_config.maximun_volume_tidal ? true : false;
-        main_warning.low_in_volume_tidal = system_measure.tidal < breathing_config.minimun_volume_tidal ? true : false;
+        //check tidal values on pressure control, else reset 
+        if (!breathing_config.is_volume_controled)
+        {
+          main_warning.high_in_volume_tidal = system_measure.tidal > breathing_config.maximun_volume_tidal;
+          main_warning.low_in_volume_tidal = system_measure.tidal < breathing_config.minimun_volume_tidal;
+          main_warning.near_low_in_volume_tidal = system_measure.tidal < (((float)breathing_config.minimun_volume_tidal) * (1.0 + kWarningNearToLowFactor));
+        }
+        else
+        {
+          main_warning.high_in_volume_tidal = false;
+          main_warning.low_in_volume_tidal = false;
+          main_warning.near_low_in_volume_tidal = false;
+        }
 
-        main_warning.high_breathing_rate = system_measure.breathing_rate > breathing_config.breathing_rate * (1.0 + kMaximunDeviationBreathingRate) ? true : false;
-        main_warning.low_breathing_rate = system_measure.breathing_rate < breathing_config.breathing_rate * (1.0 - kMaximunDeviationBreathingRate) ? true : false;
+        main_warning.high_breathing_rate = system_measure.breathing_rate > (((float)breathing_config.breathing_rate) * (1.0 + kWarningMaximunBreathingRateFactor));
+        main_warning.low_breathing_rate = system_measure.breathing_rate < (((float)breathing_config.breathing_rate) * (1.0 - kWarningMaximunBreathingRateFactor));
 
-        main_warning.high_ie_ratio = system_measure.ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximunDeviationIeRatio) ? true : false;
-        main_warning.low_ie_ratio = system_measure.ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximunDeviationIeRatio) ? true : false;
+        main_warning.high_ie_ratio = system_measure.ie_ratio > (((float)breathing_config.ie_ratio) * (1.0 + kWarningMaximunIeRatioFactor));
+        main_warning.low_ie_ratio = system_measure.ie_ratio < (((float)breathing_config.ie_ratio) * (1.0 - kWarningMaximunIeRatioFactor));
       }
+
+      //check pressure on volume control, else reset
+      if (breathing_config.is_volume_controled)
+      {
+        main_warning.high_out_pressure = system_measure.out_pressure > breathing_config.maximun_out_pressure;
+        main_warning.low_out_pressure = system_measure.out_pressure < breathing_config.minimun_out_pressure;
+      }
+      else
+      {
+        main_warning.high_out_pressure = false;
+        main_warning.low_out_pressure = false;
+      }
+
+      break;
+
+    case kBreathingOutPause:
+      main_warning.low_peep = system_measure.out_pressure < breathing_config.minimun_peep;
       break;
 
     case kBreathingInCicle:
@@ -382,11 +425,30 @@ void WarningMonitor(void)
         breathing_previous_state = breathing_state;
 
         //check warnings limits
-        main_warning.high_breathing_rate = system_measure.breathing_rate > breathing_config.breathing_rate * (1.0 + kMaximunDeviationBreathingRate) ? true : false;
-        main_warning.low_breathing_rate = system_measure.breathing_rate < breathing_config.breathing_rate * (1.0 - kMaximunDeviationBreathingRate) ? true : false;
+        main_warning.high_breathing_rate = system_measure.breathing_rate > (((float)breathing_config.breathing_rate) * (1.0 + kWarningMaximunBreathingRateFactor));
+        main_warning.low_breathing_rate = system_measure.breathing_rate < (((float)breathing_config.breathing_rate) * (1.0 - kWarningMaximunBreathingRateFactor));
 
-        main_warning.high_ie_ratio = system_measure.ie_ratio > breathing_config.ie_ratio * (1.0 + kMaximunDeviationIeRatio) ? true : false;
-        main_warning.low_ie_ratio = system_measure.ie_ratio < breathing_config.ie_ratio * (1.0 - kMaximunDeviationIeRatio) ? true : false;
+        main_warning.high_ie_ratio = system_measure.ie_ratio > (((float)breathing_config.ie_ratio) * (1.0 + kWarningMaximunIeRatioFactor));
+        main_warning.low_ie_ratio = system_measure.ie_ratio < (((float)breathing_config.ie_ratio) * (1.0 - kWarningMaximunIeRatioFactor));
+
+        main_warning.high_volume_leakage = system_measure.patient_leakage > breathing_config.maximum_leakage;
+
+        if (breathing_config.is_assisted)
+          main_warning.apnea = system_measure.apnea_time > breathing_config.apnea_time;
+        else
+          main_warning.apnea = false;
+      }
+
+      //check pressure on volume control, else reset
+      if (breathing_config.is_volume_controled)
+      {
+        main_warning.high_in_pressure = system_measure.in_pressure > breathing_config.maximun_in_pressure;
+        main_warning.low_in_pressure = system_measure.in_pressure < breathing_config.minimun_in_pressure;
+      }
+      else
+      {
+        main_warning.high_in_pressure = false;
+        main_warning.low_in_pressure = false;
       }
 
       break;
@@ -395,24 +457,11 @@ void WarningMonitor(void)
 
       break;
     }
-
-    // only analize warnings in respective cicle
-    if (breathing_previous_state == kBreathingOutCicle)
-    {
-      main_warning.high_out_pressure = system_measure.out_pressure > breathing_config.maximun_out_pressure ? true : false;
-      main_warning.low_out_pressure = system_measure.out_pressure < breathing_config.minimun_out_pressure ? true : false;
-    }
-    else //(breathing_previous_state == kBreathinginCicle)
-    {
-      //check warnings
-      main_warning.high_in_pressure = system_measure.in_pressure > breathing_config.maximun_in_pressure ? true : false;
-      main_warning.low_in_pressure = system_measure.in_pressure < breathing_config.minimun_in_pressure ? true : false;
-    }
   }
   else
   {
-    //reset warnings
-    main_warning.all = 0;
+    //reset breathing warnings
+    main_warning.all &= ~kWarningMaskBreathingFlags;
   }
 }
 
@@ -536,7 +585,7 @@ void FMSMainLoop(void)
       DriverMotorMoveTo(kMotorIdBellows, kMotorMinPos);
       DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_return_vel_bellows);
 
-    #if 0
+#if 0
       //close oxigen valve in first period
       if ((Millis() - breathing_state_ref_time) < breathing_dinamic.motor_open_time_air_choke)
       {
@@ -555,13 +604,10 @@ void FMSMainLoop(void)
         DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
         DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
       }
-  #else
-     DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
-        DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
-  #endif      
-
-     
-
+#else
+      DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
+      DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
+#endif
 
       //----------transition events---------//
 
@@ -705,7 +751,7 @@ void FMSMainLoop(void)
 
           break;
         case kBreathingOutCicle:
-/*
+          /*
           if (!breathing_config.is_volume_controled && system_measure.out_pressure > breathing_dinamic.sensor_pressure_trigger_esp_value)
           {
             breathing_state = (BreathingStates)breathing_delay.next_state;
@@ -895,11 +941,9 @@ void loop()
 }
 */
 
-/*
-
 // Motor testing
 
-
+/*
 void AnyCallback(void);
 
 uint32_t ref =0 ;
@@ -911,8 +955,8 @@ void setup()
   
   PinInitialization();
   DirverInitialization();
-  DriverMotorMoveTo(kMotorIdBellows, 0.5);
-  DriverMotorSetVel(kMotorIdBellows, 0.5);
+  DriverMotorMoveTo(kMotorIdBellows, 50.0);
+  DriverMotorSetVel(kMotorIdBellows, 50.0);
   
   Serial.begin(115200);
 
@@ -932,11 +976,13 @@ void loop()
     Serial.println((DriverMotorActualPos(kMotorIdBellows)-ref2)/0.1);
     //Serial.println(DriverMotorActualPos(kMotorIdBellows));
     ref2 = DriverMotorActualPos(kMotorIdBellows);
-    //DriverMotorMoveTo(kMotorIdBellows, 0);
+    DriverMotorMoveTo(kMotorIdBellows, 0.0);
   }
 
   DriverLoops();
 }
+
+
 
 void AnyCallback(void)
 {
