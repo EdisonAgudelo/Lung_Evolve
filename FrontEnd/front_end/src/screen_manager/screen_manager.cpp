@@ -20,7 +20,7 @@ int ScreenStates;
 bool update;
 static ModeHeader MODE;
 static TypeHeader TYPE;
-
+static bool monitoring=false;
 
 
 /////////////////////////////////////////////////////////
@@ -273,6 +273,7 @@ void screen_revieve_data(void)
           Serial2.write(0xff);
           delay(4);
           update=true;
+          monitoring=true;
       break;
 
       case kpressure1:
@@ -398,12 +399,33 @@ void screen_revieve_data(void)
 
 void screen_management(void)
 {
+  
+  int id= 5, ch=1;
+  String data_monitoring = "add";
+  uint32_t i;
     /*
     *si estoy en pagina tal que hago
     *si estoy en pagina de monitor que envío
     */
    
     nexLoop(nex_listen_list);
+    delay(20);
+    if(monitoring)
+    {
+      for(i=0;i<100;i++)
+      {
+        data_monitoring += id;
+        data_monitoring +=",";
+        data_monitoring +=ch;
+        data_monitoring +=i;
+        data_monitoring +="\xFF\xFF\xFF";
+        Serial2.print(data_monitoring);
+        
+        Serial.write(i);
+      }
+      
+      
+    }
    /* 
    if(ScreenStates==kpage19)
    {
