@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 
-#define HICOP_LL_BUFFER_LENGTH 68
+#define HICOP_LL_BUFFER_LENGTH 255
 #define SERIAL_BAUDRATE 115200
 #define HICOP_LL_INVALID_HEADER 0xff
 #define HICOP_LL_MAX_RX_TIME 10 //mss

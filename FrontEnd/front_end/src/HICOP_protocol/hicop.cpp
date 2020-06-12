@@ -5,7 +5,7 @@
 #include "time.h"
 #include "../hardware/hardware_interface.h"
 
-#define HICOP_MAX_DATA_LENGTH 68
+#define HICOP_MAX_DATA_LENGTH 255
 #define HICOP_STACK_SIZE 3
 #define HICOP_MAX_RESPONSE_TIME 100 //ms
 #define HICOP_MAX_SEND_TRIES 10    //times

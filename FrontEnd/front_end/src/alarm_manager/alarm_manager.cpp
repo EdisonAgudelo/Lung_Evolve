@@ -44,7 +44,7 @@ void alarm_management_loop(void)
 */
 void check_state_alarm(void)
 {
-    if(alarms_struct.low_in_pressure || alarms_struct.high_in_pressure || alarms_struct.low_out_volume_tidal || alarms_struct.high_out_volume_tidal || alarms_struct.high_volume_leakage || 
+    if(alarms_struct.low_in_pressure || alarms_struct.high_in_pressure  || alarms_struct.high_volume_leakage || 
         alarms_struct.system_shutdown || alarms_struct.low_battery || alarms_struct.no_battery || alarms_struct.high_temp_motor || alarms_struct.high_temp_bat|| alarms_struct.detached_oxygen_tube || alarms_struct.detached_proximal_tube == true)
     {
         AS.HighAlarmState=1;     

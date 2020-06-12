@@ -1,9 +1,9 @@
 #ifndef DATA_BUS_H
 #define DATA_BUS_H
 #include <stdint.h>
-#define byte uint8_t
 
-const uint8_t kTxBufferLength = 0x45;
+
+const uint8_t kTxBufferLength = 0xff;
 ///////////*************************////////////////////////
 //ALARMS
 typedef union {
@@ -22,9 +22,9 @@ typedef union {
     bool high_in_pressure : 1;
     bool low_in_pressure : 1;
 
-    bool high_out_volume_tidal : 1;
-    bool low_out_volume_tidal : 1;
-    bool near_low_out_volume_tidal:1;
+    //bool high_out_volume_tidal : 1;
+    //bool low_out_volume_tidal : 1;
+    //bool near_low_out_volume_tidal:1;
 
     bool high_in_volume_tidal : 1;
     bool low_in_volume_tidal : 1;
@@ -53,7 +53,7 @@ typedef union {
     bool system_shutdown:1;
   };
   
-  uint8_t all[25];
+  uint8_t all[22];
 } ALARMS;
 extern ALARMS alarms_struct;
 
@@ -102,13 +102,9 @@ const uint8_t AlarmId[] = {
   //bool no_battery:1;
   0x20,
   //bool no_main_supply:1;
-  0x21,
+  0x21
   //bool high_temp_bat:1;
-  0x22,
-  //bool high_temp_motor:1;
-  0x23,
-  //bool ShutDown;
-  0x24
+
 };
 ///////////*************************////////////////////////
 
@@ -116,34 +112,55 @@ const uint8_t AlarmId[] = {
 typedef union
 {
   struct{
-    byte fio2;
-    byte bpm;
-    byte peep;
-    byte pausa;
-    byte apnea;
-    byte ie;
-    byte pressure;
-	uint16_t tidal;
-	byte trigger;
-    bool controlType;//assistive(true) or controlled(false)
-    bool control; //volume(true) or pressure(false)
-    bool off; //ventilator is off(true) or not
-    bool pause; //ventilation operation is paused(true)
-    byte maxInPressure;
-    byte minInPressure;
-    byte maxOutPressure;
-    byte minOutPressure;
-    byte maxTV;
-    byte minTV;
-	byte max_leakage;
+    uint32_t fio2;
+    uint32_t bpm;
+    uint32_t peep;
+    uint32_t tpause; //tiempo?
+    uint32_t apnea;
+    uint8_t ie;
+    uint32_t pressure;
+	  uint32_t tidal;
+	  uint32_t trigger;
+    uint8_t controlType;//assistive(0x1) or controlled(0x0)
+    uint8_t control; //volume(true) or pressure(false)
+    uint8_t off; //ventilator is off(0x1) or not(0x0)
+    uint8_t pause; //ventilation operation is paused(0x1) or not (0x0)
+    uint32_t maxInPressure;
+    uint32_t minInPressure;
+    uint32_t maxOutPressure;
+    uint32_t minOutPressure;
+    uint32_t maxTV;
+    uint32_t minTV;
+	  uint32_t max_leakage;
 
   };
-  uint8_t all[18];
+  uint8_t all[65];
 
 }CONFIGURATION;
 extern CONFIGURATION config;
 //configuration id define
 const uint8_t ConfigId[] = {
+  0x0,
+  0x1,
+  0x2,
+  0x3,
+  0x4,
+  0x5,
+  0x6,
+  0x7,
+  0x8,
+  0x9,
+  0x10,
+  0x11,
+  0x12,
+  0x13,
+  0x14,
+  0x15,
+  0x16,
+  0x17,
+  0x18,
+  0x19
+ 
 };
 
 ///////////*************************////////////////////////
@@ -185,9 +202,34 @@ const uint8_t DataId[] = {
 
 #endif /*DATA_BUS_H*/
 
-
 /*
+typedef union
+{
+  struct{
+    byte fio2;
+    byte bpm;
+    byte peep;
+    byte pausa;
+    byte apnea;
+    byte ie;
+    byte pressure;
+	uint16_t tidal;
+	byte trigger;
+    bool controlType;//assistive(true) or controlled(false)
+    bool control; //volume(true) or pressure(false)
+    bool off; //ventilator is off(true) or not
+    bool pause; //ventilation operation is paused(true)
+    byte maxInPressure;
+    byte minInPressure;
+    byte maxOutPressure;
+    byte minOutPressure;
+    byte maxTV;
+    byte minTV;
+	byte max_leakage;
 
+  };
+  uint8_t all[18];
 
-
+}CONFIGURATION;
+extern CONFIGURATION config;
 */

@@ -23,7 +23,9 @@ static bool data_change = false;
 
 void backend_init(void)
 {
+    //uint8_t test[]={0x64,0x35,0x12};
     HicopInit();
+    //HicopSendData(kHicopHeaderConfig, test, sizeof(test));
 }
 
 
@@ -49,6 +51,7 @@ void backend_management(void)
                     dataValue.all[transfer_pointer] = transfer_buffer[transfer_pointer];
                 }
                 data_change = true;
+                Serial.print("store");
             break;
             case kHicopHeaderAlarm:
             //update parameters
@@ -68,9 +71,9 @@ void backend_management(void)
 
     if (update)
     {
-        for(i=0;i< sizeof(ConfigId);i++)
+        for(i=0;i< sizeof(config.all);i++)
         {
-            transfer_buffer[transfer_pointer++] = ConfigId[i];
+            //transfer_buffer[transfer_pointer++] = ConfigId[i];
             transfer_buffer[transfer_pointer++] = (config.all[i]);
         }
         //send data
