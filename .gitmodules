@@ -1,3 +1,6 @@
 [submodule "FrontEnd/front_end/src/nextion"]
 	path = FrontEnd/front_end/src/nextion
 	url = https://github.com/itead/ITEADLIB_Arduino_Nextion.git
+[submodule "FrontEnd/front_end/src/HICOP_protocol"]
+	path = FrontEnd/front_end/src/HICOP_protocol
+	url = https://github.com/EdisonAgudelo/Hicop.git
