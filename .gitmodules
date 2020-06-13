@@ -4,3 +4,6 @@
 [submodule "BackEnd/src/hicop_lib"]
 	path = BackEnd/src/hicop_lib
 	url = https://github.com/EdisonAgudelo/Hicop.git
+[submodule "BackEnd/pruebas/hicop_protocol/src/Hicop"]
+	path = BackEnd/pruebas/hicop_protocol/src/Hicop
+	url = https://github.com/EdisonAgudelo/Hicop.git

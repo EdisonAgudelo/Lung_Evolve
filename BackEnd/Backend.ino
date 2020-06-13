@@ -4,8 +4,6 @@
 #include "src/hw_lib/basic_function.h"
 #include "src/fw_lib/control.h"
 #include "src/hw_lib/time.h"
-
-#define HICOP_USE_ARDUINO
 #include "src/hicop_lib/hicop.h"
 
 //error variable
