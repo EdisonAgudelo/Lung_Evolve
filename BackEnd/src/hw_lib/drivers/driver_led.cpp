@@ -62,7 +62,7 @@ void DriverLedLoop(DriverLed *led)
         case kLedOn:
 
             //transition control
-            if (Millis() - led->ref_time > led->period_ms)
+            if (GetDiffTime(Millis(), led->ref_time) > led->period_ms)
             {
                 led->ref_time = Millis();
                 PinSetDigital(led->gpio_pin, false); //positive logic
@@ -73,7 +73,7 @@ void DriverLedLoop(DriverLed *led)
 
         case kLedOff:
             //transition control
-            if (Millis() - led->ref_time > led->period_ms)
+            if (GetDiffTime(Millis(), led->ref_time) > led->period_ms)
             {
                 led->ref_time = Millis();
 
@@ -110,7 +110,7 @@ void DriverLedLoop(DriverLed *led)
     }
     else if (led->one_shoot)
     {
-        if ((Millis() - led->ref_time) > led->one_shoot_time)
+        if (GetDiffTime(Millis(), led->ref_time) > led->one_shoot_time)
         {
             led->one_shoot = false;
             DriverLedTurnOff(led);

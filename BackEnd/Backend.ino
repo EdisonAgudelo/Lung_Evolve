@@ -67,7 +67,7 @@ void FrontEndCommunicationInit(void);
 void FrontEndCommunicationLoop(void);
 
 //general initization
-
+/*
 void setup()
 {
   main_error.all = 0;   //reset all errors;
@@ -81,7 +81,7 @@ void setup()
 
   FMSMainInit();
   FrontEndCommunicationInit();
-}
+}*/
 
 void FMSMainInit(void)
 {
@@ -112,6 +112,7 @@ void FrontEndCommunicationInit(void)
   frontend_warning_copy.all = main_warning.all & main_warning_mask.all;
 }
 
+/*
 void loop()
 {
   MeasureVariables();
@@ -120,7 +121,7 @@ void loop()
   FMSMainLoop();
   DriverLoops();
   FrontEndCommunicationLoop();
-}
+}*/
 
 void ComputeParameters(void)
 {
@@ -260,7 +261,7 @@ void MeasureVariables(void)
       system_measure.battery_level = 0.0;
   }
 
-  //only Measure breathing variables if ventilator is breathing mode
+  //only Measure breathing variables if ventilator is in workingmode
   if (main_state == kMainBreathing)
   {
     //always save presure measure, and flow data
@@ -332,17 +333,27 @@ void MeasureVariables(void)
 
 void WarningActions(void)
 {
+  // this make a local copy of supply warning to reset discharge rele
+  // when power source is pluged in
+  static bool warning_power_source_prev = false;
 
-  //if there are warnings, turn on buzzer
-  if (main_warning.all != 0)
+  //only cath transition edge
+  if (main_warning.no_main_supply != warning_power_source_prev)
   {
-    DriverLedTShoot(&buzzer, 2000, 100);
+    warning_power_source_prev = main_warning.no_main_supply;
+    //if supply is restore
+    if (!warning_power_source_prev)
+      DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
   }
 
-  if (main_warning.high_in_pressure)
+
+#if 0
+  //if system is going to break up
+  if (main_warning.high_temp_bat || main_warning.high_temp_motor)
   {
-    DriverLedNBlink(&led_red, 2000, 3);
+    DriverLedTShoot(&buzzer, 300, 10);
   }
+#endif
 }
 
 //this function watches all critial varibles and make warnings if varible reaches threshold
@@ -363,6 +374,7 @@ void WarningMonitor(void)
 
     main_warning.high_temp_bat = SensorGetAlarm(kSensorIdTempBattery);
     main_warning.high_temp_motor = SensorGetAlarm(kSensorIdTempMotor);
+
   }
 
   //only check breathing warnings if ventilator is working
@@ -379,7 +391,7 @@ void WarningMonitor(void)
         breathing_previous_state = breathing_state;
         //check warnings limits
 
-        //check tidal values on pressure control, else reset 
+        //check tidal values on pressure control, else reset
         if (!breathing_config.is_volume_controled)
         {
           main_warning.high_in_volume_tidal = system_measure.tidal > breathing_config.maximun_volume_tidal;
@@ -992,15 +1004,16 @@ void AnyCallback(void)
 */
 
 //for comunication layer test
-/*
+
 HicopHeaders test_type = kHicopHeaderAlarm;
-uint8_t data[] = {0xff,0xfe,0x40,0x3,0x0};
+uint8_t data[] = {0x19,0x1};
 uint8_t len = sizeof(data);
 
 void setup()
 {
   DirverInitialization();
   HicopInit();
+  Delay(1000);
   HicopSendData(test_type,data,len);
 }
 
@@ -1009,4 +1022,3 @@ void loop()
   HicopLoop();
  // DriverLoops();
 }
-*/

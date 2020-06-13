@@ -15,17 +15,14 @@
 //--------motor parameters-------//
 
 const uint8_t kMotorBellowUSteps = 16; //review
-//const uint8_t kMotorBellowUSteps = 8; //review
 const uint8_t kMotorO2USteps = 8; //review
 const uint8_t kMotorAirUSteps = 8; //review
 
 const uint16_t kMotorBellowSteps = 200; //review
-//const uint16_t kMotorBellowSteps = 32; //review
 const uint16_t kMotorO2Steps = 32; //review
 const uint16_t kMotorAirSteps = 32; //review
 
 const float kMotorBellowmmRev = 100.0; //review
-//const float kMotorBellowmmRev = (1.27/63.8); //review
 const float kMotorO2mmRev = (1.27/63.8); //review
 const float kMotorAirmmRev = (1.27/63.8); //review
 
@@ -56,8 +53,9 @@ const float kVoltageAttenuationSource = (51.0+100.0)/(51.0); //for 51k and 100k 
 
 
 //------ Driver objects creation -------//
-DriverLed led_red;
-DriverLed buzzer;
+DriverLed g_led_red;
+DriverLed g_buzzer;
+DriverLed g_discharge_rele;
 
 Stepper motor_bellow(kHardwareStepMotor1, kHardwareDirMotor1, kHardwareEnMotor1, kHardwarePWMMotor1);
 Stepper motor_valve_o2(kHardwareStepMotor2, kHardwareDirMotor2, kHardwareEnMotor2, kHardwarePWMMotor2);
@@ -80,7 +78,7 @@ Temp temp_bat(kHardwareTemp2);
 Stepper *motor[]={&motor_bellow, &motor_valve_o2, &motor_valve_air};
 void *Sensor[]={(void *)&flow_in,(void *)&flow_out, (void *)&pressure_in, (void *)&pressure_out,
                 (void *)&temp_motor, (void *)&temp_bat, (void *)&voltage_source, (void *)&voltage_bat, (void *)&flow_mixture};
-const int valve[]={kHardwareRele1, kHardwareRele2, kHardwareRele3, kHardwareRele4};
+const int valve[]={kHardwareRele1, kHardwareRele2, kHardwareRele3};
 
 
 
@@ -99,6 +97,7 @@ bool PinInitialization(void)
   PinConfigDigital(kHardwareRele2, kOutput);
   PinConfigDigital(kHardwareRele3, kOutput);
   PinConfigDigital(kHardwareRele4, kOutput);
+
 
   return true;
 }
@@ -159,8 +158,9 @@ bool DirverInitialization(void)
 
   TimeVirtualISRBegin();
    
-  DriverLedInit(&led_red, kHardwareLedRedPin); //config pin and initialize pin
-  DriverLedInit(&buzzer, kHardwareBuzzerPin); //config pin and initialize pin
+  DriverLedInit(&g_led_red, kHardwareLedRedPin); 
+  DriverLedInit(&g_buzzer, kHardwareBuzzerPin); 
+  DriverLedInit(&g_discharge_rele, kHardwareRele4);
 
   motor_bellow.Begin();/*
   motor_valve_o2.Begin();
@@ -200,8 +200,9 @@ bool DirverInitialization(void)
 bool DriverLoops(void)
 {
 
-  DriverLedLoop(&led_red);
-  DriverLedLoop(&buzzer);
+  DriverLedLoop(&g_led_red);
+  DriverLedLoop(&g_buzzer);
+  DriverLedLoop(&g_discharge_rele);
   // restore
   motor_bellow.Loop(); //much faster than a for
   /*

@@ -95,8 +95,6 @@ typedef union {
 
     bool high_temp_bat:1; //x
     bool high_temp_motor:1; //x
-
-    bool system_shutdown:1; //review
   };
   bool bits[32];
   uint32_t all;
@@ -158,7 +156,6 @@ typedef union
   bool is_standby;            //no control
   bool is_volume_controled;   //control by volumen or pressure
   bool is_assisted;           //true: ventilator should wait for patient trigger or false: wait for time trigger
-  bool is_power_off;          //Kill power source
 
   //reference values 
   bool trigger_source;        //pressure true or flow false
