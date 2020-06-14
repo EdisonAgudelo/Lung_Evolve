@@ -65,7 +65,7 @@ void FrontEndCommunicationInit(void);
 void FrontEndCommunicationLoop(void);
 
 //general initization
-/*
+
 void setup()
 {
   main_error.all = 0;   //reset all errors;
@@ -79,7 +79,7 @@ void setup()
 
   FMSMainInit();
   FrontEndCommunicationInit();
-}*/
+}
 
 void FMSMainInit(void)
 {
@@ -110,7 +110,7 @@ void FrontEndCommunicationInit(void)
   frontend_warning_copy.all = main_warning.all & main_warning_mask.all;
 }
 
-/*
+
 void loop()
 {
   MeasureVariables();
@@ -119,7 +119,7 @@ void loop()
   FMSMainLoop();
   DriverLoops();
   FrontEndCommunicationLoop();
-}*/
+}
 
 void ComputeParameters(void)
 {
@@ -848,21 +848,24 @@ void FrontEndCommunicationLoop(void)
   uint8_t transfer_pointer = 0;
   uint16_t i;
   HicopHeaders rx_flag;
+  uint32_t mask = 0x0;
 
   main_warning_masked.all = main_warning.all & main_warning_mask.all;
 
   //warnings have a high priority to send to front end MCU
   if (frontend_warning_copy.all != main_warning_masked.all)
   {
+    mask = 0b1;
     //build message
     for (i = 0; i < 32; i++) //warning variable is a 32 bits register
     {
       //find which flags changed state
-      if (frontend_warning_copy.bits[i] != main_warning_masked.bits[i])
+      if ((frontend_warning_copy.all & mask)  != (main_warning_masked.all & mask))
       {
         transfer_buffer[transfer_pointer++] = kTxAlarmId[i];
-        transfer_buffer[transfer_pointer++] = main_warning_masked.bits[i];
+        transfer_buffer[transfer_pointer++] = (0!=main_warning_masked.all & mask);
       }
+      mask<<=1;
     }
     //save changes
     frontend_warning_copy.all = main_warning_masked.all;
@@ -870,7 +873,7 @@ void FrontEndCommunicationLoop(void)
     //send data
     HicopSendData(kHicopHeaderAlarm, transfer_buffer, transfer_pointer);
   }
-  //data has lowe priority
+  //data has lower priority
   else
   {
     //check if it is time to send fast data
@@ -884,7 +887,7 @@ void FrontEndCommunicationLoop(void)
         for (i = 0; i < sizeof(kTxFastDataId); i++)
         {
           transfer_buffer[transfer_pointer++] = kTxFastDataId[i];
-          transfer_buffer[transfer_pointer++] = (uint8_t)(system_measure.fast_data[i] / 1000);
+          transfer_buffer[transfer_pointer++] = (uint8_t)(system_measure.fast_data[i]);
         }
       }
     }
@@ -896,7 +899,7 @@ void FrontEndCommunicationLoop(void)
       for (i = 0; i < sizeof(kTxSlowDataId); i++)
       {
         transfer_buffer[transfer_pointer++] = kTxSlowDataId[i];
-        transfer_buffer[transfer_pointer++] = (uint8_t)(system_measure.slow_data[i] / 1000);
+        transfer_buffer[transfer_pointer++] = (uint8_t)(system_measure.slow_data[i]);
       }
     }
 
@@ -1002,7 +1005,7 @@ void AnyCallback(void)
 */
 
 //for comunication layer test
-
+/*
 HicopHeaders test_type = kHicopHeaderAlarm;
 uint8_t data[] = {0x19,0x1};
 uint8_t len = sizeof(data);
@@ -1020,3 +1023,4 @@ void loop()
   HicopLoop();
  // DriverLoops();
 }
+*/

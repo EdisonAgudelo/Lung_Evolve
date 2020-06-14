@@ -8,7 +8,7 @@
 #define STEPPER_UPDATE_PERIOD 30 //Each UPDATE_PERIOD ms this library performs an upate in vel referece. This for aceleration purpose.
 #define STEPPER_MIN_VEL_TO_STOP 200 // steps/s
 #define STEPPER_TIME_GAP 1 //this value idicate how much millisecond is isr timeout ahead of real estimate end time
-#define STEPPER_DEFAULT_ACC (2000/(1000/STEPPER_UPDATE_PERIOD)) // => 1000 steps/s^2
+#define STEPPER_DEFAULT_ACC (4000/(1000/STEPPER_UPDATE_PERIOD)) // => 1000 steps/s^2
 #define STEPPER_FINE_ADJ -2
 
 #include "../low_level/hardware_interface.h"

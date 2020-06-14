@@ -84,7 +84,7 @@ bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
   return true;
 }
 
-//write data from I2C slave divice.
+//write data in I2C slave divice.
 bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
 {
   int i = 0;
@@ -146,37 +146,45 @@ bool I2CBegin(int id)
 
 
 ////////// Serial interface ////////
+
+//this config a custom user function wich will be called each time that uart data is available
 void UartConfigCallback(void (*callback)(void))
 {
   uart_callback = callback;
 }
 
+//this is the arduino implementation of uart reception interrupt
 void serialEvent2() {
   if(uart_callback!=nullptr)
     uart_callback();
 }
 
+//start uart interfaced dedicated to backend - frontend comunication
 void UartBegin(uint32_t baudrate)
 {
   Serial2.begin(baudrate);
 }
 
+//write data in uart
 void UartWrite(uint8_t data)
 {
   Serial2.write(data);
 }
 
+//read from uart
 uint8_t UartRead(void)
 {
   return Serial2.read();
 }
 
+//if there is available data in uart retun true
 bool UartAvailable(void){
   return Serial2.available();
 }
 
 ////////// GPIO interface //////////
 
+//config an user callback for each time that one pin has a rising edge transition
 void PinConfigRisingIRS(int pin, void (*callback)(void))
 {
   attachInterrupt(digitalPinToInterrupt(pin), callback, RISING);
@@ -215,12 +223,14 @@ void PinSetDigital(int pin, bool level)
 
 //////////// Timers Interfacer /////////
 
+//return the actual count of dedicated timer for timing aplication
 uint16_t Timer1msCount(void)
 {
   //return (uint16_t)TCNT2;
   return (((uint16_t)TCNT3H) << 8) + (uint16_t)TCNT3L;
 }
 
+//set an interrupt for each time that dedicated time for timing aplication reach 1ms period 
 void Timer1msISR(void (*callback)(void))
 {
   timer1m_callback = callback;
@@ -236,6 +246,7 @@ void Timer1msISR(void (*callback)(void))
   TIMSK3 = 0x2; // intterrupt in compare match A
 }
 
+//init hardware counters for generate a custom pwm frecuency. Also it returns de real reached pwm period in us 
 double PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
 {
   uint8_t i;
@@ -328,6 +339,7 @@ double PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
   return pwm_period;
 }
 
+//turn on pwm reset interrpt for custom user aplication
 bool PWMRequestInterrupt(int pwm_id)
 {
   g_pending_interrupt[pwm_id] = true;
@@ -352,12 +364,13 @@ bool PWMRequestInterrupt(int pwm_id)
   }
 }
 
+//return if pwm has cleared pending interrupt
 bool PWMIsPendingInterrupt(int pwm_id)
 {
   return g_pending_interrupt[pwm_id];
 }
 
-
+// init a pin rising edge counter
 void CounterBegin(int counter_id)
 {
   switch (counter_id)
@@ -377,6 +390,7 @@ void CounterBegin(int counter_id)
   }
 }
 
+//return the actual value of rising edge counter 
 uint32_t CounterGetValue(int counter_id)
 {
   uint32_t temp=0;
@@ -415,11 +429,6 @@ ISR(TIMER1_OVF_vect)
   TIMSK1 &= ~(0x1); //turn off interrupt
   g_pending_interrupt[1] = false;
 }
-/*
-ISR(TIMER1_OVF_vect)
-{
-  g_overflow_count[1]++;
-}*/
 
 ISR(TIMER5_OVF_vect)
 {

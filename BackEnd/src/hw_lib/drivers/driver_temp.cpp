@@ -8,8 +8,8 @@ Temp::Temp(int _analog_pin) : analog_pin(_analog_pin)
     value_raw = 0;
 
     alarm_enable = false;
-    float max_value = -1;
-    float min_value = -1;
+    float max_value = -1.0;
+    float min_value = -1.0;
     alarm = false;
 }
 Temp::~Temp()
@@ -59,7 +59,7 @@ void Temp::Loop()
         }
         value_raw /= i;   
 
-        temp = (((float)value_raw)/((float)kACDResolution)-TEMP_TEMP_OFFSET)/TEMP_TEMP_COEF;
+        temp = (((float)value_raw)*kBoardVoltage/((float)kACDResolution)-TEMP_TEMP_OFFSET)/TEMP_TEMP_COEF;
 
         if(alarm_enable && (temp>max_value || temp < min_value))
             alarm = true;

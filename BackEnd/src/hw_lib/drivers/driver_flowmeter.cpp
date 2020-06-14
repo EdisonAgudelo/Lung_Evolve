@@ -20,7 +20,7 @@ Flowmeter::Flowmeter(int8_t _i2c_id, uint8_t _i2c_addr) : i2c_id(_i2c_id), i2c_a
 
 Flowmeter::~Flowmeter()
 {
-    //this library suppotr instance deletion but it is no recommended
+    //this library support instance deletion but it is no recommended
 }
 
 //methods
@@ -33,6 +33,8 @@ void Flowmeter::Begin(void)
 
     sensor_power_up = true; //let the sensor to power up
     sensor_available = false;
+
+    value_raw = 0;
 
     I2CBegin(i2c_id);
 
@@ -76,12 +78,13 @@ void Flowmeter::SensorGetParam(void)
                 sensor_available = false;
                 break;
             }
-            uDelay(1000);
+           // uDelay(1000);
         }
 
 
         any_use_count = 0;
 
+        //if there are no erros from last transaction, make other read
         while (sensor_available && !MakeTransaction(kFlowCommandReadOffset, &offset_value))
         {
             any_use_count++;
@@ -90,7 +93,7 @@ void Flowmeter::SensorGetParam(void)
                 sensor_available = false;
                 break;
             }
-            uDelay(1000);
+           // uDelay(1000);
         }
     }
 }
@@ -145,12 +148,14 @@ void Flowmeter::Loop(void)
             else
                 read_error_count++;
 
+            //if sensor don't answere 3 consecutive times, enter in recovery mode 
             if (FLOWMETER_MAX_ERROR_COUNT <= read_error_count)
             {
                 sensor_available = false;
                 read_error_count = 0;
             }
         }
+        //recovery mode
         else
         {
             SensorGetParam();
@@ -166,8 +171,7 @@ void Flowmeter::Loop(void)
 
 float Flowmeter::GetFlow(void)
 {
-    if (sensor_available)
+    //if sensor is available, raw data will be uptaded, else it will hold the last read value.
         return ((float)(value_raw) - (float)offset_value) / ((float)scale_factor);
-    else
-        return 0.0;
+
 }

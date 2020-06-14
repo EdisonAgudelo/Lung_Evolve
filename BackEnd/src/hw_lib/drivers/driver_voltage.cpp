@@ -58,7 +58,7 @@ void Voltage::Loop()
         }
         value_raw /= i;   
 
-        voltage = ((float)value_raw)*attenuation;
+        voltage = (((float)value_raw)*kBoardVoltage/(float)kACDResolution)*attenuation;
 
         if(alarm_enable && (voltage>max_value || voltage < min_value))
             alarm = true;

@@ -3,10 +3,10 @@
 #define _DRIVER_TEMP_H_
 
 
-#define TEMP_UPDATE_PERIOD 60000 //update time each minute
-#define TEMP_TEMP_COEF 19.5/kBoardVoltage //normalized
+#define TEMP_UPDATE_PERIOD 30000 //update time each half minute
+#define TEMP_TEMP_COEF 0.0195 // V/°C
 #define TEMP_OVERSAMPLING 10 //total average data
-#define TEMP_TEMP_OFFSET 0.4/kBoardVoltage //normalized
+#define TEMP_TEMP_OFFSET 0.4 // V
 
 #include <stdint.h>
 

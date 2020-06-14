@@ -1,9 +1,7 @@
 
 
 #include "driver_water_flowmeter.h"
-
 #include "../low_level/hardware_interface.h"
-
 #include "../time.h"
 
 WFlowmeter::WFlowmeter(int8_t _counter_id, float _counts_per_slm) : counter_id(_counter_id), counts_per_slm(_counts_per_slm)
