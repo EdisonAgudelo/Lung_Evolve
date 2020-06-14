@@ -96,7 +96,6 @@ typedef union {
     bool high_temp_bat:1; //x
     bool high_temp_motor:1; //x
   };
-  bool bits[32];
   uint32_t all;
 } WarningType;
 

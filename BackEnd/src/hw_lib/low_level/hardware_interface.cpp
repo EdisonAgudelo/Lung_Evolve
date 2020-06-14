@@ -2,10 +2,10 @@
 //definitions for sofware I2C
 #define I2C_TIMEOUT 10
 #define I2C_PULLUP 1
-#define SDA_PORT PORTC //review
-#define SDA_PIN 7      // //review
-#define SCL_PORT PORTC //review
-#define SCL_PIN 5      //review
+#define SDA_PORT PORTA //r
+#define SDA_PIN 1      //r
+#define SCL_PORT PORTA //r
+#define SCL_PIN 3      //r
 
 #include "SoftI2CMaster.h"
 
@@ -15,9 +15,10 @@
 //library version for arduino mega
 
 /*
-  Timer 5 woriking for millis and micros aplication
-  Timer 1 , 3, 4 is for custom pwm genarator
+  Timer 3 is woriking for millis and micros aplication
+  Timer 1 , 5, 4 is for custom pwm genarator
   Timer 0 is used by flowmeter
+  Timer 2 is not used  
 */
 
 void (*timer1m_callback)(void)=nullptr;
@@ -27,8 +28,6 @@ volatile bool g_pending_interrupt[6] = {false};
 
 volatile uint8_t g_overflow_count[6] = {0};
 
-uint32_t g_hard_counter = 0;
-//I2C com
 
 //read data from a I2C slave device
 bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
@@ -152,28 +151,28 @@ void UartConfigCallback(void (*callback)(void))
   uart_callback = callback;
 }
 
-void serialEvent() {
+void serialEvent2() {
   if(uart_callback!=nullptr)
     uart_callback();
 }
 
 void UartBegin(uint32_t baudrate)
 {
-  Serial.begin(baudrate);
+  Serial2.begin(baudrate);
 }
 
 void UartWrite(uint8_t data)
 {
-  Serial.write(data);
+  Serial2.write(data);
 }
 
 uint8_t UartRead(void)
 {
-  return Serial.read();
+  return Serial2.read();
 }
 
 bool UartAvailable(void){
-  return Serial.available();
+  return Serial2.available();
 }
 
 ////////// GPIO interface //////////
@@ -219,7 +218,7 @@ void PinSetDigital(int pin, bool level)
 uint16_t Timer1msCount(void)
 {
   //return (uint16_t)TCNT2;
-  return (((uint16_t)TCNT5H) << 8) + (uint16_t)TCNT5L;
+  return (((uint16_t)TCNT3H) << 8) + (uint16_t)TCNT3L;
 }
 
 void Timer1msISR(void (*callback)(void))
@@ -227,14 +226,14 @@ void Timer1msISR(void (*callback)(void))
   timer1m_callback = callback;
   uint16_t compare_value = 16000;
 
-  TCCR5A = 0x00; // mode 4, no outputs pin
-  TCCR5B = 0x09; //preescaler value = 1. Ignore Input compare
+  TCCR3A = 0x00; // mode 4, no outputs pin
+  TCCR3B = 0x09; //preescaler value = 1. Ignore Input compare
 
   //this register define PWM frecuency
-  OCR5AH = (compare_value >> 8) & 0x00ff; //config calculated compare value
-  OCR5AL = (compare_value)&0x00ff;        //config calculated compare value
+  OCR3AH = (compare_value >> 8) & 0x00ff; //config calculated compare value
+  OCR3AL = (compare_value)&0x00ff;        //config calculated compare value
 
-  TIMSK5 = 0x2; // intterrupt in compare match A
+  TIMSK3 = 0x2; // intterrupt in compare match A
 }
 
 double PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
@@ -285,20 +284,20 @@ double PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
     //TIMSK1 = 0x1; //no generate any interrupt
     break;
 
-  case 3:
+  case 5:
 
-    TCCR3A = 0x23;           // mode 15, com3b as normal PWM
-    TCCR3B = (i + 1) | 0x18; //preescaler value + mode 15. Ignore Input compare
+    TCCR5A = 0x23;           // mode 15, com3b as normal PWM
+    TCCR5B = (i + 1) | 0x18; //preescaler value + mode 15. Ignore Input compare
 
     //this register define PWM frecuency
-    OCR3AH = (compare_value >> 8) & 0x00ff; //config calculated compare value
-    OCR3AL = (compare_value)&0x00ff;        //config calculated compare value
+    OCR5AH = (compare_value >> 8) & 0x00ff; //config calculated compare value
+    OCR5AL = (compare_value)&0x00ff;        //config calculated compare value
 
     compare_value /= 2;                     //on period is equal to 1/2 of total time
-    OCR3BH = (compare_value >> 8) & 0x00ff; //config calculated compare value
-    OCR3BL = (compare_value)&0x00ff;        //config calculated compare value
+    OCR5BH = (compare_value >> 8) & 0x00ff; //config calculated compare value
+    OCR5BL = (compare_value)&0x00ff;        //config calculated compare value
 
-    TIMSK3 = 0x0; //no generate any interrupt
+    TIMSK5 = 0x0; //no generate any interrupt
 
     break;
 
@@ -339,8 +338,8 @@ bool PWMRequestInterrupt(int pwm_id)
     TIMSK1 |= 0x1; //turn on interrupt
     break;
 
-  case 3:
-    TIMSK3 |= 0x1; //turn on interrupt
+  case 5:
+    TIMSK5 |= 0x1; //turn on interrupt
     break;
 
   case 4:
@@ -422,10 +421,10 @@ ISR(TIMER1_OVF_vect)
   g_overflow_count[1]++;
 }*/
 
-ISR(TIMER3_OVF_vect)
+ISR(TIMER5_OVF_vect)
 {
-  TIMSK3 &= ~(0x1); //turn off interrupt
-  g_pending_interrupt[3] = false;
+  TIMSK5 &= ~(0x1); //turn off interrupt
+  g_pending_interrupt[5] = false;
 }
 
 ISR(TIMER4_OVF_vect)
@@ -434,7 +433,7 @@ ISR(TIMER4_OVF_vect)
   g_pending_interrupt[4] = false;
 }
 
-ISR(TIMER5_COMPA_vect)
+ISR(TIMER3_COMPA_vect)
 {
   timer1m_callback();
 }
