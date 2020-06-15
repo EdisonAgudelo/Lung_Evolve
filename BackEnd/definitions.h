@@ -142,7 +142,7 @@ typedef enum
 //review
 const float kMotorBellowMaxPos = 280.0; // mm. In this position, bellow is full closed
 const float kMotorBellowMinPos = 5.0;   // mm. In this position, bellow is full open
-const float kMotorChokeMaxPos = 60.0;   // mm. In this position, choke valve is full open
+const float kMotorChokeMaxPos = 6.0;   // mm. In this position, choke valve is full open
 const float kMotorChokeMinPos = 0.0;    // mm. In this position, choke valve is full closed
 
 const float kMotorDefaultReturnVelBellows = 10.0; //mm/s //to go to home position

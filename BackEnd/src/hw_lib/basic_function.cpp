@@ -210,11 +210,11 @@ bool DirverInitialization(void)
   voltage_bat.SetAlarm(kVoltageMaxValueBattery, kVoltageMinValueBattery);
   temp_bat.SetAlarm(kTempMaxValueBattery, kTempMinValueBattery);
   temp_motor.SetAlarm(kTempMaxValueMotor, kTempMinValueMotor);
-
+/*
   motor_bellow.SetLimitPin(kHardwareSwitchBMotor1, kHardwareSwitchFMotor1);
   motor_valve_o2.SetLimitPin(kHardwareSwitchBMotor2, kHardwareSwitchFMotor2);
   motor_valve_air.SetLimitPin(kHardwareSwitchBMotor3, kHardwareSwitchFMotor3);
-
+*/
   motor_bellow.SetDriverConfig(kMotorBellowSteps, kMotorBellowmmRev, kMotorBellowUSteps);
   motor_valve_o2.SetDriverConfig(kMotorO2Steps, kMotorO2mmRev, kMotorO2USteps);
   motor_valve_air.SetDriverConfig(kMotorAirSteps, kMotorAirmmRev, kMotorAirUSteps);

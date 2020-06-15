@@ -384,7 +384,7 @@ void WarningActions(void)
     //if supply is restore
     if (!warning_power_source_prev)
     {
-      dbprintf("INFO:Battery protection was restored\n");
+      dbprintf("INFO: Battery protection was restored\n");
       DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
     }
   }
@@ -553,7 +553,7 @@ void FMSBreathingConfigHW(void)
 
   case kBreathingInPause:
 
-    dbprintf("INFO:Enter in In pause\n");
+    dbprintf("INFO: Enter in In pause\n");
     DriverMotorStop(kMotorIdBellows);
     if (!breathing_config.is_assisted || breathing_config.trigger_source_pressure)
     {
@@ -592,7 +592,7 @@ void FMSBreathingConfigHW(void)
   case kBreathingInCicle:
 
     //move motor forward
-    dbprintf("INFO: Enter in In clicle\n");
+    dbprintf("INFO: Enter in In cicle\n");
     if (!breathing_config.is_assisted || breathing_config.trigger_source_pressure)
     {
       //pressure trigger or breathing controlled
@@ -673,6 +673,7 @@ void FMSMainLoop(void)
         //check if main motor stops
         if (DriverMotorIsStop(kMotorIdBellows))
         {
+          dbprintf("INFO: Init Bellows is full\n");
           init_state = kInitMoveChokeDefault;
           DriverMotorStop(kMotorIdAirChoke);
         }
@@ -703,14 +704,15 @@ void FMSMainLoop(void)
           //if is the firt time, bring air choke to a close position
           if (any_use_count == 0)
           {
-
-            DriverMotorMoveTo(kMotorIdAirChoke, -2 * kMotorBellowMaxPos); //close air choke valve
+            dbprintf("INFO: Init Closing air input\n");
+            DriverMotorMoveTo(kMotorIdAirChoke, -2.0 * kMotorChokeMaxPos); //close air choke valve
 
             any_use_count++;
             main_state_ref_time = Millis();
           }
           else
           {
+            dbprintf("INFO: Init Wait O2 choke\n");
             init_state = kInitFinalStep;
           }
         }
@@ -835,18 +837,48 @@ void FMSMainLoop(void)
       ComputeParameters();
       if (breathing_config.is_standby)
       {
+        dbprintf("INFO: leaving breathing mode\n");
         main_state = kMainIdle;
+        
+        // return to default position
+        DriverMotorStop(kMotorIdBellows);
+        DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMinPos);
+        DriverMotorSetVel(kMotorIdBellows, kMotorDefaultReturnVelBellows);
         break;
       }
 
       //if out pause ends
       if (GetDiffTime(Millis(), breathing_state_ref_time) >= breathing_dinamic.breathing_out_puase_time)
       {
-        breathing_state_ref_time = Millis();
-        breathing_state = kBreathingInCicle;
-        FMSBreathingConfigHW();
+        dbprintf("INFO: Time trigger detected\n");
+        goto kBreathingOutPause_change_state;
+      }
+      else if (breathing_config.is_assisted)
+      {
+        //check if it is presure controled
+        if (!breathing_config.is_volume_controled && system_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
+        {
+          dbprintf("INFO: Patient trigger detected\n");
+          goto kBreathingOutPause_change_state;
+        }
+        //check if volume controled
+        else if (breathing_config.is_volume_controled && system_measure.patient_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
+        {
+          dbprintf("INFO: Patient trigger detected\n");
+          goto kBreathingOutPause_change_state;
+        }
+        else
+        {
+          //no trigger from patient
+        }
       }
 
+      break;
+
+    kBreathingOutPause_change_state:
+      breathing_state_ref_time = Millis();
+      breathing_state = kBreathingInCicle;
+      FMSBreathingConfigHW();
       break;
 
     case kBreathingInPause:
@@ -860,36 +892,11 @@ void FMSMainLoop(void)
       //if there is a time out
       if (GetDiffTime(Millis(), breathing_state_ref_time) >= breathing_dinamic.breathing_in_puase_time)
       {
-        dbprintf("INFO: Time trigger detected\n");
-        goto kBreathingInPause_change_state;
-      }
-      //check if breathig is assited
-      else if (breathing_config.is_assisted)
-      {
-        //check if it is presure controled
-        if (!breathing_config.is_volume_controled && system_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
-        {
-          dbprintf("INFO: Patient trigger detected\n");
-          goto kBreathingInPause_change_state;
-        }
-        //check if volume controled
-        else if (breathing_config.is_volume_controled && system_measure.patient_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
-        {
-          dbprintf("INFO: Patient trigger detected\n");
-          goto kBreathingInPause_change_state;
-        }
-        else
-        {
-          //no trigger from patient
-        }
-      }
 
-      break;
-    //chenge state routine
-    kBreathingInPause_change_state:
-      breathing_state_ref_time = Millis();
-      breathing_state = kBreathingOutCicle;
-      FMSBreathingConfigHW();
+        breathing_state_ref_time = Millis();
+        breathing_state = kBreathingOutCicle;
+        FMSBreathingConfigHW();
+      }
 
       break;
 
