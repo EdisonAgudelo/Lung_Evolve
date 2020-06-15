@@ -209,7 +209,7 @@ bool DriverLoops(void)
   DriverLedLoop(&g_buzzer);
   DriverLedLoop(&g_discharge_rele);
   // restore
-  motor_bellow.Loop(); //much faster than a for
+  motor_bellow.Loop();
 
   motor_valve_o2.Loop();
   motor_valve_air.Loop();

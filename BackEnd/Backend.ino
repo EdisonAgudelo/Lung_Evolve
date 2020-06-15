@@ -131,7 +131,7 @@ void ComputeParameters(void)
 {
   uint8_t i;
 
-  //this temporal variables is used to make first caculos a check if time result are sound.
+  //this temporal variables is used to make first calculation a check if time result are sound.
   //If everything is ok, transfer this values to breathing dinamics
 
   int32_t breathing_in_puase_time;
@@ -149,12 +149,13 @@ void ComputeParameters(void)
     //////////////here is where config parameters request is proecessed///////////////
 
     //transfer flags
-    breathing_config.all[0] = breathing_config_request.all[0];
+    for (i = 0; i < 5; i++)
+      breathing_config.all[i] = breathing_config_request.all[i];
 
     //calculate new breathing dinamics
-    breathing_in_puase_time = ((int32_t)breathing_config_request.pause_time) * 1000;
+    breathing_in_puase_time = ((int32_t)breathing_config_request.pause_time);
     breathing_in_time = 60000 / (((int32_t)breathing_config_request.breathing_rate) * (((int32_t)breathing_config_request.ie_ratio) + 1));
-    breathing_out_puase_time = ((int32_t)breathing_config_request.apnea_time) * 1000;
+    breathing_out_puase_time = ((int32_t)breathing_config_request.apnea_time);
     breathing_out_time = (60000 * ((int32_t)breathing_config_request.ie_ratio)) / (((int32_t)breathing_config_request.breathing_rate) * (((int32_t)breathing_config_request.ie_ratio) + 1));
 
     breathing_out_time -= breathing_out_puase_time;
@@ -185,7 +186,7 @@ void ComputeParameters(void)
     }
 
     //transfer all new parameters
-    for (i = 1; i < sizeof(breathing_config.all); i++)
+    for (; i < sizeof(breathing_config.all); i++)
       breathing_config.all[i] = breathing_config_request.all[i];
 
     // transfer main calculations
@@ -200,16 +201,29 @@ void ComputeParameters(void)
     breathing_dinamic.motor_return_vel_bellows = (kMotorBellowMaxPos * 1000.0) / (((float)breathing_dinamic.breathing_out_time) * 0.9); //mm/s
 
     if (breathing_config.is_volume_controled)
-      breathing_dinamic.sensor_air_flow_ref = breathing_config.volume_tidal;
+      breathing_dinamic.sensor_air_flow_ref = (float)breathing_config.volume_tidal;
     else
-      breathing_dinamic.sensor_pressure_ref = breathing_config.in_presure;
+      breathing_dinamic.sensor_pressure_ref = (float)breathing_config.in_presure;
 
-    //espiration trigger is no supported rigth now
+    if (breathing_config.trigger_source_pressure)
+    { //  manifold        inhalation         exhalation
+      breathing_dinamic.valve_position[kBreathingInCicle] = (ValvePos){kValveFullClose, kValveFullOpen, kValveFullClose};
+      breathing_dinamic.valve_position[kBreathingInPause] = (ValvePos){kValveFullClose, kValveFullClose, kValveFullClose};
+      breathing_dinamic.valve_position[kBreathingOutCicle] = (ValvePos){kValveFullOpen, kValveFullClose, kValveFullOpen};
+      breathing_dinamic.valve_position[kBreathingOutPause] = (ValvePos){kValveFullOpen, kValveFullClose, kValveFullOpen};
 
-    breathing_dinamic.sensor_pressure_trigger_ins_value = (float)breathing_config.minimun_peep - (float)breathing_config.trigger_value;
-    //breathing_dinamic.sensor_pressure_trigger_esp_value;
-    breathing_dinamic.sensor_flow_trigger_ins_value = (float)breathing_config.trigger_value; //flow deviation
-    //breathing_dinamic.sensor_flow_trigger_esp_value;
+      breathing_dinamic.sensor_pressure_trigger_ins_value = (float)breathing_config.minimun_peep - (float)breathing_config.trigger_value;
+    }
+    else
+    {
+      breathing_dinamic.valve_position[kBreathingInCicle] = (ValvePos){kValveFullClose, kValveFullOpen, kValveFullClose};
+      breathing_dinamic.valve_position[kBreathingInPause] = (ValvePos){kValveFullOpen, kValveFullClose, kValveFullClose};
+      breathing_dinamic.valve_position[kBreathingOutCicle] = (ValvePos){kValveFullOpen, kValveFullClose, kValveFullOpen};
+      breathing_dinamic.valve_position[kBreathingOutPause] = (ValvePos){kValveFullClose, kValveFullOpen, kValveFullOpen};
+
+      breathing_dinamic.sensor_flow_trigger_ins_value = (float)breathing_config.trigger_value;              //flow deviation
+      breathing_dinamic.motor_flow_bias_vel_bellows = (breathing_config.trigger_value + 1) * kBellowFactor; //
+    }
 
     //----------review----------//
 
@@ -453,7 +467,7 @@ void WarningMonitor(void)
         main_warning.high_volume_leakage = system_measure.patient_leakage > breathing_config.maximum_leakage;
 
         if (breathing_config.is_assisted)
-          main_warning.apnea = system_measure.apnea_time > breathing_config.apnea_time;
+          main_warning.apnea = system_measure.apnea_time >= breathing_config.apnea_time;
         else
           main_warning.apnea = false;
       }
@@ -491,28 +505,77 @@ void FMSBreathingConfigHW(void)
 
   case kBreathingOutPause:
 
+    if (!breathing_config.is_assisted || breathing_config.trigger_source_pressure)
+    {
+      //pressure trigger or breathing controlled
+
+      //motor is returning
+    }
+    else
+    {
+      //flow trigger
+
+      //move motor at calculated velocity to generate a bias flow in patient circuit tubes
+      DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMaxPos);
+      DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_flow_bias_vel_bellows);
+    }
+
+    DriverMotorMoveTo(kMotorIdAirChoke,breathing_dinamic.motor_position_air_choke);
+    DriverMotorMoveTo(kMotorIdO2Choke,breathing_dinamic.motor_position_o2_choke);
+
     goto config_valves;
 
   case kBreathingInPause:
-    //hold motor position
+
     DriverMotorStop(kMotorIdBellows);
+    if (!breathing_config.is_assisted || breathing_config.trigger_source_pressure)
+    {
+      //pressure trigger or breathing controlled
+      //motor starts to stop
+    }
+    else
+    {
+      //flow trigger
+      //move motor full backward 
+      DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMinPos);
+      DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_return_vel_bellows);
+    }
+
+    //hold motor position
+
     goto config_valves;
 
   case kBreathingOutCicle:
-    //full bellows of o2 and air
-    DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMinPos);
-    DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_return_vel_bellows);
 
-    //move motor to request fio
-    DriverMotorMoveTo(kMotorIdO2Choke, breathing_dinamic.motor_position_o2_choke);
-    DriverMotorMoveTo(kMotorIdAirChoke, breathing_dinamic.motor_position_air_choke);
-
+    if (!breathing_config.is_assisted || breathing_config.trigger_source_pressure)
+    {
+      //pressure trigger or breathing controlled
+      DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMinPos);
+      DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_return_vel_bellows);
+    }
+    else
+    {
+      //flow trigger
+      //motor is returning
+    }
+    
     goto config_valves;
 
   case kBreathingInCicle:
 
-    //move motor foward
-    DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMaxPos);
+    //move motor forward
+
+    if (!breathing_config.is_assisted || breathing_config.trigger_source_pressure)
+    {
+      //pressure trigger or breathing controlled
+      DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMaxPos);
+      DriverMotorSetVel(kMotorIdBellows, kMotorDefaultReturnVelBellows); //start with any vel
+    }
+    else
+    {
+      //flow trigger
+      //motor is already running
+    }
 
     //clear PID control
     ControlWindup(&control_pressure);
@@ -645,9 +708,9 @@ void FMSMainLoop(void)
     //----------state actions---------//
 
     //make sure that all valves are closed
-    DriverValveOpenTo(kValveIdExhalation, kValveFullClose); 
+    DriverValveOpenTo(kValveIdExhalation, kValveFullClose);
     DriverValveOpenTo(kValveIdInhalation, kValveFullClose);
-    DriverValveOpenTo(kValveIdManifold, kValveFullClose); 
+    DriverValveOpenTo(kValveIdManifold, kValveFullClose);
 
     //compute working parameters
     ComputeParameters();
@@ -883,6 +946,7 @@ void FrontEndCommunicationLoop(void)
   uint8_t transfer_buffer[kTxBufferLength];
   uint8_t transfer_pointer = 0;
   uint16_t i;
+  uint16_t j;
   HicopHeaders rx_flag;
   uint32_t mask = 0x0;
 
@@ -920,10 +984,11 @@ void FrontEndCommunicationLoop(void)
       //check if there is an interesting data to send depending of machine state
       if (main_state == kMainBreathing)
       {
-        for (i = 0; i < sizeof(kTxFastDataId); i++)
+        for (i = 0; i < sizeof(kTxFastDataId) / sizeof(float); i++)
         {
           transfer_buffer[transfer_pointer++] = kTxFastDataId[i];
-          transfer_buffer[transfer_pointer++] = (uint8_t)(system_measure.fast_data[i]);
+          for (j = 0; j < sizeof(float); j++)
+            transfer_buffer[transfer_pointer++] = (uint8_t)(system_measure.fast_data[i * 4 + j]);
         }
       }
     }
@@ -932,13 +997,15 @@ void FrontEndCommunicationLoop(void)
     {
       last_update_time.slow_data = Millis();
 
-      for (i = 0; i < sizeof(kTxSlowDataId); i++)
+      for (i = 0; i < sizeof(kTxSlowDataId) / sizeof(float); i++)
       {
         transfer_buffer[transfer_pointer++] = kTxSlowDataId[i];
-        transfer_buffer[transfer_pointer++] = (uint8_t)(system_measure.slow_data[i]);
+        for (j = 0; j < sizeof(float); j++)
+          transfer_buffer[transfer_pointer++] = (uint8_t)(system_measure.slow_data[i * 4 + j]);
       }
     }
 
+    //if there is data on transfer_buffer, send it
     if (transfer_pointer != 0)
       HicopSendData(kHicopHeaderData, transfer_buffer, transfer_pointer);
   }

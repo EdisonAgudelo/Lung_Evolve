@@ -8,7 +8,7 @@
 typedef enum
 {
 
-  kMainInit,
+  kMainInit= 0x0,
   kMainIdle,
   kMainTunning,
   kMainBreathing,
@@ -19,19 +19,20 @@ typedef enum
 //sub main or breathins states
 typedef enum
 {
-  kBreathingOutPause,
+  kBreathingOutPause = 0x0,
   kBreathingInPause,
   kBreathingOutCicle,
   kBreathingInCicle
 } BreathingStates;
 
-typedef enum{
+//submain init states 
+typedef enum
+{
   kInitStartFuelBellow,
   kInitWaitFuelBellow,
   kInitMoveChokeDefault,
   kInitWaitChokeDefault,
   kInitFinalStep
-
 } InitStates;
 
 //this struct is used by FMSDelaySet to create "virtual" FMS delays
@@ -67,12 +68,21 @@ typedef union {
 typedef union {
   struct
   {
-
-    //mechanical ventilator alarms
     bool apnea : 1; //x
 
     bool high_breathing_rate : 1; //x
     bool low_breathing_rate : 1;  //x
+
+    bool high_in_volume_tidal : 1;     //x
+    bool low_in_volume_tidal : 1;      //x
+    bool near_low_in_volume_tidal : 1; //x
+
+    bool high_ie_ratio : 1; //x
+    bool low_ie_ratio : 1;  //x
+
+    bool low_peep : 1; //x
+
+    bool no_main_supply : 1; //x
 
     bool high_out_pressure : 1; //x
     bool low_out_pressure : 1;  //x
@@ -80,26 +90,13 @@ typedef union {
     bool high_in_pressure : 1; //x
     bool low_in_pressure : 1;  //x
 
-    bool high_in_volume_tidal : 1;     //x
-    bool low_in_volume_tidal : 1;      //x
-    bool near_low_in_volume_tidal : 1; //x
-
     bool high_volume_leakage : 1; //x
 
-    bool high_ie_ratio : 1; //x
-    bool low_ie_ratio : 1;  //x
-
-    bool low_peep : 1; //x
-
-    // mechanical problems
     bool detached_proximal_tube : 1; //x
     bool detached_oxygen_tube : 1;   //review
 
-    //electrical problems
     bool low_battery : 1; //x
     bool no_battery : 1;  //x
-
-    bool no_main_supply : 1; //x
 
     bool high_temp_bat : 1;   //x
     bool high_temp_motor : 1; //x
@@ -107,7 +104,10 @@ typedef union {
   uint32_t all;
 } WarningType;
 
-const uint32_t kWarningMaskBreathingFlags = 0x3ff; //no include mechanical or electrical flags
+//used to turn off flags when ventilator is not breathing
+const uint32_t kWarningMaskBreathingFlags = 0x1fdff; //no include electrical flags
+
+//to generate warnings
 const float kWarningNearToLowFactor = 0.1;
 const float kWarningMaximunBreathingRateFactor = 0.3;
 const float kWarningMaximunIeRatioFactor = 0.1;
@@ -125,6 +125,10 @@ const float kMotorBellowMaxPos = 280.0; // mm. In this position, bellow is full 
 const float kMotorBellowMinPos = 5.0;   // mm. In this position, bellow is full open
 const float kMotorChokeMaxPos = 60.0;   // mm. In this position, choke valve is full open
 const float kMotorChokeMinPos = 0.0;    // mm. In this position, choke valve is full closed
+
+const float kMotorDefaultReturnVelBellows = 10.0; //mm/s //to go to home position
+const float kMotorDefaultVelAirChoke = 0.5;       //mm/s //normal operation
+const float kMotorDefaultVelO2Choke = 0.5;        //mm/s //normal operation
 
 //valve IDs
 typedef enum
@@ -158,12 +162,12 @@ typedef union {
   {
     //working mode options
     bool is_tunning;          //calibration
-    bool is_standby;          //no control
+    bool is_standby;          //no breathing
     bool is_volume_controled; //control by volumen or pressure
     bool is_assisted;         //true: ventilator should wait for patient trigger or false: wait for time trigger
 
     //reference values
-    bool trigger_source; //pressure true or flow false
+    bool trigger_source_pressure; //pressure true or flow false
 
     uint8_t trigger_value;  //1 ~ 3 slm or -3 ~ -5 cmh20
     uint8_t FiO2;           // 21 - 100 [%]
@@ -190,12 +194,6 @@ typedef union {
 
 } BreathingParameters;
 
-const float kMinimunFiO2 = 21.0;
-
-//review
-const float kConstantO2Choke = 1 / (100.0 - 21.0);  //to convert fio in choke position
-const float kConstantAirChoke = 1 / (100.0 - 21.0); //to convert fio in choke position
-
 typedef union {
   struct
   {
@@ -210,8 +208,8 @@ typedef union {
 typedef struct
 {
   //velocities
-  float motor_return_vel_bellows; //mm/s
-  float motor_flow_bias_bellows; //mm/s
+  float motor_return_vel_bellows;    //mm/s
+  float motor_flow_bias_vel_bellows; //mm/s
 
   //control ref
   float sensor_air_flow_ref; //control reference for flow controlled mode
@@ -235,9 +233,16 @@ typedef struct
   ValvePos valve_position[4];
 } BreathingDinamics;
 
-const float kMotorDefaultReturnVelBellows = 10.0;  //mm/s //to go to home position
-const float kMotorDefaultVelAirChoke = 0.5;      //mm/s //normal operation
-const float kMotorDefaultVelO2Choke = 0.5;       //mm/s //normal operation
+
+const float kMinimunFiO2 = 21.0;
+
+//review
+const float kConstantO2Choke = 1 / (100.0 - 21.0);  //to convert fio in choke position
+const float kConstantAirChoke = 1 / (100.0 - 21.0); //to convert fio in choke position
+
+const float kBellowArea = 232.35219; //cm^2
+//to convert flow in bellow vel 
+const float kBellowFactor = 10000.0 / (60.0 * kBellowArea); // [mm/s]/[slm]
 
 //this struct saves all measured data
 typedef union {
@@ -265,12 +270,12 @@ typedef union {
   //for frontend pruporse
   struct
   {
-    float fast_data[4];
-    float slow_data[3];
-    float anonymous_data[4];
+    uint8_t fast_data[4*4];
+    uint8_t slow_data[5*4];
+    float anonymous_data[6];
   };
 
-  float all[14];
+  uint8_t all[15*4];
 
 } MeasureType;
 
@@ -283,34 +288,32 @@ const float kBatDischargerConversion = 100.0 / (kBatMaxVolatge - kBatMinVoltage)
 
 //////////////////////// front end comunication definitions ///////////////////
 
-enum
-{
-  kFastDataPeriod = 40,  //ms each kTxDataPeriod ms send data to mcu
-  kSlowDataPeriod = 5000 //ms each kTxDataPeriod ms send data to mcu
-};
-
 //temporal buffer used to build a receive all frames from other mcu
 const uint8_t kTxBufferLength = 0xff;
 
 const uint8_t kTxFastDataId[] = {
-    // tidal;
+    // in_pressure    
     0x0,
-    // in_pressure;
+    // out_pressure
     0x1,
-    // out_pressure;
+    // patient_flow
     0x2,
-    // patient_flow;
-    0x3};
+    // patient_volume
+    0x3,
 
-const uint8_t kTxSlowDataId[] =
-    {
-        // breathing_rate;
-        0x4,
-        // ie_ratio;
-        0x5,
-        //battery_level
-        0x6
+};
 
+const uint8_t kTxSlowDataId[] = {
+    // tidal
+    0x4,
+    // breathing_rate
+    0x5,
+    // ie_ratio;
+    0x6,
+    // battery_level
+    0x7,
+    // patient_leakage
+    0x8,
 };
 
 typedef struct
@@ -319,56 +322,58 @@ typedef struct
   uint32_t slow_data;
 } DataTimeRef;
 
+enum
+{
+  kFastDataPeriod = 40,  //ms each kTxDataPeriod ms send data to mcu
+  kSlowDataPeriod = 5000 //ms each kTxDataPeriod ms send data to mcu
+};
+
 const uint8_t kTxAlarmId[] = {
-    //bool apnea_alarm:1;
+  
+    
+    //    bool apnea_alarm; 
     0x0,
-    //bool high_breathing_rate : 1;
+    //bool high_breathing_rate; 
     0x1,
-    //bool low_breathing_rate : 1;
+    //bool low_breathing_rate ; 
     0x2,
-    //bool high_out_pressure : 1;
+    //bool high_in_volume_tidal ; 
     0x3,
-    //bool low_out_pressure : 1;
+    //bool low_in_volume_tidal ; 
     0x4,
-    // bool high_in_pressure : 1;
+    //bool near_low_in_volume_tidal; 
     0x5,
-    // bool low_in_pressure : 1;
+    //bool high_ie_ratio ; 
     0x6,
-    //bool high_out_volume_tidal : 1;
+    //bool low_ie_ratio; 
     0x7,
-    //bool low_out_volume_tidal : 1;
+    //bool low_peep; 
     0x8,
-    //bool near_low_out_volume_tidal:1;
+    //bool no_main_supply; 
     0x9,
-    //bool high_in_volume_tidal : 1;
+    //bool high_out_pressure;
+    0xA,
+    //bool low_out_pressure ;
+    0xB,
+    //bool high_in_pressure ; 
+    0xC,
+    //bool low_in_pressure;  
+    0xD,
+    //bool high_volume_leakage; 
+    0xE,
+    //bool detached_proximal_tube; 
+    0xF,
+    //bool detached_oxygen_tube; 
     0x10,
-    //bool low_in_volume_tidal : 1;
+    //bool low_battery;
     0x11,
-    //bool near_low_in_volume_tidal:1;
+    //bool no_battery; 
     0x12,
-    //bool high_volume_leakage:1;
+    //bool high_temp_bat; 
     0x13,
-    //bool high_ie_ratio : 1;
+    //bool high_temp_motor; 
     0x14,
-    //bool low_ie_ratio : 1;
-    0x15,
-    //bool low_peep:1;
-    0x16,
-    //bool detached_proximal_tube:1;
-    0x17,
-    //bool detached_oxygen_tube:1;
-    0x18,
-    //bool low_battery:1;
-    0x19,
-    //bool no_battery:1;
-    0x20,
-    //bool no_main_supply:1;
-    0x21,
-    //bool high_temp_bat:1;
-    0x22,
-    //bool high_temp_motor:1;
-    0x23,
-    //bool ShutDown;
-    0x24};
+    
+    };
 
 #endif
