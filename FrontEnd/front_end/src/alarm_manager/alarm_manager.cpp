@@ -59,7 +59,7 @@ void check_state_alarm(void)
         {
             AS.transition1=true;
             AS.prevstate1=1;
-            Serial.print("transision");
+            //Serial.print("transision");
         }
         else
         {

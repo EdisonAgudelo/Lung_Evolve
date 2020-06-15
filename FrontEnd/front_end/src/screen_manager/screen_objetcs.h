@@ -35,15 +35,16 @@ NexNumber n17 = NexNumber(11, 11, "n17");
 NexNumber n18 = NexNumber(12, 9, "n18");
 NexNumber n19 = NexNumber(12, 10, "n19");
 
-
-
+NexButton b2 = NexButton(1, 5, "b2");      // parameters Button
+NexButton b3 = NexButton(1, 6, "b3");      // calibration Button
+NexButton b5 = NexButton(1, 7, "b5");      // alarm config Button
 NexButton b9 = NexButton(2, 8, "b9");      // Main menu Button
 NexButton b11 = NexButton(3, 5, "b11");      // assistive ventilation Button
 NexButton b12 = NexButton(3, 6, "b12");      // controlled ventilation Button
 NexButton b14 = NexButton(14, 5, "b14");      // volume control Button
 NexButton b15 = NexButton(15, 6, "b15");      // pressure control Button
 NexButton b23 = NexButton(5, 14, "b23");      //  next page Button
-NexButton b29 = NexButton(6, 17, "b29");      //begin ventilation
+NexButton b29 = NexButton(6, 19, "b29");      //begin ventilation
 NexButton b37 = NexButton(7, 14, "b37");      //next page Button
 NexButton b42 = NexButton(8, 12, "b42");      //begin ventilation
 NexButton b75 = NexButton(9, 12, "b75");      //next page Button
@@ -100,6 +101,9 @@ NexText t52 = NexText(20,7,"t52");
 
 NexTouch *nex_listen_list[] = 
 {
+  &b2,
+  &b3,
+  &b5,
   &b9,
   &b11,
   &b12,

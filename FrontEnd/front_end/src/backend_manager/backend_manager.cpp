@@ -67,15 +67,15 @@ void backend_management(void)
                  while (i<transfer_pointer)
                 {
                     alarms_struct.bits[transfer_buffer[i]] = transfer_buffer[i+1];
-                    Serial.write(transfer_buffer[i]);
-                    Serial.write(transfer_buffer[i+1]);
+                    //Serial.write(transfer_buffer[i]);
+                   // Serial.write(transfer_buffer[i+1]);
                     i+=2;
 
                 }
                 warnings_change = true;
                 //mask_alarms_struct.all=alarms_struct.all;
 
-                Serial.write(alarms_struct.apnea_alarm);
+               /*Serial.write(alarms_struct.apnea_alarm);
                 Serial.write(alarms_struct.high_breathing_rate);
                 Serial.write(alarms_struct.low_breathing_rate);
                 Serial.write(alarms_struct.high_out_pressure);
@@ -95,7 +95,7 @@ void backend_management(void)
                 Serial.write(alarms_struct.no_battery);
                 Serial.write(alarms_struct.no_main_supply);
                 Serial.write(alarms_struct.high_temp_bat);
-                Serial.write(alarms_struct.high_temp_motor);
+                Serial.write(alarms_struct.high_temp_motor);*/
                 
             break;
             default:
@@ -108,14 +108,39 @@ void backend_management(void)
 
     if (update)
     {
-        for(i=0;i< sizeof(config.all);i++)
+        /*for(i=0;i< sizeof(config.all);i++)
         {
             //transfer_buffer[transfer_pointer++] = ConfigId[i];
-            transfer_buffer[transfer_pointer++] = (config.all[i]);
-        }
+            transfer_buffer[i] = (config.all[i]);
+            //Serial.write(transfer_buffer[i]);
+            //Serial.print(i);
+        }*/
         //send data
-        HicopSendData(kHicopHeaderConfig, transfer_buffer, transfer_pointer);
+        
+        HicopSendData(kHicopHeaderConfig, config.all, sizeof(config.all));
         update=false;
+        Serial.write(config.tunning);
+        Serial.write(config.pause);
+        Serial.write(config.control);
+        Serial.write(config.controlType);
+        Serial.write(config.triggerSource);
+        Serial.write(config.trigger);
+        Serial.write(config.fio2);
+        Serial.write(config.pressure);
+        Serial.write(config.tidal);
+        Serial.write(config.bpm);
+        Serial.write(config.ie);
+        Serial.write(config.apnea);
+        Serial.write(config.tpause);
+        Serial.write(config.maxInPressure);
+        Serial.write(config.minInPressure);
+        Serial.write(config.maxOutPressure);
+        Serial.write(config.minOutPressure);
+        Serial.write(config.maxTV);
+        Serial.write(config.minTV);
+        Serial.write(config.peep);
+        Serial.write(config.max_leakage);
+        //Serial.print("ENVIO");
     }   
     else
     {

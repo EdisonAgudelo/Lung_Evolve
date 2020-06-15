@@ -4,6 +4,8 @@
 
 
 const uint8_t kTxBufferLength = 0xff;
+
+extern bool off;
 ///////////*************************////////////////////////
 //ALARMS
 typedef union {
@@ -105,6 +107,38 @@ const uint8_t AlarmId[] = {
 typedef union
 {
   struct{
+    bool tunning;
+    bool pause; //ventilation operation is paused(0x1) or not (0x0)
+    bool control; //volume(true) or pressure(false)
+    bool controlType;//assistive(true) or controlled(false)
+    bool triggerSource; //pressure(true) flow(false)
+    uint32_t trigger;
+    uint32_t fio2; //21-100
+    uint32_t pressure;//0-65
+    uint32_t tidal; //200-650
+    uint32_t bpm; //6-40
+    uint8_t ie; 
+    uint32_t apnea; //ms 0-30000
+    uint32_t tpause; //0-30000
+    uint32_t maxInPressure; //
+    uint32_t minInPressure;
+    uint32_t maxOutPressure;
+    uint32_t minOutPressure;
+    uint32_t maxTV;
+    uint32_t minTV;
+    uint32_t peep; 
+    uint32_t max_leakage;
+     
+	  
+	  
+    
+    
+    //uint8_t off; //ventilator is off(0x1) or not(0x0)
+    
+    
+    
+	  
+/*
     uint32_t fio2;
     uint32_t bpm;
     uint32_t peep;
@@ -125,9 +159,9 @@ typedef union
     uint32_t maxTV;
     uint32_t minTV;
 	  uint32_t max_leakage;
-
+*/
   };
-  uint8_t all[65];
+  uint8_t all[66];
 
 }CONFIGURATION;
 extern CONFIGURATION config;
@@ -143,10 +177,10 @@ const uint8_t ConfigId[] = {
   0x7,
   0x8,
   0x9,
-  0x10,
-  0x11,
-  0x12,
-  0x13,
+  0xa,
+  0xb,
+  0xc,
+  0x1c,
   0x14,
   0x15,
   0x16,

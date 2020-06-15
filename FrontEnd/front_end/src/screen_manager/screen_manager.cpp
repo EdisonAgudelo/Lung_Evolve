@@ -24,6 +24,7 @@ static TypeHeader TYPE;
 static bool monitoring=false;
 bool alarmPage=false;
 bool update_alarm_screen;
+bool off;
 
 //const char t[]={'t30','t31','t32','t33','t34','t35','t36','t37','t38','t39','t40','t41','t42','t43'
 //                  ,'t44','t45','t46','t47','t48','t49','t50'};
@@ -62,7 +63,9 @@ void init_mask (void)
 void handlers (void)
 {
   //Serial.print("handler\n");
-
+  b2.attachPush(b2PushCallback, &b2);
+  b3.attachPush(b3PushCallback, &b3);
+  b5.attachPush(b5PushCallback, &b5);
   b9.attachPush(b9PushCallback, &b9);
   b11.attachPush(b11PushCallback, &b11);
   b12.attachPush(b12PushCallback, &b12);
@@ -89,10 +92,27 @@ void handlers (void)
 
 ////////////////////////// events when a button is pressed or released ////////////////////////
 
+void b2PushCallback(void *ptr)
+{
+  
+  config.tunning=false;
+}
+
+void b3PushCallback(void *ptr)
+{
+  config.tunning=true;
+  //Serial.print("tunning");
+}
+
+void b5PushCallback(void *ptr)
+{
+  config.tunning=false;
+}
+
 void b9PushCallback(void *ptr)
 {
   //shut down
-  config.off=0x1;
+  off=true;
 }
 
 
@@ -100,26 +120,31 @@ void b11PushCallback(void *ptr)
 {
   //assistive
   MODE=Kassistive;
-  config.controlType=0x1;
+  
+  
+  
 }
 
 void b12PushCallback(void *ptr)
 {
   //controlled
   MODE=Kcontrolled;
-  config.controlType=0x0;
+  
+ 
 }
 
 void b14PushCallback(void *ptr)
 {
   //volume control
-  config.control=0x1;
+  
 }
 
 void b15PushCallback(void *ptr)
 {
   //pressure control
-  config.control=0x0;
+  
+  //Serial.print("pression control");
+ 
 }
 
 void b23PushCallback(void *ptr)
@@ -135,7 +160,7 @@ void b29PushCallback(void *ptr)
 {
   
   //volume2
-  
+  //Serial.print("volume");
   TYPE=Kvolume2;
   screen_revieve_data();
  
@@ -187,7 +212,20 @@ void b73PushCallback(void *ptr)
 
 void bt0PushCallback(void *ptr)
 {
-  config.pause=0x1;
+  uint32_t temp=0;
+  
+  update=1;
+  bt0.getValue(&temp);
+  if(temp==0x1)
+  {
+    config.pause=0x1;
+    Serial.print("push");
+  }
+  else
+  {
+    config.pause=0x0;
+    Serial.print("pop");
+  }
 }
 
 void bt0PopCallback(void *ptr)
@@ -202,7 +240,7 @@ void bt1PushCallback(void *ptr)
   if(temp==0x1)
   {
     AS.ScreenSoundOff=true;
-    Serial.print("sounOff");
+    //Serial.print("sounOff");
   }
   else
   {
@@ -246,17 +284,21 @@ void screen_revieve_data(void)
   switch(MODE)
   {
     case Kcontrolled:
+      
       switch (TYPE)
       {
       case Kvolume1:
+          config.control=true;
+          config.controlType=false;
+          //Serial.write(config.control);
           n1.getValue(&config.fio2);
-          delay(4);
+          delay(5);
           n2.getValue(&config.bpm);
-          delay(4);
+          delay(5);
           n3.getValue(&config.peep);
-          delay(4);
+          delay(5);
           n20.getValue(&config.tpause);
-          delay(4);
+          delay(5);
           Serial2.print("page 6");
           Serial2.write(0xff);
           Serial2.write(0xff);
@@ -265,9 +307,9 @@ void screen_revieve_data(void)
       case Kvolume2:
               
           n4.getValue(&config.tidal);
-          delay(4);
+          delay(5);
           n5.getValue(&config.apnea);
-          delay(4);
+          delay(5);
           c0.getValue(&temp);
           if(temp)
           {
@@ -275,7 +317,7 @@ void screen_revieve_data(void)
           }
           else
           {
-            delay(4);
+            delay(5);
             c1.getValue(&temp);
             if(temp)
             {
@@ -286,39 +328,41 @@ void screen_revieve_data(void)
               config.ie=0x4;
             }
           }
-          delay(4);
+          delay(5);
           Serial2.print("page 20");
           Serial2.write(0xff);
           Serial2.write(0xff);
           Serial2.write(0xff);
-          delay(4);
+          //delay(4);
           update=true;
           monitoring=true;
       break;
 
       case kpressure1:
+        config.control=false;
+        config.controlType=false;
         n6.getValue(&config.fio2);
-        delay(4);
+        delay(5);
         n7.getValue(&config.bpm);
-        delay(4);
+        delay(5);
         n8.getValue(&config.peep);
-        delay(4);
+        delay(5);
         n21.getValue(&config.tpause);
-        delay(4);
+        delay(5);
         Serial2.print("page 8");
         Serial2.write(0xff);
         Serial2.write(0xff);
         Serial2.write(0xff);
-        delay(4);
+        delay(5);
       break;
       case Kpressure2:
       
       n9.getValue(&config.pressure);
-      delay(4);
+      delay(5);
       n10.getValue(&config.apnea);
-      delay(4);
+      delay(5);
       n26.getValue(&config.tidal);
-      delay(4);
+      delay(5);
       c5.getValue(&temp);
           if(temp)
           {
@@ -326,7 +370,7 @@ void screen_revieve_data(void)
           }
           else
           {
-            delay(4);
+            delay(5);
             c6.getValue(&temp);
             if(temp)
             {
@@ -337,12 +381,12 @@ void screen_revieve_data(void)
               config.ie=0x4;
             }
           }
-          delay(4);
+          delay(5);
           Serial2.print("page 20");
           Serial2.write(0xff);
           Serial2.write(0xff);
           Serial2.write(0xff);
-          delay(4);
+          delay(5);
           update=true;
           monitoring=true;
       break;
@@ -352,34 +396,45 @@ void screen_revieve_data(void)
       }
     break;
     case Kassistive:
+      config.controlType=true;
+      config.control=true;
       switch(TYPE)
       {
         case Kassistive1:
           n11.getValue(&config.fio2);
-          delay(4);
+          delay(5);
           n12.getValue(&config.peep);
-          delay(4);
+          delay(5);
           n23.getValue(&config.trigger);
-          delay(4);
+          delay(5);
+          if((int32_t)config.trigger>0)
+          {
+            config.triggerSource=false;
+          }
+          else
+          {
+            config.triggerSource=true;
+          }
+          
           Serial2.print("page 10");
           Serial2.write(0xff);
           Serial2.write(0xff);
           Serial2.write(0xff);
-          delay(4);
+          delay(5);
 
         break;
         case Kassistive2:
           n13.getValue(&config.tpause);
-          delay(4);
+          delay(5);
           n24.getValue(&config.apnea);
-          delay(4);
+          delay(5);
           n25.getValue(&config.tidal);
-          delay(4);
+          delay(5);
           Serial2.print("page 20");
           Serial2.write(0xff);
           Serial2.write(0xff);
           Serial2.write(0xff);
-          delay(4);
+          delay(5);
           update=true;
           monitoring=true;
       break;
@@ -391,29 +446,29 @@ void screen_revieve_data(void)
       {
         case kalarms1:
         n14.getValue(&config.maxInPressure);
-        delay(4);
+        delay(5);
         n15.getValue(&config.minInPressure);
-        delay(4);
+        delay(5);
         n16.getValue(&config.maxOutPressure);
-        delay(4);
+        delay(5);
         n17.getValue(&config.minOutPressure);
-        delay(4);
+        delay(5);
         Serial2.print("page 12");
         Serial2.write(0xff);
         Serial2.write(0xff);
         Serial2.write(0xff);
-        delay(4);
+        delay(5);
         break;
         case Kalarms2:
         n18.getValue(&config.maxTV);
-        delay(4);
+        delay(5);
         n19.getValue(&config.minTV);
-        delay(4);
+        delay(5);
         Serial2.print("page 1");
         Serial2.write(0xff);
         Serial2.write(0xff);
         Serial2.write(0xff);
-        delay(4);
+        delay(5);
         update=true;
         break;
       }
