@@ -11,28 +11,28 @@ void UartConfigCallback(void (*callback)(void))
   uart_callback = callback;
 }
 
-void serialEvent() {
+void serialEvent1() {
   if(uart_callback!=nullptr)
     uart_callback();
 }
 
 void UartBegin(uint32_t baudrate)
 {
-  Serial.begin(baudrate);
+  Serial1.begin(baudrate);
 }
 
 void UartWrite(uint8_t data)
 {
-  Serial.write(data);
+  Serial1.write(data);
 }
 
 uint8_t UartRead(void)
 {
-  return Serial.read();
+  return Serial1.read();
 }
 
 bool UartAvailable(void){
-  return Serial.available();
+  return Serial1.available();
 }
 
 

@@ -10,52 +10,45 @@ typedef union {
   struct
   {
 
-//mechanical ventilator alarms
-    bool apnea_alarm:1;
+    bool apnea_alarm; 
 
-    bool high_breathing_rate : 1;
-    bool low_breathing_rate : 1;
+    bool high_breathing_rate; 
+    bool low_breathing_rate ; 
 
-    bool high_out_pressure : 1;
-    bool low_out_pressure : 1;
+    bool high_in_volume_tidal ; 
+    bool low_in_volume_tidal ; 
+    bool near_low_in_volume_tidal; 
+
+    bool high_ie_ratio ; 
+    bool low_ie_ratio; 
+
+    bool low_peep; 
+
+    bool no_main_supply; 
+
+    bool high_out_pressure;
+    bool low_out_pressure ;
     
-    bool high_in_pressure : 1;
-    bool low_in_pressure : 1;
+    bool high_in_pressure ; 
+    bool low_in_pressure;  
 
-    //bool high_out_volume_tidal : 1;
-    //bool low_out_volume_tidal : 1;
-    //bool near_low_out_volume_tidal:1;
+    bool high_volume_leakage; 
 
-    bool high_in_volume_tidal : 1;
-    bool low_in_volume_tidal : 1;
-    bool near_low_in_volume_tidal:1;
-    
-    bool high_volume_leakage:1;
+    bool detached_proximal_tube; 
+    bool detached_oxygen_tube; 
 
-    bool high_ie_ratio : 1;
-    bool low_ie_ratio : 1;
+    bool low_battery;
+    bool no_battery; 
 
-    bool low_peep:1;
-
-// mechanical problems
-    bool detached_proximal_tube:1;
-    bool detached_oxygen_tube:1;
-
-//electrical problems
-    bool low_battery:1;
-    bool no_battery:1;
-
-    bool no_main_supply:1;
-
-    bool high_temp_bat:1;
-    bool high_temp_motor:1;
-
-    bool system_shutdown:1;
+    bool high_temp_bat; 
+    bool high_temp_motor; 
   };
   
-  uint8_t all[22];
+  uint32_t all;
+  bool bits[21];
 } ALARMS;
 extern ALARMS alarms_struct;
+extern ALARMS mask_alarms_struct;
 
 //alarms id define
 const uint8_t AlarmId[] = {
@@ -80,11 +73,11 @@ const uint8_t AlarmId[] = {
   //bool near_low_out_volume_tidal:1;
   0x9,
   //bool high_in_volume_tidal : 1;
-  0x10,
+  0xa,
   //bool low_in_volume_tidal : 1;
-  0x11,
+  0xb,
   //bool near_low_in_volume_tidal:1;
-  0x12,
+  0xc,
   //bool high_volume_leakage:1;
   0x13,
   //bool high_ie_ratio : 1;

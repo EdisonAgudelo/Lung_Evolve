@@ -13,9 +13,13 @@ typedef struct
     bool MediumAlarmState;
     bool BuzzerOn;
     bool ScreenSoundOff;
+    bool transition1;
+    bool transition2;
+    int prevstate1;
+    int prevstate2;
 } Alarm_state;
 
-extern Alarm_state AS;
+volatile extern Alarm_state AS;
 
 //unsigned long start_counter;
 

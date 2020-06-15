@@ -5,6 +5,7 @@
 
 //serial
 #include "backend_manager.h"
+
 #include "../HICOP_protocol/hicop.h"
 //#include <Arduino.h>
 #include <stdlib.h>
@@ -34,10 +35,11 @@ void backend_management(void)
   uint8_t transfer_buffer[kTxBufferLength];
   uint8_t transfer_pointer = 0;
   HicopHeaders rx_flag;
-  uint16_t i;
+  uint8_t i;
 
     if (HicopReadData(&rx_flag, transfer_buffer, &transfer_pointer))
     {
+        
         switch (rx_flag)
         {
             case kHicopHeaderConfig:
@@ -51,15 +53,50 @@ void backend_management(void)
                     dataValue.all[transfer_pointer] = transfer_buffer[transfer_pointer];
                 }
                 data_change = true;
-                Serial.print("store");
+                //Serial.print("store");
             break;
             case kHicopHeaderAlarm:
             //update parameters
-                 while (transfer_pointer--)
+                
+                i=0;
+                /*
+                for(i=0;i<transfer_pointer;i++)
                 {
-                    alarms_struct.all[transfer_pointer] = transfer_buffer[transfer_pointer];
+                    Serial.write(transfer_buffer[i]);
+                }*/
+                 while (i<transfer_pointer)
+                {
+                    alarms_struct.bits[transfer_buffer[i]] = transfer_buffer[i+1];
+                    Serial.write(transfer_buffer[i]);
+                    Serial.write(transfer_buffer[i+1]);
+                    i+=2;
+
                 }
                 warnings_change = true;
+                //mask_alarms_struct.all=alarms_struct.all;
+
+                Serial.write(alarms_struct.apnea_alarm);
+                Serial.write(alarms_struct.high_breathing_rate);
+                Serial.write(alarms_struct.low_breathing_rate);
+                Serial.write(alarms_struct.high_out_pressure);
+                Serial.write(alarms_struct.low_out_pressure);
+                Serial.write(alarms_struct.high_in_pressure);
+                Serial.write(alarms_struct.low_in_pressure);
+                Serial.write(alarms_struct.high_in_volume_tidal);
+                Serial.write(alarms_struct.low_in_volume_tidal);
+                Serial.write(alarms_struct.near_low_in_volume_tidal);
+                Serial.write(alarms_struct.high_volume_leakage);
+                Serial.write(alarms_struct.high_ie_ratio);
+                Serial.write(alarms_struct.low_ie_ratio);
+                Serial.write(alarms_struct.low_peep);
+                Serial.write(alarms_struct.detached_proximal_tube);
+                Serial.write(alarms_struct.detached_oxygen_tube);
+                Serial.write(alarms_struct.low_battery);
+                Serial.write(alarms_struct.no_battery);
+                Serial.write(alarms_struct.no_main_supply);
+                Serial.write(alarms_struct.high_temp_bat);
+                Serial.write(alarms_struct.high_temp_motor);
+                
             break;
             default:
                 //do nothing

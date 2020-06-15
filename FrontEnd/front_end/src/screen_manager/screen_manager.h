@@ -53,6 +53,8 @@ const int NUM_BYTES=18;
 
 extern bool update;
 
+extern bool alarmPage;
+
 
 //extern CONFIGURATION config;
 //extern Alarm_state AlarmState;
@@ -76,6 +78,14 @@ void b61PushCallback(void *ptr);
 void b73PushCallback(void *ptr);
 void bt0PushCallback(void *ptr);
 void bt0PopCallback(void *ptr);
+void bt1PushCallback(void *ptr);
+void bt1PopCallback(void *ptr);
+void b69PushCallback(void *ptr);
+void b70PushCallback(void *prt);
+void b67PushCallback(void *ptr);
+void screen_alarms(void);
+void send_screen_alarm(void);
+void init_mask (void);
 void screen_revieve_data(void);
 void screen_management(void);
 #endif /*SCREEN_MANAGER_H*/

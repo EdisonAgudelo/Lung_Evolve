@@ -9,9 +9,9 @@ extern DriverLed YELLOW_led;
 
 
 
-void REDLed(bool action);
-void YELLOWLed(bool action);
+void REDLed(bool action, bool transition);
+void YELLOWLed(bool action,bool transition);
 void BUZZER(bool action);
 void init_hardware_front(void);
-
+void ledloop(void);
 #endif /*HARDWARE_FRONT_H*/

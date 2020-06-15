@@ -1,5 +1,6 @@
 
 #include "alarm_manager.h"
+#include <Arduino.h>
 
 
 //ALARMS *alarms_struct;
@@ -23,6 +24,8 @@ void init_alarm_maganement(void)
     AS.MediumAlarmState=false;
     AS.BuzzerOn=false;
     AS.ScreenSoundOff=false;
+    AS.prevstate1=0;
+    AS.prevstate2=0;
 }
 
 /*
@@ -35,6 +38,8 @@ void alarm_management_loop(void)
 
     check_state_alarm();
     alarm_action();
+    DriverLedLoop(&RED_led);
+    DriverLedLoop(&YELLOW_led);
 
 }
 
@@ -44,26 +49,53 @@ void alarm_management_loop(void)
 */
 void check_state_alarm(void)
 {
+    
     if(alarms_struct.low_in_pressure || alarms_struct.high_in_pressure  || alarms_struct.high_volume_leakage || 
-        alarms_struct.system_shutdown || alarms_struct.low_battery || alarms_struct.no_battery || alarms_struct.high_temp_motor || alarms_struct.high_temp_bat|| alarms_struct.detached_oxygen_tube || alarms_struct.detached_proximal_tube == true)
+        alarms_struct.low_battery || alarms_struct.no_battery || alarms_struct.high_temp_motor || alarms_struct.high_temp_bat|| 
+        alarms_struct.detached_oxygen_tube || alarms_struct.detached_proximal_tube || alarms_struct.high_out_pressure || alarms_struct.low_out_pressure == true)
     {
-        AS.HighAlarmState=1;     
+        AS.HighAlarmState=1;  
+        if(AS.prevstate1==0)   
+        {
+            AS.transition1=true;
+            AS.prevstate1=1;
+            Serial.print("transision");
+        }
+        else
+        {
+            AS.transition1=false;
+        }
+        
+        //Serial.print("high");
     }
     else
     {
-        AS.HighAlarmState=0;     
+        AS.HighAlarmState=0;    
+        AS.prevstate1=0; 
     }
     
-    if(alarms_struct.apnea_alarm || alarms_struct.high_breathing_rate || alarms_struct.low_breathing_rate || alarms_struct.high_in_volume_tidal || alarms_struct.no_main_supply || alarms_struct.low_peep==true)
+    if(alarms_struct.apnea_alarm || alarms_struct.high_breathing_rate || alarms_struct.low_breathing_rate || alarms_struct.high_in_volume_tidal || alarms_struct.low_in_volume_tidal || alarms_struct.near_low_in_volume_tidal ||
+     alarms_struct.no_main_supply || alarms_struct.low_peep || alarms_struct.high_ie_ratio || alarms_struct. low_ie_ratio==true)
     {
-        AS.MediumAlarmState=1;     
+        AS.MediumAlarmState=1; 
+        if(AS.prevstate2==0)   
+        {
+            AS.transition2=true;
+            AS.prevstate2=1;
+        }    
+        else
+        {
+            AS.transition2=false;
+        }
+        
     }
     else
     {
         AS.MediumAlarmState=0;     
+        AS.prevstate2=0;
     }
     
-       
+   
 }
 
 /*
@@ -72,17 +104,23 @@ void check_state_alarm(void)
 */
 void alarm_action(void)
 {
+
             //////////// HIGH PRIORITY ALARMS//////////
         if(AS.HighAlarmState == true)
         {
-            REDLed(true);
+            //Serial.print("RLED");
+            REDLed(true,AS.transition1);
+            //digitalWrite(10,HIGH);
+            
             if(AS.ScreenSoundOff)
             {
+                //Serial.print(" off ");
                 BUZZER(false);
                 AS.BuzzerOn=false;
             }
             else
             {
+                //Serial.print("ON");
                 BUZZER(true);
                 AS.BuzzerOn=true;
             }
@@ -90,18 +128,22 @@ void alarm_action(void)
         }
         else
         {
-            REDLed(false);
+            REDLed(false,AS.transition1);
+            //digitalWrite(10,LOW);
             BUZZER(false);
             AS.BuzzerOn=false;
         }
         /////////////MEDIUM PRIORITY ALARMS////////////
         if(AS.MediumAlarmState==true)
         {
-            YELLOWLed(true);
+            YELLOWLed(true,AS.transition2);
+            //digitalWrite(9,HIGH);
         }
         else
         {
-            YELLOWLed(false);
+            YELLOWLed(false,AS.transition2);
+            //digitalWrite(9,LOW);;
         }
+        
 
 }
