@@ -5,19 +5,23 @@
 
 //serial
 #include "backend_manager.h"
-
-#include "../HICOP_protocol/hicop.h"
+#define HICOP_MAX_RESPONSE_TIME 500
+#include "../HICOP_protocol/hicop_config.h"
 //#include <Arduino.h>
 #include <stdlib.h>
 //#include <string.h>
 
 
 
-
+union
+{
+  float var;
+  uint8_t all[4];
+}temp;
 
 static bool breathing_config_change = false;
 static bool warnings_change = false;
-static bool data_change = false;
+bool data_change = false;
 
 
 
@@ -35,6 +39,7 @@ void backend_management(void)
   uint8_t transfer_buffer[kTxBufferLength];
   uint8_t transfer_pointer = 0;
   HicopHeaders rx_flag;
+  uint8_t idtemp;
   uint8_t i;
 
     if (HicopReadData(&rx_flag, transfer_buffer, &transfer_pointer))
@@ -48,12 +53,24 @@ void backend_management(void)
             break;
             case kHicopHeaderData:
             //update parameters
-                 while (transfer_pointer--)
+            Serial.print("dato ");
+            i=0;
+                 while (i<transfer_pointer)
                 {
-                    dataValue.all[transfer_pointer] = transfer_buffer[transfer_pointer];
+                    idtemp=transfer_buffer[i++];
+                    temp.all[0]=transfer_buffer[i++];
+                    temp.all[1]=transfer_buffer[i++];
+                    temp.all[2]=transfer_buffer[i++];
+                    temp.all[3]=transfer_buffer[i++];
+                    dataValue.all[idtemp] = (uint32_t) temp.var;
                 }
                 data_change = true;
-                //Serial.print("store");
+                Serial.write(temp.all[0]);
+                Serial.write(temp.all[1]);
+                Serial.write(temp.all[2]);
+                Serial.write(temp.all[3]);
+                Serial.print("done   ");
+                
             break;
             case kHicopHeaderAlarm:
             //update parameters

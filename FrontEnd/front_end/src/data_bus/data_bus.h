@@ -6,6 +6,7 @@
 const uint8_t kTxBufferLength = 0xff;
 
 extern bool off;
+extern bool data_change;
 ///////////*************************////////////////////////
 //ALARMS
 typedef union {
@@ -196,15 +197,19 @@ const uint8_t ConfigId[] = {
 typedef union
 {
   struct{
-  uint32_t tidal;
-  uint32_t ie_ratio;
-  uint32_t breathing_rate;
+
   uint32_t in_pressure;
   uint32_t out_pressure;
-  uint32_t mixture_flow; //% 
+  uint32_t mixture_flow; 
+  uint32_t tidal;
+  uint32_t breathing_rate;
+  uint32_t ie_ratio;  
   uint32_t battery_level;
+  uint32_t patient_leakage;
+
   };
-  uint32_t all[7];
+  
+  uint32_t all[32];
 }DATA;
 extern DATA dataValue;
 //data id define

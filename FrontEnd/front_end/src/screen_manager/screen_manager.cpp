@@ -26,8 +26,14 @@ bool alarmPage=false;
 bool update_alarm_screen;
 bool off;
 
-//const char t[]={'t30','t31','t32','t33','t34','t35','t36','t37','t38','t39','t40','t41','t42','t43'
-//                  ,'t44','t45','t46','t47','t48','t49','t50'};
+#define factor  255/7000
+#define CH0_OFFSET 10
+#define CH1_OFFSET 50
+#define CH2_OFFSET 100
+
+
+
+
 /////////////////////////////////////////////////////////
 
 
@@ -226,6 +232,7 @@ void bt0PushCallback(void *ptr)
     config.pause=0x0;
     Serial.print("pop");
   }
+  delay(6);
 }
 
 void bt0PopCallback(void *ptr)
@@ -333,7 +340,7 @@ void screen_revieve_data(void)
           Serial2.write(0xff);
           Serial2.write(0xff);
           Serial2.write(0xff);
-          //delay(4);
+          delay(5);
           update=true;
           monitoring=true;
       break;
@@ -762,9 +769,13 @@ void screen_management(void)
 
   if(monitoring)
   {
-    if(config.control==1)
+    if(data_change)
     {
-      s0.addValue(1,(dataValue.tidal*255/7000));
+      s0.addValue(0,((dataValue.battery_level)+CH0_OFFSET));//dataValue.battery_level
+      s0.addValue(1,((dataValue.in_pressure)+CH1_OFFSET));
+      s0.addValue(2,((dataValue.mixture_flow)+CH2_OFFSET));
+      Serial.write(dataValue.battery_level);
+      data_change = false;
     }
     
   }
