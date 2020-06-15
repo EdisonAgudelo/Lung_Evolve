@@ -17,6 +17,10 @@
     
     */
 
+#define HICOP_MAX_RESPONSE_TIME 500
+#define HICOP_LL_MAX_RX_TIME 100
+#define HICOP_HICOP_STACK_SIZE 2
+
 #include "definitions.h"
 #include "src/hw_lib/basic_function.h"
 #include "src/fw_lib/control.h"
@@ -53,6 +57,16 @@ static MeasureType system_measure;
 //control variables
 static ControlData control_pressure;
 static ControlData control_air_flow;
+
+//----------Test varibles----------//
+#if 0 //for test loop delay
+uint32_t max_delay_time = 0;
+uint32_t ref_time_delay = 0;
+uint32_t ref_time_delay_print = 0;
+uint32_t min_delay_time = 1000;
+uint32_t any_use_time;
+uint32_t count = 0;
+#endif
 
 //----------Local funcitions---------//
 
@@ -102,6 +116,11 @@ void setup()
 
   FMSMainInit();
   FrontEndCommunicationInit();
+
+#if 0 //for test delay loop
+  ref_time_delay = Millis();
+  ref_time_delay_print = ref_time_delay;
+#endif
 }
 
 void FMSMainInit(void)
@@ -142,6 +161,30 @@ void loop()
   FMSMainLoop();
   DriverLoops();
   FrontEndCommunicationLoop();
+
+#if 0 //for test loop delay
+
+  any_use_time = GetDiffTime(Millis(), ref_time_delay);
+  ref_time_delay = Millis();
+
+  count++;
+
+  if (any_use_time > max_delay_time)
+    max_delay_time = any_use_time;
+
+  if (any_use_time < min_delay_time)
+    min_delay_time = any_use_time;
+
+  if (GetDiffTime(Millis(), ref_time_delay_print) > 5000)
+  {
+    ref_time_delay_print = Millis();
+    dbprintf("INFO: delay time %lu, %lu, %lu \n", max_delay_time, count, min_delay_time);
+    count = 0;
+    min_delay_time = 1000;
+    max_delay_time = 0;
+  }
+
+#endif
 }
 
 void ComputeParameters(void)
@@ -727,7 +770,7 @@ void FMSMainLoop(void)
         DriverMotorSetZeroPos(kMotorIdO2Choke);
         init_state = kInitStartFuelBellow;
         main_state = kMainIdle; //end init senquence
-        dbprintf("INFO: Init procedure finshed\n");
+        dbprintf("INFO: Init procedure finished\n");
       }
       break;
     default:
@@ -839,7 +882,7 @@ void FMSMainLoop(void)
       {
         dbprintf("INFO: leaving breathing mode\n");
         main_state = kMainIdle;
-        
+
         // return to default position
         DriverMotorStop(kMotorIdBellows);
         DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMinPos);
@@ -1004,19 +1047,22 @@ void FrontEndCommunicationLoop(void)
   //warnings have a high priority to send to front end MCU
   if (frontend_warning_copy.all != main_warning_masked.all)
   {
-    dbprintf("INFO: New Warning info available\n");
+    dbprintf("INFO: New Warning info available: ");
     mask = 0b1;
     //build message
     for (i = 0; i < 32; i++) //warning variable is a 32 bits register
     {
+
       //find which flags changed state
       if ((frontend_warning_copy.all & mask) != (main_warning_masked.all & mask))
       {
+        dbprintf("%i,%i ", kTxAlarmId[i], 0 != (main_warning_masked.all & mask));
         transfer_buffer[transfer_pointer++] = kTxAlarmId[i];
-        transfer_buffer[transfer_pointer++] = (0 != main_warning_masked.all & mask);
+        transfer_buffer[transfer_pointer++] = (0 != (main_warning_masked.all & mask));
       }
       mask <<= 1;
     }
+    dbprintf("\n\n");
     //save changes
     frontend_warning_copy.all = main_warning_masked.all;
 
@@ -1045,6 +1091,8 @@ void FrontEndCommunicationLoop(void)
     //check if it is time to send low data
     if (GetDiffTime(Millis(), last_update_time.slow_data) >= kSlowDataPeriod)
     {
+      system_measure.battery_level=50.0;
+      dbprintf("INFO: data send %i\n",(uint8_t) system_measure.battery_level);
       last_update_time.slow_data = Millis();
 
       for (i = 0; i < sizeof(kTxSlowDataId) / sizeof(float); i++)
@@ -1065,6 +1113,7 @@ void FrontEndCommunicationLoop(void)
   //read if there some commands
   if (HicopReadData(&rx_flag, transfer_buffer, &transfer_pointer))
   {
+    dbprintf("INFO: Hicop new %i data\n", transfer_pointer);
     switch (rx_flag)
     {
     case kHicopHeaderConfig:

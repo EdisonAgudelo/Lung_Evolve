@@ -188,28 +188,28 @@ typedef union {
     //reference values
     bool trigger_source_pressure; //pressure true or flow false
 
-    uint8_t trigger_value;  //1 ~ 3 slm or -3 ~ -5 cmh20
-    uint8_t FiO2;           // 21 - 100 [%]
-    uint8_t in_presure;     // 0 ~ 65 [cmH2O]
-    uint16_t volume_tidal;  // 200 ~ 650 [mL]
-    uint8_t breathing_rate; //6 ~ 40 [breaths/min]
+    uint32_t trigger_value;  //1 ~ 3 slm or -3 ~ -5 cmh20
+    uint32_t FiO2;           // 21 - 100 [%]
+    uint32_t in_presure;     // 0 ~ 65 [cmH2O]
+    uint32_t volume_tidal;  // 200 ~ 650 [mL]
+    uint32_t breathing_rate; //6 ~ 40 [breaths/min]
     uint8_t ie_ratio;       //1:1 ~ 1:3
 
     uint32_t apnea_time; // 0 ~ 30000 [ms]
     uint32_t pause_time; // 0 ~ 30000 [ms]
 
     //warnings
-    uint8_t maximun_in_pressure;   // 0 ~ 65 [cmH2O]
-    uint8_t minimun_in_pressure;   // 0 ~ 65 [cmH2O]
-    uint8_t maximun_out_pressure;  // 0 ~ 65 [cmH2O]
-    uint8_t minimun_out_pressure;  // 0 ~ 65 [cmH2O]
-    uint16_t maximun_volume_tidal; // 0 ~ 650  [mL]
-    uint16_t minimun_volume_tidal; // 0 ~ 650  [mL]
-    uint8_t minimun_peep;          // 0 ~ 20 [cmH2O]
-    uint16_t maximum_leakage;      //0-600 [mL]
+    uint32_t maximun_in_pressure;   // 0 ~ 65 [cmH2O]
+    uint32_t minimun_in_pressure;   // 0 ~ 65 [cmH2O]
+    uint32_t maximun_out_pressure;  // 0 ~ 65 [cmH2O]
+    uint32_t minimun_out_pressure;  // 0 ~ 65 [cmH2O]
+    uint32_t maximun_volume_tidal; // 0 ~ 650  [mL]
+    uint32_t minimun_volume_tidal; // 0 ~ 650  [mL]
+    uint32_t minimun_peep;          // 0 ~ 20 [cmH2O]
+    uint32_t maximum_leakage;      //0-600 [mL]
   };
 
-  uint8_t all[31];
+  uint8_t all[66];
 
 } BreathingParameters;
 
