@@ -5,6 +5,7 @@
 #include "src/fw_lib/control.h"
 #include "src/hw_lib/time.h"
 #include "src/hicop_lib/hicop.h"
+#include "src/hw_lib/debug.h"
 
 //error variable
 static ErrorType main_error;
@@ -17,6 +18,7 @@ static WarningType frontend_warning_copy; //to detect changes
 //state machine variables
 static MainStates main_state;
 static BreathingStates breathing_state;
+static InitStates init_state;
 
 //breathing config variables
 static BreathingParameters breathing_config;
@@ -43,6 +45,10 @@ void FMSMainInit(void);
 //this function actually is a machine state which only does breathing control action.
 //this function needs that someone config working parameters to work porperly
 void FMSMainLoop(void);
+
+// this function make all necesary change during breathing state transition.
+// For performance reasons, it should be called only on transtion events
+void FMSBreathingConfigHW(void);
 
 //this funcion measures o calcultes all physical variables
 void MeasureVariables(void);
@@ -91,6 +97,7 @@ void FMSMainInit(void)
   //variable inizialitacion
   main_state = kMainInit;               //start in idle mode
   breathing_state = kBreathingOutPause; //default state
+  init_state = kInitStartFuelBellow;    //init secuence
 
   breathing_config.is_tunning = false;
   breathing_config.is_standby = true;
@@ -109,7 +116,6 @@ void FrontEndCommunicationInit(void)
   //init front end coppy to detect when any warning change state
   frontend_warning_copy.all = main_warning.all & main_warning_mask.all;
 }
-
 
 void loop()
 {
@@ -191,7 +197,7 @@ void ComputeParameters(void)
     //check other data
 
     //in the worst case, motors should travel all available distance
-    breathing_dinamic.motor_return_vel_bellows = (kMotorMaxPos * 1000.0) / (((float)breathing_dinamic.breathing_out_time) * 0.9); //mm/s
+    breathing_dinamic.motor_return_vel_bellows = (kMotorBellowMaxPos * 1000.0) / (((float)breathing_dinamic.breathing_out_time) * 0.9); //mm/s
 
     if (breathing_config.is_volume_controled)
       breathing_dinamic.sensor_air_flow_ref = breathing_config.volume_tidal;
@@ -259,7 +265,7 @@ void MeasureVariables(void)
       system_measure.battery_level = 0.0;
   }
 
-  //only Measure breathing variables if ventilator is in workingmode
+  //only Measure breathing variables if ventilator is in working mode
   if (main_state == kMainBreathing)
   {
     //always save presure measure, and flow data
@@ -344,7 +350,6 @@ void WarningActions(void)
       DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
   }
 
-
 #if 0
   //if system is going to break up
   if (main_warning.high_temp_bat || main_warning.high_temp_motor)
@@ -372,7 +377,6 @@ void WarningMonitor(void)
 
     main_warning.high_temp_bat = SensorGetAlarm(kSensorIdTempBattery);
     main_warning.high_temp_motor = SensorGetAlarm(kSensorIdTempMotor);
-
   }
 
   //only check breathing warnings if ventilator is working
@@ -428,6 +432,11 @@ void WarningMonitor(void)
       main_warning.low_peep = system_measure.out_pressure < breathing_config.minimun_peep;
       break;
 
+    case kBreathingInPause:
+      main_warning.detached_proximal_tube = system_measure.in_pressure < breathing_config.minimun_peep;
+      main_warning.detached_proximal_tube |= system_measure.out_pressure < breathing_config.minimun_peep;
+      break;
+
     case kBreathingInCicle:
       //at the end of out cicle
       if (breathing_previous_state != breathing_state)
@@ -475,12 +484,59 @@ void WarningMonitor(void)
   }
 }
 
+void FMSBreathingConfigHW(void)
+{
+  switch (breathing_state)
+  {
+
+  case kBreathingOutPause:
+
+    goto config_valves;
+
+  case kBreathingInPause:
+    //hold motor position
+    DriverMotorStop(kMotorIdBellows);
+    goto config_valves;
+
+  case kBreathingOutCicle:
+    //full bellows of o2 and air
+    DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMinPos);
+    DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_return_vel_bellows);
+
+    //move motor to request fio
+    DriverMotorMoveTo(kMotorIdO2Choke, breathing_dinamic.motor_position_o2_choke);
+    DriverMotorMoveTo(kMotorIdAirChoke, breathing_dinamic.motor_position_air_choke);
+
+    goto config_valves;
+
+  case kBreathingInCicle:
+
+    //move motor foward
+    DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMaxPos);
+
+    //clear PID control
+    ControlWindup(&control_pressure);
+    ControlWindup(&control_air_flow);
+
+  config_valves:
+    //prepare valves for new state
+    DriverValveOpenTo(kValveIdExhalation, breathing_dinamic.valve_position[breathing_state].exhalation); //remember PEEP valve
+    DriverValveOpenTo(kValveIdInhalation, breathing_dinamic.valve_position[breathing_state].inhalation);
+    DriverValveOpenTo(kValveIdManifold, breathing_dinamic.valve_position[breathing_state].manifold); //to start to full bellows
+
+    break;
+
+  default:
+    break;
+  }
+}
+
 void FMSMainLoop(void)
 {
 
   //init dalay variables
-  static FMSDelay breathing_delay = {0, 0, kBreathingDelay, (int *)&breathing_state, kBreathingDelay};
   static uint32_t breathing_state_ref_time;
+  static uint8_t any_use_count;
 
   static FMSDelay main_delay = {0, 0, kMainDelay, (int *)&main_state, kMainDelay};
   static uint32_t main_state_ref_time;
@@ -492,24 +548,95 @@ void FMSMainLoop(void)
 
     //----------state actions---------//
 
-    //this estate shuld bring all actuator to default status or an adecauted position
-    DriverMotorMoveTo(kMotorIdAirChoke, kMotorMaxPos); //this is for fuel Bellow
-    DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
-    DriverMotorMoveTo(kMotorIdBellows, kMotorMinPos);
+    //this estate should bring all actuator to default status or an adecauted position
 
-    //Config default velocities
-    DriverMotorSetVel(kMotorIdBellows, kMotorDefaultReturnVelBellows);
-    DriverMotorSetVel(kMotorIdAirChoke, kMotorDefaultVelAirChoke);
-    DriverMotorSetVel(kMotorIdO2Choke, kMotorDefaultVelO2Choke);
+    switch (init_state)
+    {
+    case kInitStartFuelBellow:
+      //how motor will be in a unknow position, make all posible travel until stop switch is activated
+      DriverMotorMoveTo(kMotorIdAirChoke, kMotorChokeMaxPos);  //this is for fuel Bellow
+      DriverMotorMoveTo(kMotorIdO2Choke, -kMotorChokeMaxPos);  //full close Choke valve
+      DriverMotorMoveTo(kMotorIdBellows, -kMotorBellowMaxPos); //full open Bellow
 
-    //close on off valves
-    DriverValveOpenTo(kValveIdExhalation, kValveFullClose); //remember PEEP valve
-    DriverValveOpenTo(kValveIdInhalation, kValveFullClose);
-    DriverValveOpenTo(kValveIdManifold, kValveFullOpen); //this is for fuel Bellow
+      //Config default velocities
+      DriverMotorSetVel(kMotorIdBellows, kMotorDefaultReturnVelBellows);
+      DriverMotorSetVel(kMotorIdAirChoke, kMotorDefaultVelAirChoke);
+      DriverMotorSetVel(kMotorIdO2Choke, kMotorDefaultVelO2Choke);
 
-    //----------transition events---------//
+      //close on off valves
+      DriverValveOpenTo(kValveIdExhalation, kValveFullClose); //remember PEEP valve
+      DriverValveOpenTo(kValveIdInhalation, kValveFullClose);
+      DriverValveOpenTo(kValveIdManifold, kValveFullOpen); //this is for fuel Bellow
 
-    main_state = kMainIdle;
+      init_state = kInitWaitFuelBellow;
+      main_state_ref_time = Millis();
+      break;
+
+    case kInitWaitFuelBellow:
+
+      //wait driver motor start
+      if (GetDiffTime(Millis(), main_state_ref_time) > 200)
+      {
+        //check if main motor stops
+        if (DriverMotorIsStop(kMotorIdBellows))
+        {
+          init_state = kInitMoveChokeDefault;
+          DriverMotorStop(kMotorIdAirChoke);
+        }
+      }
+      break;
+
+    case kInitMoveChokeDefault:
+
+      //bellow is now full open. Make it the zero position
+      DriverMotorSetZeroPos(kMotorIdBellows);
+
+      //close bellow inputs
+      DriverValveOpenTo(kValveIdManifold, kValveFullClose);
+
+      init_state = kInitWaitChokeDefault;
+      any_use_count = 0;
+      main_state_ref_time = Millis();
+      break;
+
+    case kInitWaitChokeDefault:
+
+      //wait motor drive has any action on control
+      if (GetDiffTime(Millis(), main_state_ref_time) > 200)
+      {
+        //check if main motor stops
+        if (DriverMotorIsStop(kMotorIdAirChoke))
+        {
+          //if is the firt time, bring air choke to a close position
+          if (any_use_count == 0)
+          {
+
+            DriverMotorMoveTo(kMotorIdAirChoke, -2 * kMotorBellowMaxPos); //close air choke valve
+
+            any_use_count++;
+            main_state_ref_time = Millis();
+          }
+          else
+          {
+            init_state = kInitFinalStep;
+          }
+        }
+      }
+      break;
+
+    case kInitFinalStep:
+      //make sure that valves are full closed
+      if (DriverMotorIsStop(kMotorIdO2Choke))
+      {
+        DriverMotorSetZeroPos(kMotorIdAirChoke);
+        DriverMotorSetZeroPos(kMotorIdO2Choke);
+        init_state = kInitStartFuelBellow;
+        main_state = kMainIdle; //end init senquence
+      }
+      break;
+    default:
+      break;
+    }
 
     break;
 
@@ -517,13 +644,10 @@ void FMSMainLoop(void)
 
     //----------state actions---------//
 
-    //wait for fully open bellows
-    if (DriverMotorActualPos(kMotorIdBellows) == kMotorMinPos)
-    {
-      //close inputs
-      DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
-      DriverValveOpenTo(kValveIdManifold, kValveFullClose);
-    }
+    //make sure that all valves are closed
+    DriverValveOpenTo(kValveIdExhalation, kValveFullClose); 
+    DriverValveOpenTo(kValveIdInhalation, kValveFullClose);
+    DriverValveOpenTo(kValveIdManifold, kValveFullClose); 
 
     //compute working parameters
     ComputeParameters();
@@ -540,25 +664,23 @@ void FMSMainLoop(void)
         main_state = kMainBreathing;
         breathing_state = kBreathingOutPause;
 
-        //reset control energy
-        ControlWindup(&control_pressure);
-        ControlWindup(&control_air_flow);
+        //prepare hardware for start breathing
+        FMSBreathingConfigHW();
       }
       else
       {
+        breathing_config.is_standby = true;
         //no parameters were found or valid :(!
       }
     }
-
     else if (breathing_config.is_tunning)
     {
-
       main_state = kMainTunning;
     }
     else
     {
-      //hold state
-      FMSDelaySet(&main_delay, 1000, kMainIdle);
+      //hold state and only review on 500ms after
+      FMSDelaySet(&main_delay, 500, kMainIdle);
     }
     //Do not put more code here
     break;
@@ -587,45 +709,17 @@ void FMSMainLoop(void)
 
       //----------State Actions---------//
 
-      DriverValveOpenTo(kValveIdExhalation, kValveFullOpen); //remember PEEP valve
-      DriverValveOpenTo(kValveIdInhalation, kValveFullClose);
-      DriverValveOpenTo(kValveIdManifold, kValveFullOpen); //to start to full bellows
-
-      //full bellows of o2 and air
-      DriverMotorMoveTo(kMotorIdBellows, kMotorMinPos);
-      DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_return_vel_bellows);
-
-#if 0
-      //close oxigen valve in first period
-      if ((Millis() - breathing_state_ref_time) < breathing_dinamic.motor_open_time_air_choke)
-      {
-        DriverMotorMoveTo(kMotorIdAirChoke, breathing_dinamic.motor_position_air_choke);
-        DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
-      }
-      //close air valve in second period
-      else if ((Millis() - breathing_state_ref_time) < breathing_dinamic.motor_open_time_o2_choke)
-      {
-        DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
-        DriverMotorMoveTo(kMotorIdO2Choke, breathing_dinamic.motor_position_o2_choke);
-      }
-      //close all valves and wait for timeout. Technically, this case never happen
-      else
-      {
-        DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
-        DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
-      }
-#else
-      DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
-      DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
-#endif
+      // bellow is returning to an open state
 
       //----------transition events---------//
 
-      //when espirarion time ends, change state. Remember, this should be a little more fast
+      //when espirarion time ends, change state. Remember, Bellow Motor should be a little more fast
       //that patient espirarion, because it needs to refuel bellows before go to inspiration cicle
-      if ((Millis() - breathing_state_ref_time) >= breathing_dinamic.breathing_out_time)
+      if (GetDiffTime(Millis(), breathing_state_ref_time) >= breathing_dinamic.breathing_out_time)
       {
+        breathing_state_ref_time = Millis();
         breathing_state = kBreathingOutPause;
+        FMSBreathingConfigHW();
       }
 
       break;
@@ -636,29 +730,24 @@ void FMSMainLoop(void)
 
       //this state supose Bellows is full of air to start a new cicle
 
-      DriverValveOpenTo(kValveIdExhalation, kValveFullOpen); //remember PEEP valve
-      DriverValveOpenTo(kValveIdInhalation, kValveFullClose);
-      DriverValveOpenTo(kValveIdManifold, kValveFullClose);
-
-      //bring  valve motors to closed postion
-      DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
-      DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
-
       //----------transition events---------//
 
-      //just see if ventilator should stop. This transition triggers
-      //is only analyzed here for patient safety
-
-      //compute working parameters and check if there is new working parameters
+      //Just see if ventilator should stop or there is new working parameters.
+      //This transition trigger is only analyzed here for patient safety
       ComputeParameters();
       if (breathing_config.is_standby)
       {
-        DriverValveOpenTo(kValveIdExhalation, kValveFullClose);
         main_state = kMainIdle;
+        break;
       }
 
-      //enter to out puase delay and then jump to in cicle
-      FMSDelaySet(&breathing_delay, breathing_dinamic.breathing_out_puase_time, kBreathingInCicle);
+      //if out pause ends
+      if (GetDiffTime(Millis(), breathing_state_ref_time) >= breathing_dinamic.breathing_out_puase_time)
+      {
+        breathing_state_ref_time = Millis();
+        breathing_state = kBreathingInCicle;
+        FMSBreathingConfigHW();
+      }
 
       break;
 
@@ -666,19 +755,40 @@ void FMSMainLoop(void)
 
       //----------State Actions---------//
 
-      DriverValveOpenTo(kValveIdExhalation, kValveFullClose);
-      DriverValveOpenTo(kValveIdInhalation, kValveFullClose);
-      DriverValveOpenTo(kValveIdManifold, kValveFullClose);
+      //bellow start to stop and hold position
 
-      //bring  valve motors to closed postion
-      DriverMotorMoveTo(kMotorIdAirChoke, kMotorMinPos);
-      DriverMotorMoveTo(kMotorIdO2Choke, kMotorMinPos);
-      //hold Blows position
-      //DriverMotorMoveTo(kMotorIdBellows, DriverMotorActualPos(kMotorIdBellows));
-      DriverMotorSetVel(kMotorIdBellows, 0.0);
+      //---------State transition events ----//
 
-      //enter to in puase delay and then jump to in cicle
-      FMSDelaySet(&breathing_delay, breathing_dinamic.breathing_in_puase_time, kBreathingOutCicle);
+      //if there is a time out
+      if (GetDiffTime(Millis(), breathing_state_ref_time) >= breathing_dinamic.breathing_in_puase_time)
+      {
+        goto kBreathingInPause_change_state;
+      }
+      //check if breathig is assited
+      else if (breathing_config.is_assisted)
+      {
+        //check if it is presure controled
+        if (!breathing_config.is_volume_controled && system_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
+        {
+          goto kBreathingInPause_change_state;
+        }
+        //check if volume controled
+        else if (breathing_config.is_volume_controled && system_measure.patient_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
+        {
+          goto kBreathingInPause_change_state;
+        }
+        else
+        {
+          //no trigger from patient
+        }
+      }
+
+      break;
+    //chenge state routine
+    kBreathingInPause_change_state:
+      breathing_state_ref_time = Millis();
+      breathing_state = kBreathingOutCicle;
+      FMSBreathingConfigHW();
 
       break;
 
@@ -686,103 +796,29 @@ void FMSMainLoop(void)
 
       //----------State Actions---------//
 
-      //open necesary valves
-      DriverValveOpenTo(kValveIdExhalation, kValveFullClose); //remember PEEP valve
-      DriverValveOpenTo(kValveIdInhalation, kValveFullOpen);
-      DriverValveOpenTo(kValveIdManifold, kValveFullClose);
+      //motor is moving foward to full open position
 
       //selection of control type
       if (!breathing_config.is_volume_controled)
       {
-        //presure controlled
-
-        DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
+        // if it is presure controlled
         DriverMotorSetVel(kMotorIdBellows,
                           ControlExecute(&control_pressure,
-                                         ((float)(breathing_dinamic.sensor_pressure_ref - system_measure.in_pressure)) / 1000.0));
+                                         (float)(breathing_dinamic.sensor_pressure_ref - system_measure.in_pressure)));
       }
       else
       {
-        //flow controled
-
-        //version 1
-#if 1
-        DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
         DriverMotorSetVel(kMotorIdBellows,
                           ControlExecute(&control_air_flow,
-                                         ((float)(breathing_dinamic.sensor_air_flow_ref - system_measure.mixture_flow)) / 10.0));
-#else
-        //version 2
-        DriverMotorMoveTo(kMotorIdBellows, kMotorMaxPos);
-        DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_foward_const_flow_vel_bellows);
-#endif
+                                         (float)(breathing_dinamic.sensor_air_flow_ref - system_measure.mixture_flow)));
       }
 
       //----------transition events---------//
-      if ((Millis() - breathing_state_ref_time) >= breathing_dinamic.breathing_in_time)
-      {
-        breathing_state = kBreathingInPause;
-      }
-
-      break;
-
-    case kBreathingDelay:
-
-      //----------State Actions---------//
-
-      //----------transition events---------//
-
-      //if time trigger happen, change state
-      if ((Millis() - breathing_delay.ref_time) > breathing_delay.delay_time)
+      if (GetDiffTime(Millis(), breathing_state_ref_time) >= breathing_dinamic.breathing_in_time)
       {
         breathing_state_ref_time = Millis();
-        breathing_state = (BreathingStates)breathing_delay.next_state;
-        break;
-      }
-
-      //watch patient triggers
-      if (breathing_config.is_assisted)
-      {
-        switch (breathing_delay.next_state)
-        {
-        case kBreathingInCicle:
-          if (!breathing_config.is_volume_controled && system_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
-          {
-            breathing_state = (BreathingStates)breathing_delay.next_state;
-          }
-          else if (breathing_config.is_volume_controled && system_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
-          {
-            breathing_state = (BreathingStates)breathing_delay.next_state;
-          }
-          else
-          {
-            //no trigger from patient
-          }
-
-          break;
-        case kBreathingOutCicle:
-          /*
-          if (!breathing_config.is_volume_controled && system_measure.out_pressure > breathing_dinamic.sensor_pressure_trigger_esp_value)
-          {
-            breathing_state = (BreathingStates)breathing_delay.next_state;
-          }
-          //this case should be tested
-#if 0
-          else if (breathing_config.is_volume_controled &&  system_measure.mixture_flow > breathing_dinamic.sensor_flow_trigger_esp_value)
-          {
-            breathing_state = breathing_delay.next_state;
-          }
-#endif
-          else
-          {
-            //no trigger from patient
-          }
-          */
-          break;
-
-        default:
-          break;
-        }
+        breathing_state = kBreathingInPause;
+        FMSBreathingConfigHW();
       }
 
       break;
@@ -860,12 +896,12 @@ void FrontEndCommunicationLoop(void)
     for (i = 0; i < 32; i++) //warning variable is a 32 bits register
     {
       //find which flags changed state
-      if ((frontend_warning_copy.all & mask)  != (main_warning_masked.all & mask))
+      if ((frontend_warning_copy.all & mask) != (main_warning_masked.all & mask))
       {
         transfer_buffer[transfer_pointer++] = kTxAlarmId[i];
-        transfer_buffer[transfer_pointer++] = (0!=main_warning_masked.all & mask);
+        transfer_buffer[transfer_pointer++] = (0 != main_warning_masked.all & mask);
       }
-      mask<<=1;
+      mask <<= 1;
     }
     //save changes
     frontend_warning_copy.all = main_warning_masked.all;

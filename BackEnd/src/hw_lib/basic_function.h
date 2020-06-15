@@ -21,6 +21,15 @@ bool DriverMotorMoveTo(int motor_id, float line_pos);
 //return 0 is no succes o 1 if action was totaly complete
 bool DriverMotorSetVel(int motor_id, float motor_vel);
 
+//this function stop motor if it is moving
+void DriverMotorStop(int motor_id);
+
+//check if motor is full stop
+bool DriverMotorIsStop(int motor_id);
+
+//Set zero pos on drivers
+void DriverMotorSetZeroPos(int motor_id);
+
 //this function initialize all develpment board GPIO wich are not initialized by drivers
 //return 0 if there are some error else return 1
 bool PinInitialization(void);

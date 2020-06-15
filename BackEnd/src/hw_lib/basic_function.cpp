@@ -15,26 +15,25 @@
 //--------motor parameters-------//
 
 const uint8_t kMotorBellowUSteps = 16; //review
-const uint8_t kMotorO2USteps = 8; //review
-const uint8_t kMotorAirUSteps = 8; //review
+const uint8_t kMotorO2USteps = 8;      //review
+const uint8_t kMotorAirUSteps = 8;     //review
 
 const uint16_t kMotorBellowSteps = 200; //review
-const uint16_t kMotorO2Steps = 32; //review
-const uint16_t kMotorAirSteps = 32; //review
+const uint16_t kMotorO2Steps = 32;      //review
+const uint16_t kMotorAirSteps = 32;     //review
 
-const float kMotorBellowmmRev = 100.0; //review
-const float kMotorO2mmRev = (1.27/63.8); //review
-const float kMotorAirmmRev = (1.27/63.8); //review
+const float kMotorBellowmmRev = 100.0;      //review
+const float kMotorO2mmRev = (1.27 / 63.8);  //review
+const float kMotorAirmmRev = (1.27 / 63.8); //review
 
 //------- Flow sensor parameters ------//
 
 const uint8_t kFlowI2CAddrs = 64; //review
-const float kCountsPerSLM = 5.0; //review
-
+const float kCountsPerSLM = 5.0;  //review
 
 //------- Temp sensor parameters -------//
 
-const float kTempMaxValueMotor = 75.0; //review °C
+const float kTempMaxValueMotor = 75.0;  //review °C
 const float kTempMinValueMotor = -10.0; //review °C
 
 const float kTempMaxValueBattery = 55.0; //review °C
@@ -48,9 +47,8 @@ const float kVoltageMinValueBattery = 11.0; //review V
 const float kVoltageMaxValueSource = 14.0; //review V
 const float kVoltageMinValueSource = 13.6; //review V
 
-const float kVoltageAttenuationBattery = (51.0+100.0)/(51.0); //for 51k and 100k resistors
-const float kVoltageAttenuationSource = (51.0+100.0)/(51.0); //for 51k and 100k resistors
-
+const float kVoltageAttenuationBattery = (51.0 + 100.0) / (51.0); //for 51k and 100k resistors
+const float kVoltageAttenuationSource = (51.0 + 100.0) / (51.0);  //for 51k and 100k resistors
 
 //------ Driver objects creation -------//
 DriverLed g_led_red;
@@ -74,13 +72,10 @@ Voltage voltage_source(kHardwareVoltage2, kVoltageAttenuationSource);
 Temp temp_motor(kHardwareTemp1);
 Temp temp_bat(kHardwareTemp2);
 
-
-Stepper *motor[]={&motor_bellow, &motor_valve_o2, &motor_valve_air};
-void *Sensor[]={(void *)&flow_in,(void *)&flow_out, (void *)&pressure_in, (void *)&pressure_out,
-                (void *)&temp_motor, (void *)&temp_bat, (void *)&voltage_source, (void *)&voltage_bat, (void *)&flow_mixture};
-const int valve[]={kHardwareRele1, kHardwareRele2, kHardwareRele3};
-
-
+Stepper *motor[] = {&motor_bellow, &motor_valve_o2, &motor_valve_air};
+void *Sensor[] = {(void *)&flow_in, (void *)&flow_out, (void *)&pressure_in, (void *)&pressure_out,
+                  (void *)&temp_motor, (void *)&temp_bat, (void *)&voltage_source, (void *)&voltage_bat, (void *)&flow_mixture};
+const int valve[] = {kHardwareRele1, kHardwareRele2, kHardwareRele3};
 
 bool DriverMotorMoveTo(int motor_id, float line_pos)
 {
@@ -98,47 +93,45 @@ bool PinInitialization(void)
   PinConfigDigital(kHardwareRele3, kOutput);
   PinConfigDigital(kHardwareRele4, kOutput);
 
-
   return true;
 }
 
-
 bool DriverValveOpenTo(int valve_id, bool valve_position)
 {
-  if(valve_position) // full open
+  if (valve_position) // full open
     PinSetDigital(valve[valve_id], kHigh);
   else //full close
     PinSetDigital(valve[valve_id], kLow);
-    
+
   return true;
 }
 
 //return filtered sensor values
 float SensorGetValue(int sensor_id)
 {
-  if(sensor_id<2)
+  if (sensor_id < 2)
     return ((Flowmeter *)Sensor[sensor_id])->GetFlow();
-  if(sensor_id<4)
+  if (sensor_id < 4)
     return ((DiffPressure *)Sensor[sensor_id])->GetDiffPressure();
-  if(sensor_id<6)
+  if (sensor_id < 6)
     return ((Temp *)Sensor[sensor_id])->GetTemp();
-  if(sensor_id<8)
+  if (sensor_id < 8)
     return ((Voltage *)Sensor[sensor_id])->GetVoltage();
-  if(sensor_id<9)
+  if (sensor_id < 9)
     return ((WFlowmeter *)Sensor[sensor_id])->GetFlow();
-    
-    return 0;
+
+  return 0;
 }
 
 bool SensorGetAlarm(int sensor_id)
 {
-  if(sensor_id<4)
+  if (sensor_id < 4)
     return false;
-  if(sensor_id<6)
+  if (sensor_id < 6)
     return ((Temp *)Sensor[sensor_id])->GetAlarm();
-  if(sensor_id<8)
+  if (sensor_id < 8)
     return ((Voltage *)Sensor[sensor_id])->GetAlarm();
-  
+
   return false;
 }
 
@@ -148,21 +141,35 @@ bool DriverMotorSetVel(int motor_id, float motor_vel)
   return true;
 }
 
+void DriverMotorStop(int motor_id)
+{
+  motor[motor_id]->RequestStop();
+}
+
 float DriverMotorActualPos(int motor_id)
 {
   return motor[motor_id]->GetPosmm();
 }
 
+void DriverMotorSetZeroPos(int motor_id)
+{
+  motor[motor_id]->SetPosRef();
+}
+
+bool DriverMotorIsStop(int motor_id)
+{
+  return motor[motor_id]->GetState() == kStepperStateStop;
+}
 bool DirverInitialization(void)
 {
 
   TimeVirtualISRBegin();
-   
-  DriverLedInit(&g_led_red, kHardwareLedRedPin); 
-  DriverLedInit(&g_buzzer, kHardwareBuzzerPin); 
+
+  DriverLedInit(&g_led_red, kHardwareLedRedPin);
+  DriverLedInit(&g_buzzer, kHardwareBuzzerPin);
   DriverLedInit(&g_discharge_rele, kHardwareRele4);
 
-  motor_bellow.Begin();/*
+  motor_bellow.Begin();
   motor_valve_o2.Begin();
   motor_valve_air.Begin();
 
@@ -179,21 +186,19 @@ bool DirverInitialization(void)
   temp_motor.Begin();
   temp_bat.Begin();
 
-
   voltage_source.SetAlarm(kVoltageMaxValueSource, kVoltageMinValueSource);
   voltage_bat.SetAlarm(kVoltageMaxValueBattery, kVoltageMinValueBattery);
   temp_bat.SetAlarm(kTempMaxValueBattery, kTempMinValueBattery);
   temp_motor.SetAlarm(kTempMaxValueMotor, kTempMinValueMotor);
 
-
   motor_bellow.SetLimitPin(kHardwareSwitchBMotor1, kHardwareSwitchFMotor1);
   motor_valve_o2.SetLimitPin(kHardwareSwitchBMotor2, kHardwareSwitchFMotor2);
   motor_valve_air.SetLimitPin(kHardwareSwitchBMotor3, kHardwareSwitchFMotor3);
- */
+
   motor_bellow.SetDriverConfig(kMotorBellowSteps, kMotorBellowmmRev, kMotorBellowUSteps);
   motor_valve_o2.SetDriverConfig(kMotorO2Steps, kMotorO2mmRev, kMotorO2USteps);
   motor_valve_air.SetDriverConfig(kMotorAirSteps, kMotorAirmmRev, kMotorAirUSteps);
- 
+
   return true;
 }
 
@@ -205,12 +210,12 @@ bool DriverLoops(void)
   DriverLedLoop(&g_discharge_rele);
   // restore
   motor_bellow.Loop(); //much faster than a for
-  /*
-  motor_valve_o2.Loop(); 
+
+  motor_valve_o2.Loop();
   motor_valve_air.Loop();
 
   flow_in.Loop();
-  flow_out.Loop(); 
+  flow_out.Loop();
   flow_mixture.Loop();
 
   pressure_in.Loop();
@@ -220,5 +225,5 @@ bool DriverLoops(void)
   temp_motor.Loop();
 
   voltage_bat.Loop();
-  voltage_source.Loop();*/
+  voltage_source.Loop();
 }

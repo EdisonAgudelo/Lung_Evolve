@@ -182,6 +182,21 @@ bool UartAvailable(void){
   return Serial2.available();
 }
 
+void DebugBegin(void)
+{
+  Serial.begin(kDebugBaudRate);
+}
+
+void DebugWrite(char *buffer, uint16_t length)
+{
+int i=0;
+
+  while(0!=length-- && buffer[i]!= '\0')
+  {
+    Serial.write(buffer[i++]);
+  }
+
+}
 ////////// GPIO interface //////////
 
 //config an user callback for each time that one pin has a rising edge transition

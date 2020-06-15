@@ -243,8 +243,8 @@ void Stepper::Loop(void)
         StepperStateBoth:
             update_param = false;
 
-            // check if motor is close to target position and it is moving
-            if ((remain_distance < brake_distance) && (0 != vel_target))
+            // check if motor is close to target position
+            if (remain_distance < brake_distance)
             {
                 //slowdown motor vel
                 if (vel_actual != STEPPER_MIN_VEL_TO_STOP)
@@ -402,23 +402,6 @@ void Stepper::ISRHandle(int type)
     }
 }
 
-void Stepper::SetVel(int32_t _vel)
-{
-    vel_target = _vel;
-    vel_target = vel_target < 0 ? 0 : vel_target; //avoid negative velocity;
-}
-
-//for sercurity reasons, only a pos target can ben changed in stop estate.
-void Stepper::SetPos(int32_t _pos)
-{
-
-    if (_pos != pos_target)
-    {
-        pos_change_request = true;
-        pos_request = _pos;
-    }
-}
-
 void Stepper::CalculateDistance(void)
 {
 
@@ -481,6 +464,50 @@ void Stepper::CalculateTime(void)
         else
             estimate_time = (int32_t)(((double)delta_distance) * (step_period) / 1000.0);
     }
+}
+
+void Stepper::RequestStop(void)
+{
+    int32_t new_pos = pos_actual;
+    switch (state)
+    {
+    case kStepperStateBackward:
+        new_pos -= brake_distance;
+        break;
+
+    case kStepperStateFoward:
+        new_pos += brake_distance;
+        break;
+
+    default:
+        return;
+        break;
+    }
+
+    pos_target = new_pos;
+}
+
+void Stepper::SetVel(int32_t _vel)
+{
+    vel_target = _vel;
+    vel_target = vel_target < 0 ? 0 : vel_target; //avoid negative velocity;
+}
+
+//for sercurity reasons, only a pos target can ben changed in stop estate.
+void Stepper::SetPos(int32_t _pos)
+{
+
+    if (_pos != pos_target)
+    {
+        pos_change_request = true;
+        pos_request = _pos;
+    }
+}
+
+void Stepper::SetPosRef(void)
+{
+    pos_target -= pos_actual;
+    pos_actual = 0;
 }
 
 StepperDriverStates Stepper::GetState(void)

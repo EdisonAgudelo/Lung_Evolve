@@ -100,6 +100,7 @@ const uint8_t kHardI2C = 0;
 
 const uint16_t kACDResolution = 0x3ff;
 const float kBoardVoltage = 5.0;
+const uint32_t kDebugBaudRate = 115200;
 
 //--------- Functions interface --------//
 
@@ -149,6 +150,8 @@ bool UartAvailable(void);
 void UartWrite(uint8_t data);
 uint8_t UartRead(void);
 
+void DebugBegin(void);
+void DebugWrite(char *buffer, uint16_t length);
 
 
 #endif
