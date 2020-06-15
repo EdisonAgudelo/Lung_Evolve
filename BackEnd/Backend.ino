@@ -1,4 +1,21 @@
+/*
+    Lung Evolve Mechanical Ventilator
+    Copyright (C) 2020  Edison Agudelo, Mateo Garcia, Alejandra Londoño
 
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see https://www.gnu.org/licenses/gpl-3.0.html.
+    
+    */
 
 #include "definitions.h"
 #include "src/hw_lib/basic_function.h"
@@ -146,6 +163,8 @@ void ComputeParameters(void)
   {
     breathing_config_change = false;
 
+    dbprintf("INFO: New config parameters received\n");
+
     //////////////here is where config parameters request is proecessed///////////////
 
     //transfer flags
@@ -164,6 +183,7 @@ void ComputeParameters(void)
     {
       //calculus are no valid. End execution
       main_error.working_configuration_not_initialized = true;
+      dbprintf("ERROR: conf parameters invalid\n");
       return;
     }
 
@@ -176,6 +196,7 @@ void ComputeParameters(void)
       {
         //calculus are no valid. End execution
         main_error.working_configuration_not_initialized = true;
+        dbprintf("ERROR: conf parameters invalid\n");
         return;
       }
     }
@@ -231,6 +252,7 @@ void ComputeParameters(void)
     breathing_dinamic.motor_position_air_choke = ((float)breathing_config.FiO2 - kMinimunFiO2) * kConstantAirChoke; //valve position to control O2 flow through pneumatic system
 
     //--------------------------//
+    dbprintf("INFO: config parameters accepted\n");
 
     main_error.working_configuration_not_initialized = false;
   }
@@ -361,7 +383,10 @@ void WarningActions(void)
     warning_power_source_prev = main_warning.no_main_supply;
     //if supply is restore
     if (!warning_power_source_prev)
+    {
+      dbprintf("INFO:Battery protection was restored\n");
       DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
+    }
   }
 
 #if 0
@@ -505,6 +530,7 @@ void FMSBreathingConfigHW(void)
 
   case kBreathingOutPause:
 
+    dbprintf("\nINFO: Enter in Out pause\n");
     if (!breathing_config.is_assisted || breathing_config.trigger_source_pressure)
     {
       //pressure trigger or breathing controlled
@@ -520,13 +546,14 @@ void FMSBreathingConfigHW(void)
       DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_flow_bias_vel_bellows);
     }
 
-    DriverMotorMoveTo(kMotorIdAirChoke,breathing_dinamic.motor_position_air_choke);
-    DriverMotorMoveTo(kMotorIdO2Choke,breathing_dinamic.motor_position_o2_choke);
+    DriverMotorMoveTo(kMotorIdAirChoke, breathing_dinamic.motor_position_air_choke);
+    DriverMotorMoveTo(kMotorIdO2Choke, breathing_dinamic.motor_position_o2_choke);
 
     goto config_valves;
 
   case kBreathingInPause:
 
+    dbprintf("INFO:Enter in In pause\n");
     DriverMotorStop(kMotorIdBellows);
     if (!breathing_config.is_assisted || breathing_config.trigger_source_pressure)
     {
@@ -536,7 +563,7 @@ void FMSBreathingConfigHW(void)
     else
     {
       //flow trigger
-      //move motor full backward 
+      //move motor full backward
       DriverMotorMoveTo(kMotorIdBellows, kMotorBellowMinPos);
       DriverMotorSetVel(kMotorIdBellows, breathing_dinamic.motor_return_vel_bellows);
     }
@@ -547,6 +574,7 @@ void FMSBreathingConfigHW(void)
 
   case kBreathingOutCicle:
 
+    dbprintf("INFO: Enter in Out cicle\n");
     if (!breathing_config.is_assisted || breathing_config.trigger_source_pressure)
     {
       //pressure trigger or breathing controlled
@@ -558,13 +586,13 @@ void FMSBreathingConfigHW(void)
       //flow trigger
       //motor is returning
     }
-    
+
     goto config_valves;
 
   case kBreathingInCicle:
 
     //move motor forward
-
+    dbprintf("INFO: Enter in In clicle\n");
     if (!breathing_config.is_assisted || breathing_config.trigger_source_pressure)
     {
       //pressure trigger or breathing controlled
@@ -616,6 +644,8 @@ void FMSMainLoop(void)
     switch (init_state)
     {
     case kInitStartFuelBellow:
+
+      dbprintf("INFO: Init procedure started\n");
       //how motor will be in a unknow position, make all posible travel until stop switch is activated
       DriverMotorMoveTo(kMotorIdAirChoke, kMotorChokeMaxPos);  //this is for fuel Bellow
       DriverMotorMoveTo(kMotorIdO2Choke, -kMotorChokeMaxPos);  //full close Choke valve
@@ -695,6 +725,7 @@ void FMSMainLoop(void)
         DriverMotorSetZeroPos(kMotorIdO2Choke);
         init_state = kInitStartFuelBellow;
         main_state = kMainIdle; //end init senquence
+        dbprintf("INFO: Init procedure finshed\n");
       }
       break;
     default:
@@ -719,7 +750,7 @@ void FMSMainLoop(void)
 
     if (!breathing_config.is_standby)
     {
-
+      dbprintf("INFO: Trying to start breathing mode\n");
       //make sure that all required parameters are initialized;
       if (!main_error.working_configuration_not_initialized) //this is for patient safety
       {
@@ -728,16 +759,19 @@ void FMSMainLoop(void)
         breathing_state = kBreathingOutPause;
 
         //prepare hardware for start breathing
+        dbprintf("INFO: Breathing mode started\n");
         FMSBreathingConfigHW();
       }
       else
       {
         breathing_config.is_standby = true;
         //no parameters were found or valid :(!
+        dbprintf("ERROR: no valid parameter, hold idle state\n");
       }
     }
     else if (breathing_config.is_tunning)
     {
+      dbprintf("INFO: Tunning mode started\n");
       main_state = kMainTunning;
     }
     else
@@ -759,6 +793,7 @@ void FMSMainLoop(void)
     //----------transition events---------//
     main_state = kMainIdle;
     breathing_config.is_tunning = false;
+    dbprintf("INFO: Tunning finished\n");
 
     break;
 
@@ -825,6 +860,7 @@ void FMSMainLoop(void)
       //if there is a time out
       if (GetDiffTime(Millis(), breathing_state_ref_time) >= breathing_dinamic.breathing_in_puase_time)
       {
+        dbprintf("INFO: Time trigger detected\n");
         goto kBreathingInPause_change_state;
       }
       //check if breathig is assited
@@ -833,11 +869,13 @@ void FMSMainLoop(void)
         //check if it is presure controled
         if (!breathing_config.is_volume_controled && system_measure.in_pressure < breathing_dinamic.sensor_pressure_trigger_ins_value)
         {
+          dbprintf("INFO: Patient trigger detected\n");
           goto kBreathingInPause_change_state;
         }
         //check if volume controled
         else if (breathing_config.is_volume_controled && system_measure.patient_flow > breathing_dinamic.sensor_flow_trigger_ins_value)
         {
+          dbprintf("INFO: Patient trigger detected\n");
           goto kBreathingInPause_change_state;
         }
         else
@@ -888,6 +926,8 @@ void FMSMainLoop(void)
 
     default:
 
+      dbprintf("ERROR: No valid breathing state\n");
+
       //this should be generated by a execution error, reset machine state and inform fault
       main_error.breathing_state_fault = true;
 
@@ -919,6 +959,8 @@ void FMSMainLoop(void)
     break;
 
   default:
+
+    dbprintf("ERROR: No valid main state\n");
 
     //there is some extrain error, go to init;
     main_state = kMainInit;
@@ -955,6 +997,7 @@ void FrontEndCommunicationLoop(void)
   //warnings have a high priority to send to front end MCU
   if (frontend_warning_copy.all != main_warning_masked.all)
   {
+    dbprintf("INFO: New Warning info available\n");
     mask = 0b1;
     //build message
     for (i = 0; i < 32; i++) //warning variable is a 32 bits register

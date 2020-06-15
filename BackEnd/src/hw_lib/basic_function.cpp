@@ -1,5 +1,23 @@
 
+/*
+    Lung Evolve Mechanical Ventilator
+    Copyright (C) 2020  Edison Agudelo, Mateo Garcia, Alejandra Londoño
 
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see https://www.gnu.org/licenses/gpl-3.0.html.
+    
+    */
+   
 #include "basic_function.h"
 
 #include "low_level/hardware_interface.h"
@@ -9,6 +27,7 @@
 #include "drivers/driver_voltage.h"
 #include "drivers/driver_temp.h"
 #include "drivers/driver_water_flowmeter.h"
+#include "debug.h"
 
 #include "time.h"
 
@@ -164,6 +183,7 @@ bool DirverInitialization(void)
 {
 
   TimeVirtualISRBegin();
+  DebugInit();
 
   DriverLedInit(&g_led_red, kHardwareLedRedPin);
   DriverLedInit(&g_buzzer, kHardwareBuzzerPin);
