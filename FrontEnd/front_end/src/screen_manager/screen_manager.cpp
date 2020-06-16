@@ -1,586 +1,824 @@
 //#include <Nextion.h>
-#include "screen_objetcs.h"
 #include "screen_manager.h"
-#include <SoftwareSerial.h>
+#include "screen_objetcs.h"
+//#include "../nextion/Nextion.h"
+//#include <SoftwareSerial.h>
 
-SoftwareSerial SFrontEnd (SFRONT_END_TX,SFRONT_END_RX);
+//serial to backend pins
+//#define SFRONT_END_TX 7
+//#define SFRONT_END_RX 6
+
+
+
 //buffer_screen buff;
 CONFIGURATION config;
-Alarm_state AS;
+volatile Alarm_state AS;
 ALARMS alarms_struct;
+ALARMS mask_alarms_struct;
 DATA dataValue;
 byte data[NUM_BYTES]; 
 int ScreenStates;
 bool update;
+static ModeHeader MODE;
+static TypeHeader TYPE;
+static bool monitoring=false;
+bool alarmPage=false;
+bool update_alarm_screen;
+bool off;
+
+#define factor  255/7000
+#define CH0_OFFSET 10
+#define CH1_OFFSET 50
+#define CH2_OFFSET 100
+
+
+
+
+/////////////////////////////////////////////////////////
+
 
 void serial_screen_init(void)
 {
-  SFrontEnd.begin(9600);
+  
+  //SFrontEnd.begin(9600);
+  Serial2.begin(9600);
+  //Serial.print("init");
 }
 
 void init_screen_management(void)
 {
   
+  nexInit();
   handlers();
-  clear_buffer(NUM_BYTES1);
-  ScreenStates=kpage0;
+  init_mask();
+  //clear_buffer(NUM_BYTES1);
+  bt1.setValue(0);
+  
 }
 
+void init_mask (void)
+{
+  for(int i=0;i<sizeof(mask_alarms_struct.bits);i++)
+  {
+    mask_alarms_struct.bits[i]=false;
+  }
+  //mask_alarms_struct.all=0;
+}
 
 
 void handlers (void)
 {
-  b1.attachPush(b1PushCallback);  
-  b2.attachPush(b2PushCallback);  
-  b3.attachPush(b3PushCallback);  
-  b4.attachPush(b4PushCallback);  
-  b5.attachPush(b5PushCallback);  
-  b6.attachPush(b6PushCallback);  
-  b7.attachPush(b7PushCallback);  
-  b8.attachPush(b8PushCallback);  
-  b9.attachPush(b9PushCallback);  
-  b10.attachPush(b10PushCallback);  
-  b11.attachPush(b11PushCallback);  
-  b12.attachPush(b12PushCallback);  
-  b13.attachPush(b13PushCallback);  
-  b14.attachPush(b14PushCallback);  
-  b15.attachPush(b15PushCallback);  
-  b16.attachPush(b16PushCallback);  
-  b23.attachPush(b23PushCallback);  
-  b24.attachPush(b24PushCallback);  
-  b29.attachPush(b29PushCallback);  
-  b30.attachPush(b30PushCallback);  
-  b37.attachPush(b37PushCallback);  
-  b38.attachPush(b38PushCallback);   
-  b42.attachPush(b42PushCallback);  
-  b43.attachPush(b43PushCallback);   
-  b50.attachPush(b50PushCallback);  
-  b51.attachPush(b51PushCallback);   
-  b60.attachPush(b60PushCallback);  
-  b61.attachPush(b61PushCallback);  
-  b66.attachPush(b66PushCallback);  
-  b67.attachPush(b67PushCallback);  
-  b68.attachPush(b68PushCallback);
-  b69.attachPush(b69PushCallback);  
-  b70.attachPush(b70PushCallback);  
-  b71.attachPush(b71PushCallback);    
-  b73.attachPush(b73PushCallback); 
-  bt0.attachPush(bt0PushCallback);
-  bt0.attachPop(bt0PopCallback);
-  bt1.attachPush(bt1PushCallback);
-  bt1.attachPop(bt1PopCallback);
+  //Serial.print("handler\n");
+  b2.attachPush(b2PushCallback, &b2);
+  b3.attachPush(b3PushCallback, &b3);
+  b5.attachPush(b5PushCallback, &b5);
+  b9.attachPush(b9PushCallback, &b9);
+  b11.attachPush(b11PushCallback, &b11);
+  b12.attachPush(b12PushCallback, &b12);
+  b14.attachPush(b14PushCallback, &b14);
+  b15.attachPush(b15PushCallback, &b15);
+  b23.attachPush(b23PushCallback, &b23);
+  b29.attachPush(b29PushCallback, &b29);
+  b37.attachPush(b37PushCallback, &b37);
+  b42.attachPush(b42PushCallback, &b42);
+  b75.attachPush(b75PushCallback, &b75);
+  b50.attachPush(b50PushCallback, &b50);
+  b61.attachPush(b61PushCallback, &b61);
+  b73.attachPush(b73PushCallback, &b73);
+  b69.attachPush(b69PushCallback,&b69);
+  b70.attachPush(b70PushCallback,&b70);
+  b67.attachPush(b67PushCallback,&b67);
+  bt0.attachPush(bt0PushCallback,&bt0);
+  bt0.attachPop(bt0PopCallback,&bt0);
+  bt1.attachPush(bt1PushCallback,&bt1);
+  
+
 }
 
 
 ////////////////////////// events when a button is pressed or released ////////////////////////
 
-void b1PushCallback(void *ptr)  
-{
-  ScreenStates=kpage1;
-  
-} 
-
 void b2PushCallback(void *ptr)
 {
-  ScreenStates=kpage3;
+  
+  config.tunning=false;
 }
 
 void b3PushCallback(void *ptr)
 {
-  ScreenStates=kpage12;
-}
-
-void b4PushCallback(void *ptr)
-{
-  ScreenStates=kpage14;
+  config.tunning=true;
+  //Serial.print("tunning");
 }
 
 void b5PushCallback(void *ptr)
 {
-  ScreenStates=kpage10;
-}
-
-void b6PushCallback(void *ptr)
-{
-  ScreenStates=kpage2;
-}
-
-void b7PushCallback(void *ptr)
-{
-  ScreenStates=kpage15;
-}
-
-void b8PushCallback(void *ptr)
-{
-  ScreenStates=kpage16;
+  config.tunning=false;
 }
 
 void b9PushCallback(void *ptr)
 {
-  ScreenStates=kpage20;
-  config.off=true;
+  //shut down
+  off=true;
 }
 
-void b10PushCallback(void *ptr)
-{
-  ScreenStates=kpage1;
-}
 
 void b11PushCallback(void *ptr)
 {
-  ScreenStates=kpage9;
-  config.controlType = true;
+  //assistive
+  MODE=Kassistive;
+  
+  
+  
 }
 
 void b12PushCallback(void *ptr)
 {
-  ScreenStates=kpage4;
-  config.controlType = false;
-}
-
-void b13PushCallback(void *ptr)
-{
-  ScreenStates=kpage2;
+  //controlled
+  MODE=Kcontrolled;
+  
+ 
 }
 
 void b14PushCallback(void *ptr)
 {
-  ScreenStates=kpage5;
-  config.control = true;
+  //volume control
+  
 }
 
 void b15PushCallback(void *ptr)
 {
-  ScreenStates=kpage7;
-  config.control = false;
-}
-
-void b16PushCallback(void *ptr)
-{
-  ScreenStates=kpage3;
+  //pressure control
+  
+  //Serial.print("pression control");
+ 
 }
 
 void b23PushCallback(void *ptr)
 {
-  ScreenStates=kpage6;
+
+  TYPE=Kvolume1;
+  screen_revieve_data();
+  
 }
 
-void b24PushCallback(void *ptr)
-{
-  ScreenStates=kpage4;
-}
 
 void b29PushCallback(void *ptr)
 {
-  ScreenStates=kpage19;
-  recieveData(NUM_BYTES1);
-  update=true;
-
-}
-
-void b30PushCallback(void *ptr)
-{
-  ScreenStates=kpage5;
+  
+  //volume2
+  //Serial.print("volume");
+  TYPE=Kvolume2;
+  screen_revieve_data();
+ 
 }
 
 void b37PushCallback(void *ptr)
 {
-  ScreenStates=kpage8;
-}
-
-void b38PushCallback(void *ptr)
-{
-  ScreenStates=kpage4;
+  //guarda numeros y checkbox de la pag7 pasa a la pag8
+  //pressure1
+  TYPE=kpressure1;
+  screen_revieve_data();
 }
 
 void b42PushCallback(void *ptr)
 {
-  ScreenStates=kpage19;
-  recieveData(NUM_BYTES1);
-  update=true;
+  //guarda numeros y checkbox de la pag8 y pasa a la pag 20
+  TYPE=Kpressure2;
+  screen_revieve_data();
 }
 
-void b43PushCallback(void *ptr)
+void b75PushCallback(void *ptr)
 {
-  ScreenStates=kpage7;
+  //guarda numeros y checkbox de la pag9 pasa a la pag 10
+  TYPE=Kassistive1;
+  screen_revieve_data();
 }
 
 void b50PushCallback(void *ptr)
 {
-  ScreenStates=kpage19;
-  recieveData(NUM_BYTES1);
-  update=true;
-}
-
-void b51PushCallback(void *ptr)
-{
-  ScreenStates=kpage3;
-}
-
-void b60PushCallback(void *ptr)
-{
-  ScreenStates=kpage1;
+  //guarda numeros y checkbox de la pag10 pasa a la pag 20
+  TYPE=Kassistive2;
+  screen_revieve_data();
 }
 
 void b61PushCallback(void *ptr)
 {
-  ScreenStates=kpage11;
-}
-
-void b66PushCallback(void *ptr)
-{
-  ScreenStates=kpage10;
+  //guarda numeros y checkbox de la pag11 pasa a la pag 12
+  MODE=Kalarms;
+  TYPE=kalarms1;
+  screen_revieve_data();
 }
 
 void b73PushCallback(void *ptr)
 {
-  ScreenStates=kpage1;
-  recieveData(NUM_BYTES1);
-  update=true;
-}
-
-void b67PushCallback(void *ptr)
-{
-  ScreenStates=kpage19;
-}
-
-void b68PushCallback(void *ptr)
-{
-  ScreenStates=kpage1;
-}
-
-void b69PushCallback(void *ptr)
-{
-  ScreenStates=kpage18;
-      Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue.peep);  // This is the value you want to send to that object and atribute mentioned before.
-      Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-      Serial.write(0xff);
-      Serial.write(0xff);
-
-      Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue.tv);  // This is the value you want to send to that object and atribute mentioned before.
-      Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-      Serial.write(0xff);
-      Serial.write(0xff);
-
-      Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue.bpm);  // This is the value you want to send to that object and atribute mentioned before.
-      Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-      Serial.write(0xff);
-      Serial.write(0xff);
-
-      Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue.ie);  // This is the value you want to send to that object and atribute mentioned before.
-      Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-      Serial.write(0xff);
-      Serial.write(0xff);
-
-      Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue.pressure);  // This is the value you want to send to that object and atribute mentioned before.
-      Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-      Serial.write(0xff);
-      Serial.write(0xff);
-}
-
-void b70PushCallback(void *ptr)
-{
-  ScreenStates=kpage17;
-}
-
-void b71PushCallback(void *ptr)
-{
-  ScreenStates=kpage17;
+  //guarda numeros y checkbox de la pag12 y pasa a la pag 1
+  TYPE=Kalarms2;
+  screen_revieve_data();
 }
 
 void bt0PushCallback(void *ptr)
 {
-  config.pause=true;
+  uint32_t temp=0;
+  
+  update=1;
+  bt0.getValue(&temp);
+  if(temp==0x1)
+  {
+    config.pause=0x1;
+    Serial.print("push");
+  }
+  else
+  {
+    config.pause=0x0;
+    Serial.print("pop");
+  }
+  delay(6);
 }
 
 void bt0PopCallback(void *ptr)
 {
-  config.pause=true; 
+  config.pause=0x0;
 }
 
 void bt1PushCallback(void *ptr)
 {
-  AS.ScreenSoundOff=true;  
+  uint32_t temp=0;
+  bt1.getValue(&temp);
+  if(temp==0x1)
+  {
+    AS.ScreenSoundOff=true;
+    //Serial.print("sounOff");
+  }
+  else
+  {
+    AS.ScreenSoundOff=false;
+    //Serial.print("sounOn");
+  }
+
+  //Serial.print("silence");
+  
+  
 }
 
-void bt1PopCallback(void *ptr)
+void b69PushCallback(void *ptr)
 {
-  AS.ScreenSoundOff=false; 
+  alarmPage=true;//si se pone bloqueante, quite los nextloop de send_screen_alarm y descomente
+  //screen_alarms();
+  send_screen_alarm();
+}
+
+void b70PushCallback(void *prt)
+{
+  alarmPage=false;
+  Serial.print("false");
+  Serial2.print("page 18");
+  Serial2.write(0xff);
+  Serial2.write(0xff);
+  Serial2.write(0xff);
+  delay(4);
+}
+
+
+void b67PushCallback(void *ptr)
+{
+  monitoring=true;
+}
+//***************************** End of events when a button is pressed or released********************************
+
+void screen_revieve_data(void)
+{
+  uint32_t temp=0;
+  switch(MODE)
+  {
+    case Kcontrolled:
+      
+      switch (TYPE)
+      {
+      case Kvolume1:
+          config.control=true;
+          config.controlType=false;
+          //Serial.write(config.control);
+          n1.getValue(&config.fio2);
+          delay(5);
+          n2.getValue(&config.bpm);
+          delay(5);
+          n3.getValue(&config.peep);
+          delay(5);
+          n20.getValue(&config.tpause);
+          delay(5);
+          Serial2.print("page 6");
+          Serial2.write(0xff);
+          Serial2.write(0xff);
+          Serial2.write(0xff);
+        break;
+      case Kvolume2:
+              
+          n4.getValue(&config.tidal);
+          delay(5);
+          n5.getValue(&config.apnea);
+          delay(5);
+          c0.getValue(&temp);
+          if(temp)
+          {
+            config.ie=0x2;
+          }
+          else
+          {
+            delay(5);
+            c1.getValue(&temp);
+            if(temp)
+            {
+              config.ie=0x3;
+            }
+            else
+            {
+              config.ie=0x4;
+            }
+          }
+          delay(5);
+          Serial2.print("page 20");
+          Serial2.write(0xff);
+          Serial2.write(0xff);
+          Serial2.write(0xff);
+          delay(5);
+          update=true;
+          monitoring=true;
+      break;
+
+      case kpressure1:
+        config.control=false;
+        config.controlType=false;
+        n6.getValue(&config.fio2);
+        delay(5);
+        n7.getValue(&config.bpm);
+        delay(5);
+        n8.getValue(&config.peep);
+        delay(5);
+        n21.getValue(&config.tpause);
+        delay(5);
+        Serial2.print("page 8");
+        Serial2.write(0xff);
+        Serial2.write(0xff);
+        Serial2.write(0xff);
+        delay(5);
+      break;
+      case Kpressure2:
+      
+      n9.getValue(&config.pressure);
+      delay(5);
+      n10.getValue(&config.apnea);
+      delay(5);
+      n26.getValue(&config.tidal);
+      delay(5);
+      c5.getValue(&temp);
+          if(temp)
+          {
+            config.ie=0x2;
+          }
+          else
+          {
+            delay(5);
+            c6.getValue(&temp);
+            if(temp)
+            {
+              config.ie=0x3;
+            }
+            else
+            {
+              config.ie=0x4;
+            }
+          }
+          delay(5);
+          Serial2.print("page 20");
+          Serial2.write(0xff);
+          Serial2.write(0xff);
+          Serial2.write(0xff);
+          delay(5);
+          update=true;
+          monitoring=true;
+      break;
+
+      default:
+      break;
+      }
+    break;
+    case Kassistive:
+      config.controlType=true;
+      config.control=true;
+      switch(TYPE)
+      {
+        case Kassistive1:
+          n11.getValue(&config.fio2);
+          delay(5);
+          n12.getValue(&config.peep);
+          delay(5);
+          n23.getValue(&config.trigger);
+          delay(5);
+          if((int32_t)config.trigger>0)
+          {
+            config.triggerSource=false;
+          }
+          else
+          {
+            config.triggerSource=true;
+          }
+          
+          Serial2.print("page 10");
+          Serial2.write(0xff);
+          Serial2.write(0xff);
+          Serial2.write(0xff);
+          delay(5);
+
+        break;
+        case Kassistive2:
+          n13.getValue(&config.tpause);
+          delay(5);
+          n24.getValue(&config.apnea);
+          delay(5);
+          n25.getValue(&config.tidal);
+          delay(5);
+          Serial2.print("page 20");
+          Serial2.write(0xff);
+          Serial2.write(0xff);
+          Serial2.write(0xff);
+          delay(5);
+          update=true;
+          monitoring=true;
+      break;
+      }
+    break;
+
+    case Kalarms:
+      switch(TYPE)
+      {
+        case kalarms1:
+        n14.getValue(&config.maxInPressure);
+        delay(5);
+        n15.getValue(&config.minInPressure);
+        delay(5);
+        n16.getValue(&config.maxOutPressure);
+        delay(5);
+        n17.getValue(&config.minOutPressure);
+        delay(5);
+        Serial2.print("page 12");
+        Serial2.write(0xff);
+        Serial2.write(0xff);
+        Serial2.write(0xff);
+        delay(5);
+        break;
+        case Kalarms2:
+        n18.getValue(&config.maxTV);
+        delay(5);
+        n19.getValue(&config.minTV);
+        delay(5);
+        Serial2.print("page 1");
+        Serial2.write(0xff);
+        Serial2.write(0xff);
+        Serial2.write(0xff);
+        delay(5);
+        update=true;
+        break;
+      }
+    break;
+
+    default:
+    break;
+  }
+}
+
+
+void screen_alarms(void)
+{
+ static int J=0;
+    //Serial.print("entra");
+    if(J<sizeof(alarms_struct.bits))
+    {
+      if(alarms_struct.bits[J]==true)
+      {
+        if(J<=9)
+        {
+          
+         // send_screen_alarm(J,1); // 1 indicates medium priority
+        }
+        else
+        {
+          
+//          send_screen_alarm(J,2); //2 indicates high priority
+        }
+        
+          
+      }
+      else
+      {
+  //      send_screen_alarm(J,0); 
+      }
+      
+      
+      
+    }
+    else
+    {
+      J=0;
+    }
+    
+    
+}
+
+void send_screen_alarm(void)
+{
+  uint32_t red=63488,yellow=65504,white=65535;
+  if(mask_alarms_struct.bits!=alarms_struct.bits)
+  {
+
+        if(alarms_struct.bits[0]==true)
+        {
+          t30.Set_background_color_bco(yellow);
+        }
+        else
+        {
+          t30.Set_background_color_bco(white);
+        }
+
+        if(alarms_struct.bits[1]==true)
+        {
+          t31.Set_background_color_bco(yellow);
+        }
+        else
+        {
+          t31.Set_background_color_bco(white);
+        }
+      
+
+        if(alarms_struct.bits[2]==true)
+        {
+          t32.Set_background_color_bco(yellow);
+        }
+        else
+        {
+          t32.Set_background_color_bco(white);
+        }
+
+        if(alarms_struct.bits[3]==true)
+        {
+          t33.Set_background_color_bco(yellow);
+        }
+        else
+        {
+          t33.Set_background_color_bco(white);
+        }
+        
+ 
+        if(alarms_struct.bits[4]==true)
+        {
+          t34.Set_background_color_bco(yellow);
+        }
+        else
+        {
+          t34.Set_background_color_bco(white);
+        }
+
+        if(alarms_struct.bits[5]==true)
+        {
+          t35.Set_background_color_bco(yellow);
+        }
+        else
+        {
+          t35.Set_background_color_bco(white);
+        }
+        
+   
+        if(alarms_struct.bits[6]==true)
+        {
+          t36.Set_background_color_bco(yellow);
+        }
+        else
+        {
+          t36.Set_background_color_bco(white);
+        }
+        
+
+        if(alarms_struct.bits[7]==true)
+        {
+          t37.Set_background_color_bco(yellow);
+        }
+        else
+        {
+          t37.Set_background_color_bco(white);
+        }
+        
+
+        if(alarms_struct.bits[8]==true)
+        {
+          t38.Set_background_color_bco(yellow);
+        }
+        else
+        {
+          t38.Set_background_color_bco(white);
+        }
+       
+
+        if(alarms_struct.bits[9]==true)
+        {
+          t39.Set_background_color_bco(yellow);
+        }
+        else
+        {
+          t39.Set_background_color_bco(white);
+        }
+        
+
+        if(alarms_struct.bits[10]==true)
+        {
+          t40.Set_background_color_bco(red);
+        }
+        else
+        {
+          t40.Set_background_color_bco(white);
+        }
+        
+
+        if(alarms_struct.bits[11]==true)
+        {
+          t41.Set_background_color_bco(red);
+        }
+        else
+        {
+          t41.Set_background_color_bco(white);
+        }
+
+        if(alarms_struct.bits[12]==true)
+        {
+          t42.Set_background_color_bco(red);
+        }
+        else
+        {
+          t42.Set_background_color_bco(white);
+        }
+        
+        if(alarms_struct.bits[13]==true)
+        {
+          t43.Set_background_color_bco(red);
+        }
+        else
+        {
+          t43.Set_background_color_bco(white);
+        }
+    
+        if(alarms_struct.bits[14]==true)
+        {
+          t44.Set_background_color_bco(red);
+        }
+        else
+        {
+          t44.Set_background_color_bco(white);
+        }
+
+        if(alarms_struct.bits[15]==true)
+        {
+          t45.Set_background_color_bco(red);
+        }
+        else
+        {
+          t45.Set_background_color_bco(white);
+        }
+       
+
+        if(alarms_struct.bits[16]==true)
+        {
+          t46.Set_background_color_bco(red);
+        }
+        else
+        {
+          t46.Set_background_color_bco(white);
+        }
+
+        if(alarms_struct.bits[17]==true)
+        {
+          t47.Set_background_color_bco(red);
+        }
+        else
+        {
+          t47.Set_background_color_bco(white);
+        }
+
+        if(alarms_struct.bits[18]==true)
+        {
+          t48.Set_background_color_bco(red);
+        }
+        else
+        {
+          t48.Set_background_color_bco(white);
+        }
+
+        if(alarms_struct.bits[19]==true)
+        {
+          t49.Set_background_color_bco(red);
+        }
+        else
+        {
+          t49.Set_background_color_bco(white);
+        }
+     
+        if(alarms_struct.bits[20]==true)
+        {
+          t50.Set_background_color_bco(red);
+        }
+        else
+        {
+          t50.Set_background_color_bco(white);
+        }
+        update_alarm_screen=true;
+  }
+  else
+  {
+    update_alarm_screen=false;
+  }
+  
+  for(int j=0;j<21;j++)
+  {
+    mask_alarms_struct.bits[j]=alarms_struct.bits[j];
+  }
+  
+    
 }
 
 
 
-
-//***************************** End of events when a button is pressed or released********************************
 
 
 void screen_management(void)
 {
+  
+  static int i=0;
+  const uint8_t OFFSET=0x40;
+  uint32_t conth,contm;
     /*
     *si estoy en pagina tal que hago
     *si estoy en pagina de monitor que envío
     */
+   
     nexLoop(nex_listen_list);
-   if(ScreenStates==kpage19)
-   {
-     //revisar si hay alarmas prioritarias y aun hay vacante, envíe alarma para mostrar
-     if(config.controlType==true)//assistive
-     {
-      Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue.peep);  // This is the value you want to send to that object and atribute mentioned before.
-      Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-      Serial.write(0xff);
-      Serial.write(0xff);
-
-      Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue.tv);  // This is the value you want to send to that object and atribute mentioned before.
-      Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-      Serial.write(0xff);
-      Serial.write(0xff);
-
-      Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue.bpm);  // This is the value you want to send to that object and atribute mentioned before.
-      Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-      Serial.write(0xff);
-      Serial.write(0xff);
-
-      Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue.ie);  // This is the value you want to send to that object and atribute mentioned before.
-      Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-      Serial.write(0xff);
-      Serial.write(0xff);
-
-      Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-      Serial.print(dataValue.pressure);  // This is the value you want to send to that object and atribute mentioned before.
-      Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-      Serial.write(0xff);
-      Serial.write(0xff);
-     }
-     else//controlled
-     {
-       if(config.control==true)//volume
-       {
-        Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue.peep);  // This is the value you want to send to that object and atribute mentioned before.
-        Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-        Serial.write(0xff);
-        Serial.write(0xff);
-
-        Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue.tv);  // This is the value you want to send to that object and atribute mentioned before.
-        Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-        Serial.write(0xff);
-        Serial.write(0xff);
-
-        Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue.bpm);  // This is the value you want to send to that object and atribute mentioned before.
-        Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-        Serial.write(0xff);
-        Serial.write(0xff);
-
-        Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue.ie);  // This is the value you want to send to that object and atribute mentioned before.
-        Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-        Serial.write(0xff);
-        Serial.write(0xff);
-
-        Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue.pressure);  // This is the value you want to send to that object and atribute mentioned before.
-        Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-        Serial.write(0xff);
-        Serial.write(0xff);
-       }else//pressure
-       {
-        Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue.peep);  // This is the value you want to send to that object and atribute mentioned before.
-        Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-        Serial.write(0xff);
-        Serial.write(0xff);
-
-        Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue.tv);  // This is the value you want to send to that object and atribute mentioned before.
-        Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-        Serial.write(0xff);
-        Serial.write(0xff);
-
-        Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue.bpm);  // This is the value you want to send to that object and atribute mentioned before.
-        Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-        Serial.write(0xff);
-        Serial.write(0xff);
-
-        Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue.ie);  // This is the value you want to send to that object and atribute mentioned before.
-        Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-        Serial.write(0xff);
-        Serial.write(0xff);
-
-        Serial.print("");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-        Serial.print(dataValue.pressure);  // This is the value you want to send to that object and atribute mentioned before.
-        Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-        Serial.write(0xff);
-        Serial.write(0xff); 
-       }
-     }
-   }
-     else
-     {
-       
-     }
-     
-    //Serial.print("n3.val=");  // This is sent to the nextion display to set what object name (before the dot) and what atribute (after the dot) are you going to change.
-    //Serial.print(counter);  // This is the value you want to send to that object and atribute mentioned before.
-    //Serial.write(0xff);  // We always have to send this three lines after each command sent to the nextion display.
-    //Serial.write(0xff);
-    //Serial.write(0xff);
-   }
-
-/*
-   switch (ScreenStates)
-   {
-      case kpage0://pagina inicial, foto y boton para ir al menu ppal
+    
+    if(alarmPage==true)
+    {
+      //send_screen_alarm();
+      //Serial.print("loop");
       
-      break;
-      case kpage1://pagina del menu ppal primera parte
-      
-      break;
-      case kpage2://pagina del menu ppal segunda parte
-      
-      break;
-      case kpage3://pagina para escoger si es asistido o controlado 
-      
-      break;
-      case kpage4://pagina para escoger tipo de control v o p 
-      
-      break;
-      case kpage5://pagina para configurar los parametros cuando es control por v primera parte 
-      
-      break;
-      case kpage6: //pagina para configurar los parámetros cuando es control por v segunda parte 
-      break;
-      case kpage7://pagina para configurar los parámetros cuando es control por p primera parte
-      break;
-      case kpage8: //pagina para configurar los parámetros cuando es control por p segunda parte
-      break;
-      case kpage9: //pagina para configurar los parametros cuando es asistido
-      break;
-      case kpage10: //pagina para configurar las alarmas primera parte
-      break;
-      case kpage11: //pagina para configurar las alarmas segunda parte
-      break;
-      case kpage12: //pagina para llevar a cabo las pruebas primera parte
-      break;
-      case kpage13: //pagina para llevar a cabo las pruebas segunda parte
-      break;
-      case kpage14: //pagina para realizar las conf del sistema
-      break;
-      case kpage15: //pagina acerca de lung evolve
-      break;
-      case kpage16: //pagina de ayuda
-      break;
-      case kpage17: //pagina donde se escoge si se quiere pausar el sistema, regresar a menu ppal o regresar a la pagina actual
-      break;
-      case kpage18: //pagina que muestra todas las alarmas
-      break;
-      case kpage19: //pagina de monitoreo
-      break;
-      case kpage20: //pagina de apagado
-      break;
-
-
-   default:
-    ScreenStates=kpage0;
-     break;
-   }
-*/
   
+    }
 
-
-
-
-void recieveData(int dataLength)
-{
-  //Serial.write(buff->fio2);
- if (Serial.available())
- {
-  Serial.readBytes(data,dataLength);
-   for(int i = 0;i < dataLength;i++)
-   {
-      if(data[i]==kfio2)
-      {
-        config.fio2=data[i+1];
-      }else if(data[i]==kbpm)
-      {
-        config.bpm=data[i+1];
-      }else if(data[i]==kpeep)
-      {
-        config.peep=data[i+1];
-      }else if(data[i]==kheigh)
-      {
-        config.heigh=data[i+1];
-      }else if(data[i]==kapnea)
-      {
-        config.apnea=data[i+1];
-      }else if(data[i]==kie)
-      {
-        config.ie=data[i+1];
-      }else if(data[i]==kgender)
-      {
-       config.gender=data[i+1]; 
-      }else if(data[i]==kpressure)
-      {
-        config.pressure=data[i+1];
-      }else if(data[i]==kmaxInPressure)
-      {
-        config.maxInPressure=data[i+1];
-      }else if(data[i]==kminInPressure)
-      {
-        config.minInPressure=data[i+1];
-      }else if(data[i]==kmaxOutPressure)
-      {
-        config.maxOutPressure=data[i+1];
-      }else if(data[i]==kminOutPressure)
-      {
-        config.minOutPressure=data[i+1];
-      }else if(data[i]==kmaxVT)
-      {
-        config.maxTV=data[i+1];
-      }else if(data[i]==kminTV)
-      {
-        config.minTV=data[i+1];
-      }
-
+  if(monitoring)
+  {
+    if(data_change)
+    {
+      s0.addValue(0,((dataValue.battery_level)+CH0_OFFSET));//dataValue.battery_level
+      s0.addValue(1,((dataValue.in_pressure)+CH1_OFFSET));
+      s0.addValue(2,((dataValue.mixture_flow)+CH2_OFFSET));
+      Serial.write(dataValue.battery_level);
+      data_change = false;
     }
     
   }
-  clear_buffer(dataLength);
-}
 
-void clear_buffer(int nbytes)
-{
-  for(int i = 0;i < nbytes;i++){
-        data[i] = 0x00;
+    /*
+    if(monitoring && update_alarm_screen)
+    {
+      //envia data
+      for(i=0;i<21;i++)
+      {
+        if((i<10) && (AS.MediumAlarmState==true))
+        {
+          if(alarms_struct.bits[i]==true)
+          {
+            contm++;
+          }
+        }
+        if((10<i<21) && (AS.HighAlarmState==true))
+        {
+           if(alarms_struct.bits[i]==true)
+          {
+            conth++;
+          }
+        }
+        
+      }
+      n20.setValue(conth);
+      n21.setValue(contm);    
+      conth=0;
+      contm=0;  
+
     }
+    else
+    {
+      conth=0;
+      contm=0;
+    }
+    */
+    
+  
 }
+  
 
-/*
-void init_struct(buffer_screen *buff)
-{
-  buff->fio2=0x0;
-  buff->bpm=0x0;
-  buff->peep=0x0;
-  buff->heigh=0x0;
-  buff->apnea=0x0;
-  buff->ie=0x0;
-  buff->gender=0x0;
-  buff->pressure=0x0;
-}
-*/
 
 
 

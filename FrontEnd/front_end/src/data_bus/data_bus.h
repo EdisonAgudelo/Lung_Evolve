@@ -1,67 +1,252 @@
 #ifndef DATA_BUS_H
 #define DATA_BUS_H
 #include <stdint.h>
-#define byte uint8_t
+
+
+const uint8_t kTxBufferLength = 0xff;
+
+extern bool off;
+extern bool data_change;
+///////////*************************////////////////////////
 //ALARMS
-typedef struct 
-{
+typedef union {
+  struct
+  {
 
-    bool ApneaAlarm;
-    bool HighBreathRate;
-    bool LowInspP;
-    bool HighInspP;
-    bool HighVte;
-    bool LowVte;
-    bool NearToLowVte;
-    bool HighVti;
-    bool ProximalTube;
-    bool VteNotAchived;
-    bool VteOv;
-    bool PatientLeaks;
-    bool ShutDown;
-    bool BackUpOn;
-    bool LowBattery;
-    bool NoBattery;
-    bool HighTemp;
-    bool UnderPeep;
-    bool NoOxygen;
+    bool apnea_alarm; 
 
+    bool high_breathing_rate; 
+    bool low_breathing_rate ; 
+
+    bool high_in_volume_tidal ; 
+    bool low_in_volume_tidal ; 
+    bool near_low_in_volume_tidal; 
+
+    bool high_ie_ratio ; 
+    bool low_ie_ratio; 
+
+    bool low_peep; 
+
+    bool no_main_supply; 
+
+    bool high_out_pressure;
+    bool low_out_pressure ;
+    
+    bool high_in_pressure ; 
+    bool low_in_pressure;  
+
+    bool high_volume_leakage; 
+
+    bool detached_proximal_tube; 
+    bool detached_oxygen_tube; 
+
+    bool low_battery;
+    bool no_battery; 
+
+    bool high_temp_bat; 
+    bool high_temp_motor; 
+  };
+  
+  uint32_t all;
+  bool bits[21];
 } ALARMS;
 extern ALARMS alarms_struct;
+extern ALARMS mask_alarms_struct;
 
 //alarms id define
- #define kApneaAlarm 0x1
- #define kHighBreathRate 0x2
- #define kLowInspP 0x3
- #define kHighInspP 0x4
- #define kHighVte 0x5
- #define kLowVte 0x6
- #define kNearToLowVte 0x7
- #define kHighVti 0x8
- #define kProximalTube 0x9
- #define kVteNotAchived 0xa
- #define kVteOv 0xb
- #define kPatientLeaks 0xc
- #define kShutDown 0xd
- #define kBackUpOn 0xe
- #define kLowBattery 0xf
- #define kNoBattery 0x10
- #define kHighTemp 0x11
- #define kUnderPeep 0x12
- #define kNoOxygen 0x13
+const uint8_t AlarmId[] = {
+  //bool apnea_alarm:1;
+  0x0,
+  //bool high_breathing_rate : 1;
+  0x1,
+  //bool low_breathing_rate : 1;
+  0x2,
+  //bool high_out_pressure : 1;
+  0x3,
+  //bool low_out_pressure : 1;
+  0x4,
+  // bool high_in_pressure : 1;
+  0x5,
+  // bool low_in_pressure : 1;
+  0x6,
+  //bool high_out_volume_tidal : 1;
+  0x7,
+  //bool low_out_volume_tidal : 1;
+  0x8,
+  //bool near_low_out_volume_tidal:1;
+  0x9,
+  //bool high_in_volume_tidal : 1;
+  0xa,
+  //bool low_in_volume_tidal : 1;
+  0xb,
+  //bool near_low_in_volume_tidal:1;
+  0xc,
+  //bool high_volume_leakage:1;
+  0x13,
+  //bool high_ie_ratio : 1;
+  0x14,
+  //bool low_ie_ratio : 1;
+  0x15,
+  //bool low_peep:1;
+  0x16,
+  //bool detached_proximal_tube:1;
+  0x17,
+  //bool detached_oxygen_tube:1;
+  0x18,
+  //bool low_battery:1;
+  0x19,
+  //bool no_battery:1;
+  0x20,
+  //bool no_main_supply:1;
+  0x21
+  //bool high_temp_bat:1;
 
+};
+///////////*************************////////////////////////
 
 //CONFIGURATION
-typedef struct 
+typedef union
 {
+  struct{
+    bool tunning;
+    bool pause; //ventilation operation is paused(0x1) or not (0x0)
+    bool control; //volume(true) or pressure(false)
+    bool controlType;//assistive(true) or controlled(false)
+    bool triggerSource; //pressure(true) flow(false)
+    uint32_t trigger;
+    uint32_t fio2; //21-100
+    uint32_t pressure;//0-65
+    uint32_t tidal; //200-650
+    uint32_t bpm; //6-40
+    uint8_t ie; 
+    uint32_t apnea; //ms 0-30000
+    uint32_t tpause; //0-30000
+    uint32_t maxInPressure; //
+    uint32_t minInPressure;
+    uint32_t maxOutPressure;
+    uint32_t minOutPressure;
+    uint32_t maxTV;
+    uint32_t minTV;
+    uint32_t peep; 
+    uint32_t max_leakage;
+     
+	  
+	  
+    
+    
+    //uint8_t off; //ventilator is off(0x1) or not(0x0)
+    
+    
+    
+	  
+/*
+    uint32_t fio2;
+    uint32_t bpm;
+    uint32_t peep;
+    uint32_t tpause; //tiempo?
+    uint32_t apnea;
+    uint8_t ie;
+    uint32_t pressure;
+	  uint32_t tidal;
+	  uint32_t trigger;
+    uint8_t controlType;//assistive(0x1) or controlled(0x0)
+    uint8_t control; //volume(true) or pressure(false)
+    uint8_t off; //ventilator is off(0x1) or not(0x0)
+    uint8_t pause; //ventilation operation is paused(0x1) or not (0x0)
+    uint32_t maxInPressure;
+    uint32_t minInPressure;
+    uint32_t maxOutPressure;
+    uint32_t minOutPressure;
+    uint32_t maxTV;
+    uint32_t minTV;
+	  uint32_t max_leakage;
+*/
+  };
+  uint8_t all[66];
+
+}CONFIGURATION;
+extern CONFIGURATION config;
+//configuration id define
+const uint8_t ConfigId[] = {
+  0x0,
+  0x1,
+  0x2,
+  0x3,
+  0x4,
+  0x5,
+  0x6,
+  0x7,
+  0x8,
+  0x9,
+  0xa,
+  0xb,
+  0xc,
+  0x1c,
+  0x14,
+  0x15,
+  0x16,
+  0x17,
+  0x18,
+  0x19
+ 
+};
+
+///////////*************************////////////////////////
+
+//DATA
+typedef union
+{
+  struct{
+
+  uint32_t in_pressure;
+  uint32_t out_pressure;
+  uint32_t mixture_flow; 
+  uint32_t tidal;
+  uint32_t breathing_rate;
+  uint32_t ie_ratio;  
+  uint32_t battery_level;
+  uint32_t patient_leakage;
+
+  };
+  
+  uint32_t all[32];
+}DATA;
+extern DATA dataValue;
+//data id define
+const uint8_t DataId[] = {
+    //tidal
+    0x0,
+    //ie_ratio
+    0x1,
+    //breathing_rate
+    0x2,
+    //in_pressure
+    0x3,
+    //out_pressure
+    0x4,
+    //mixture_flow
+    0x5,
+    //battery_level
+    0x6
+};
+///////////*************************////////////////////////
+
+
+#endif /*DATA_BUS_H*/
+
+/*
+typedef union
+{
+  struct{
     byte fio2;
     byte bpm;
     byte peep;
-    byte heigh;
+    byte pausa;
     byte apnea;
     byte ie;
-    byte gender;  
     byte pressure;
+	uint16_t tidal;
+	byte trigger;
     bool controlType;//assistive(true) or controlled(false)
     bool control; //volume(true) or pressure(false)
     bool off; //ventilator is off(true) or not
@@ -72,59 +257,11 @@ typedef struct
     byte minOutPressure;
     byte maxTV;
     byte minTV;
+	byte max_leakage;
 
+  };
+  uint8_t all[18];
 
 }CONFIGURATION;
 extern CONFIGURATION config;
-//configuration id define
-#define cfio2 0x1e
-#define cbpm 0x1f
-#define cpeep 0x20
-#define cheigh 0x21
-#define capnea 0x22
-#define cie 0x23
-#define cgender 0x24
-#define cpressure 0x25
-#define ccontrolType 0x26
-#define ccontrol 0x27
-#define coff 0x28
-#define cpause 0x29
-#define cmaxInPressure 0x2a
-#define cminInPressure 0x2b
-#define cmaxOutPressure 0x2c
-#define cminOutPressure 0x2d
-#define cmaxTV 0x2e
-#define cminTV 0x2f
-
-//DATA
-typedef struct 
-{
-    byte peep;
-    byte tv;
-    byte bpm;
-    byte ie;
-    byte pressure;  
-
-}DATA;
-extern DATA dataValue;
-
-//data id define
-#define kppeep 0x14
-#define kttv 0x15
-#define kbbpm 0x16
-#define kiie 0x17
-#define kppressure 0x18
-
-
-//commands id define
-#define alarms 0x19
-#define datas 0x1a
-#define sign 0x1b
-#define parameterConfig 0x1c
-
-//signaling id define
-#define ACK 0x1d
-#define NACK 0x1e
-
-extern bool status_send,status_recieve;
-#endif /*DATA_BUS_H*/
+*/

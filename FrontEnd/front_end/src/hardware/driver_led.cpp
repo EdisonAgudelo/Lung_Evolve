@@ -51,6 +51,7 @@ void DriverLedLoop(DriverLed *led)
 {
     if (led->blink)
     {
+        //Serial.print("entra a led loop\n");
         switch (led->state)
         {
         case kLedOn:

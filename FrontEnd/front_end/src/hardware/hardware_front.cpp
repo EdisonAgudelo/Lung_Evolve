@@ -5,6 +5,18 @@
 #include <Arduino.h>
 
 
+//frontend peripheral pins
+#define Ypin 9 
+#define Rpin 10
+#define BUZZERpin 3
+
+
+
+//duty cycle front end peripherals 
+
+const int DUTY_BUZZER= 128;
+
+
 DriverLed RED_led;
 DriverLed YELLOW_led;
 
@@ -24,6 +36,8 @@ void init_hardware_front(void)
     DriverLedInit(&RED_led, Rpin);
     DriverLedInit(&YELLOW_led, Ypin);
 
+    //DriverLedBlink(&RED_led,1000);
+
     
 }
 
@@ -33,14 +47,21 @@ void init_hardware_front(void)
 *
 */
 
-void YELLOWLed(bool action)
+void YELLOWLed(bool action,bool transition)
 {
-    uint32_t blink_period=2000;
+    uint32_t blink_period=200;
     if(action)
     {
-        //digitalWrite(Ypin,HIGH);
-        //analogWrite(Ypin, DUTY_LEDY);
-        DriverLedBlink(&YELLOW_led, blink_period);
+        if(transition)
+        {
+            DriverLedBlink(&YELLOW_led, blink_period);
+            
+        }
+        else
+        {
+            
+        }
+        
         
     }
     else
@@ -57,14 +78,24 @@ void YELLOWLed(bool action)
 *   activates or desactivates the blinking of the led for the high priority alarms
 *
 */
-void REDLed(bool action)
+void REDLed(bool action, bool transition)
 {
      uint32_t blink_period=200;
     if(action)
     {
         //digitalWrite(Rpin,HIGH);
         //analogWrite(Rpin, DUTY_LEDR);
-        DriverLedBlink(&RED_led, blink_period);
+        if(transition)
+        {
+            DriverLedBlink(&RED_led, blink_period);
+            
+        }
+        else
+        {
+            
+        }
+                       
+        
     }
     else
     {
@@ -72,6 +103,7 @@ void REDLed(bool action)
         DriverLedTurnOff(&RED_led);
     
     }
+    
     
 }
 
@@ -94,3 +126,4 @@ void BUZZER(bool action)
     
     }
 }
+
