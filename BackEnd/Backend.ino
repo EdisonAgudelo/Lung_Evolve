@@ -131,7 +131,8 @@ void FMSMainInit(void)
   main_error.working_configuration_not_initialized = true;
 
   //variable inizialitacion
-  main_state = kMainInit;               //start in idle mode
+  //resotore
+  main_state = kMainIdle;               //start in idle mode
   breathing_state = kBreathingOutPause; //default state
   init_state = kInitStartFuelBellow;    //init secuence
 
@@ -1091,8 +1092,8 @@ void FrontEndCommunicationLoop(void)
     //check if it is time to send low data
     if (GetDiffTime(Millis(), last_update_time.slow_data) >= kSlowDataPeriod)
     {
-      system_measure.battery_level=50.0;
-      dbprintf("INFO: data send %i\n",(uint8_t) system_measure.battery_level);
+     // system_measure.battery_level=50.0;
+      //dbprintf("INFO: data send %i\n",(uint8_t) system_measure.battery_level);
       last_update_time.slow_data = Millis();
 
       for (i = 0; i < sizeof(kTxSlowDataId) / sizeof(float); i++)
