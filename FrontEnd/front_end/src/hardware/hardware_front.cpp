@@ -8,7 +8,8 @@
 //frontend peripheral pins
 #define Ypin 9 
 #define Rpin 10
-#define BUZZERpin 3
+#define BUZZERpin 11//3
+#define RELEpin 7
 
 
 
@@ -31,10 +32,13 @@ void init_hardware_front(void)
     pinMode(Ypin,OUTPUT);
     pinMode(Rpin,OUTPUT);
     pinMode(BUZZERpin,OUTPUT);
+    pinMode(RELEpin,OUTPUT);
     //TCCR1B = TCCR1B & B11111000 | B00000101;
 
     DriverLedInit(&RED_led, Rpin);
     DriverLedInit(&YELLOW_led, Ypin);
+
+    RELE(false);
 
     //DriverLedBlink(&RED_led,1000);
 
@@ -127,3 +131,15 @@ void BUZZER(bool action)
     }
 }
 
+void RELE(bool action)
+{
+    if(action) //action means to power off if it is true
+    {
+        digitalWrite(RELEpin,HIGH);
+    }
+    else
+    {
+        digitalWrite(RELEpin,LOW);
+    }
+    
+}

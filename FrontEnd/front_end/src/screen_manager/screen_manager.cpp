@@ -780,6 +780,13 @@ void screen_management(void)
     
   }
 
+  if(off)
+  {
+    off=false;
+    RELE(true);
+
+  }
+
     /*
     if(monitoring && update_alarm_screen)
     {
