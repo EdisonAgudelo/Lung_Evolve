@@ -64,12 +64,15 @@ void backend_management(void)
                     temp.all[3]=transfer_buffer[i++];
                     dataValue.all[idtemp] = (uint32_t) temp.var;
                 }
-                data_change = true;
                 Serial.write(temp.all[0]);
                 Serial.write(temp.all[1]);
                 Serial.write(temp.all[2]);
                 Serial.write(temp.all[3]);
                 Serial.print("done   ");
+
+
+                data_change = true;
+                Serial3.write(2, 32);//send data to the datalogger to be stored
                 
             break;
             case kHicopHeaderAlarm:
@@ -90,6 +93,7 @@ void backend_management(void)
 
                 }
                 warnings_change = true;
+                Serial3.write(1, 21);//send alarms to the datalogger to be stored
                 //mask_alarms_struct.all=alarms_struct.all;
 
                /*Serial.write(alarms_struct.apnea_alarm);
@@ -158,6 +162,9 @@ void backend_management(void)
         Serial.write(config.peep);
         Serial.write(config.max_leakage);
         //Serial.print("ENVIO");
+
+
+        Serial3.write(0, 66);//send configuration to the datalogger to be stored
     }   
     else
     {
