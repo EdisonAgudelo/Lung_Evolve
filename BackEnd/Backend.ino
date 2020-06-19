@@ -267,7 +267,7 @@ void ComputeParameters(void)
     breathing_dinamic.motor_return_vel_bellows = (kMotorBellowMaxPos * 1000.0) / (((float)breathing_dinamic.breathing_out_time) * 0.9); //mm/s
 
     if (breathing_config.is_volume_controled)
-      breathing_dinamic.sensor_air_flow_ref = (float)breathing_config.volume_tidal;
+      breathing_dinamic.sensor_air_flow_ref = ((float)breathing_config.volume_tidal*60.0)/((float)breathing_dinamic.breathing_in_time);
     else
       breathing_dinamic.sensor_pressure_ref = (float)breathing_config.in_presure;
 
@@ -1186,8 +1186,12 @@ void setup()
 
   PinInitialization();
   DirverInitialization();
-  DriverMotorMoveTo(kMotorIdBellows, 50.0);
-  DriverMotorSetVel(kMotorIdBellows, 50.0);
+  DriverMotorMoveTo(kMotorIdO2Choke, -6.0);
+  DriverMotorSetVel(kMotorIdO2Choke, 0.5);
+  DriverMotorMoveTo(kMotorIdAirChoke, -6.0);
+  DriverMotorSetVel(kMotorIdAirChoke, 0.5);
+  DriverMotorMoveTo(kMotorIdBellows, 50);
+  DriverMotorSetVel(kMotorIdBellows, 50);
 
   Serial.begin(115200);
 
@@ -1201,9 +1205,11 @@ void loop()
   {
     ref = Millis();
     Serial.print("ok vel: ");
-    Serial.println((DriverMotorActualPos(kMotorIdBellows) - ref2) / 0.1);
+    Serial.println((DriverMotorActualPos(kMotorIdO2Choke) - ref2) / 0.1);
     //Serial.println(DriverMotorActualPos(kMotorIdBellows));
-    ref2 = DriverMotorActualPos(kMotorIdBellows);
+    ref2 = DriverMotorActualPos(kMotorIdO2Choke);
+    DriverMotorMoveTo(kMotorIdAirChoke, 0.0);
+    DriverMotorMoveTo(kMotorIdO2Choke, 0.0);
     DriverMotorMoveTo(kMotorIdBellows, 0.0);
   }
 
@@ -1215,8 +1221,8 @@ void AnyCallback(void)
   Serial.print(Micros());
   Serial.println(" ok\n");
 }
-*/
 
+*/
 //for comunication layer test
 /*
 HicopHeaders test_type = kHicopHeaderAlarm;

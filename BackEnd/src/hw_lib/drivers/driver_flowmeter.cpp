@@ -48,11 +48,12 @@ void Flowmeter::Begin(void)
     prev_update_time = Millis();
     sensor_reset_time = Millis();
 
-    sensor_power_up = true; //let the sensor to power up
+    sensor_power_up = false; //let the sensor to power up
     sensor_available = false;
 
     value_raw = 0;
 
+     Serial.println("flow begin");
     I2CBegin(i2c_id);
 
     /*
@@ -85,6 +86,10 @@ void Flowmeter::SensorGetParam(void)
         sensor_available = true;
 
         any_use_count = 0;
+
+        //offset_value=32768;
+        //scale_factor = 120;
+
 
         //try to get data 3 times before give up
         while (!MakeTransaction(kFlowCommandReadScaleFactor, &scale_factor))
@@ -120,13 +125,15 @@ bool Flowmeter::MakeTransaction(uint16_t command, uint16_t *buffer)
     uint8_t cmd[2] = {(uint8_t)(command >> 8), (uint8_t)(command & 0xff)};
     uint8_t response[3];
 
+    //Serial.println(command);
     //send command if it is avilable
     if (0 != command)
     {
+        
         if (!I2CWrite(i2c_id, i2c_addr, cmd, 2))
             return false;
-        else
-            uDelay(500); //typical response time
+       // else
+            //uDelay(500); //typical response time
     }
 
       

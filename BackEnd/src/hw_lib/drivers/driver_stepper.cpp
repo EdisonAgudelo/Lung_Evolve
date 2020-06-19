@@ -203,7 +203,7 @@ void Stepper::SoftStop(void)
             missed_steps = (missed_steps - STEPPER_FINE_ADJ) < 0 ? 0 : (missed_steps - STEPPER_FINE_ADJ);
 
             //try to get reach position
-            while (0 != missed_steps-- && (0 > pin_end || !PinReadDigital(pin_end)))
+            while (0 != missed_steps-- && (0 > pin_end || PinReadDigital(pin_end)))
             {
                 PinSetDigital(pin_step, kStepLevel);
                 uDelay(step_period / 2.0);
@@ -212,7 +212,7 @@ void Stepper::SoftStop(void)
             }
 
             //if while ends due to end switch
-            if (0 <= pin_end && PinReadDigital(pin_end))
+            if (0 <= pin_end && !PinReadDigital(pin_end))
                 pos_target = pos_actual; //force  position
             else
             {
@@ -348,7 +348,7 @@ void Stepper::Loop(void)
             }
 
             //check if this driver can jump to foward
-            if (pos_target > pos_actual && (0 > pin_limit_forward || !PinReadDigital(pin_limit_forward)))
+            if (pos_target > pos_actual && (0 > pin_limit_forward || PinReadDigital(pin_limit_forward)))
             {
 
                 state = kStepperStateFoward;
@@ -359,7 +359,7 @@ void Stepper::Loop(void)
                     PinSetDigital(pin_enable, kStepEnable);
             }
             //check if this driver can jump to backward
-            else if (pos_target < pos_actual && (0 > pin_limit_backward || !PinReadDigital(pin_limit_backward)))
+            else if (pos_target < pos_actual && (0 > pin_limit_backward || PinReadDigital(pin_limit_backward)))
             {
 
                 state = kStepperStateBackward;
@@ -391,11 +391,11 @@ void Stepper::ISRHandle(int type)
         switch (state)
         {
         case kStepperStateFoward:
-            if (0 <= pin_limit_forward && PinReadDigital(pin_limit_forward))
+            if (0 <= pin_limit_forward && !PinReadDigital(pin_limit_forward))
                 HardStop();
             break;
         case kStepperStateBackward:
-            if (0 <= pin_limit_backward && PinReadDigital(pin_limit_backward))
+            if (0 <= pin_limit_backward && !PinReadDigital(pin_limit_backward))
                 HardStop();
             break;
         }

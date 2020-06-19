@@ -185,8 +185,8 @@ bool DirverInitialization(void)
   motor_valve_o2.Begin();
   motor_valve_air.Begin();
 
-  //flow_in.Begin();
-  //flow_out.Begin();
+  flow_in.Begin();
+  flow_out.Begin();
 
   pressure_in.Begin();
   pressure_out.Begin();
@@ -216,14 +216,15 @@ bool DirverInitialization(void)
 bool DriverLoops(void)
 {
 
+ 
   DriverLedLoop(&g_discharge_rele);
   // restore
   motor_bellow.Loop();
   motor_valve_o2.Loop();
   motor_valve_air.Loop();
 
-  //flow_in.Loop();
-  //flow_out.Loop();
+  flow_in.Loop();
+  flow_out.Loop();
 
   pressure_in.Loop();
   pressure_out.Loop();

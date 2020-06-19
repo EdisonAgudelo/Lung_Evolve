@@ -111,6 +111,7 @@ bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
   {
   case kSoftI2C:
     
+    //Serial.print("empieza i2c soft");
 
     if (!i2c_start_wait((addres << 1) | I2C_WRITE))
     {
@@ -124,6 +125,8 @@ bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
     }
     i2c_stop();
 
+    //Serial.println("termina i2c soft");
+
     //if it is a no complete transaction
     if (lenght != 0xff)
       return false;
@@ -131,9 +134,13 @@ bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
 
   case kHardI2C:
 
+    //Serial.print("empieza i2c hard");
+
     Wire.beginTransmission(addres);
     i = Wire.write(buffer, lenght);
     Wire.endTransmission();
+
+    //Serial.println("termina i2c hard");
 
     //if it is a no complete transaction
     if (i != lenght)
@@ -221,7 +228,7 @@ int i=0;
 //config an user callback for each time that one pin has a rising edge transition
 void PinConfigRisingIRS(int pin, void (*callback)(void))
 {
-  attachInterrupt(digitalPinToInterrupt(pin), callback, RISING);
+  attachInterrupt(digitalPinToInterrupt(pin), callback, FALLING);
 }
 
 void PinConfigDigital(int pin, bool dir)
