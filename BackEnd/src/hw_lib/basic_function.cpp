@@ -104,13 +104,14 @@ bool DriverMotorMoveTo(int motor_id, float line_pos)
 
 bool PinInitialization(void)
 {
-  PinConfigDigital(kHardwareLedRedPin, kOutput);
-  PinConfigDigital(kHardwareBuzzerPin, kOutput);
+ // PinConfigDigital(kHardwareLedRedPin, kOutput);
+ // PinConfigDigital(kHardwareBuzzerPin, kOutput);
 
   PinConfigDigital(kHardwareRele1, kOutput);
   PinConfigDigital(kHardwareRele2, kOutput);
   PinConfigDigital(kHardwareRele3, kOutput);
   PinConfigDigital(kHardwareRele4, kOutput);
+  digitalWrite(kHardwareRele4, kHigh);
 
   return true;
 }
@@ -184,17 +185,18 @@ bool DirverInitialization(void)
 
   TimeVirtualISRBegin();
   DebugInit();
-
+/*
   DriverLedInit(&g_led_red, kHardwareLedRedPin);
   DriverLedInit(&g_buzzer, kHardwareBuzzerPin);
   DriverLedInit(&g_discharge_rele, kHardwareRele4);
-
+*/
   motor_bellow.Begin();
   motor_valve_o2.Begin();
   motor_valve_air.Begin();
 
-  flow_in.Begin();
-  flow_out.Begin();
+  //flow_in.Begin();
+  //flow_out.Begin();
+  /*
   flow_mixture.Begin();
 
   pressure_in.Begin();
@@ -209,12 +211,12 @@ bool DirverInitialization(void)
   voltage_source.SetAlarm(kVoltageMaxValueSource, kVoltageMinValueSource);
   voltage_bat.SetAlarm(kVoltageMaxValueBattery, kVoltageMinValueBattery);
   temp_bat.SetAlarm(kTempMaxValueBattery, kTempMinValueBattery);
-  temp_motor.SetAlarm(kTempMaxValueMotor, kTempMinValueMotor);
-/*
+  temp_motor.SetAlarm(kTempMaxValueMotor, kTempMinValueMotor);*/
+
   motor_bellow.SetLimitPin(kHardwareSwitchBMotor1, kHardwareSwitchFMotor1);
   motor_valve_o2.SetLimitPin(kHardwareSwitchBMotor2, kHardwareSwitchFMotor2);
   motor_valve_air.SetLimitPin(kHardwareSwitchBMotor3, kHardwareSwitchFMotor3);
-*/
+
   motor_bellow.SetDriverConfig(kMotorBellowSteps, kMotorBellowmmRev, kMotorBellowUSteps);
   motor_valve_o2.SetDriverConfig(kMotorO2Steps, kMotorO2mmRev, kMotorO2USteps);
   motor_valve_air.SetDriverConfig(kMotorAirSteps, kMotorAirmmRev, kMotorAirUSteps);
@@ -224,13 +226,13 @@ bool DirverInitialization(void)
 
 bool DriverLoops(void)
 {
-
+/*
   DriverLedLoop(&g_led_red);
   DriverLedLoop(&g_buzzer);
-  DriverLedLoop(&g_discharge_rele);
+  DriverLedLoop(&g_discharge_rele);*/
   // restore
   motor_bellow.Loop();
-
+/*
   motor_valve_o2.Loop();
   motor_valve_air.Loop();
 
@@ -245,5 +247,5 @@ bool DriverLoops(void)
   temp_motor.Loop();
 
   voltage_bat.Loop();
-  voltage_source.Loop();
+  voltage_source.Loop();*/
 }

@@ -59,7 +59,7 @@ static ControlData control_pressure;
 static ControlData control_air_flow;
 
 //----------Test varibles----------//
-#if 0 //for test loop delay
+#if 1 //for test loop delay
 uint32_t max_delay_time = 0;
 uint32_t ref_time_delay = 0;
 uint32_t ref_time_delay_print = 0;
@@ -102,7 +102,7 @@ void FrontEndCommunicationInit(void);
 void FrontEndCommunicationLoop(void);
 
 //general initization
-
+/*
 void setup()
 {
   main_error.all = 0;   //reset all errors;
@@ -117,12 +117,14 @@ void setup()
   FMSMainInit();
   FrontEndCommunicationInit();
 
-#if 0 //for test delay loop
+  dbprintf("hola\n");
+
+#if 1 //for test delay loop
   ref_time_delay = Millis();
   ref_time_delay_print = ref_time_delay;
 #endif
 }
-
+*/
 void FMSMainInit(void)
 {
   main_warning_mask.all = 0xffffffff; //enable all Warning
@@ -132,7 +134,7 @@ void FMSMainInit(void)
 
   //variable inizialitacion
   //resotore
-  main_state = kMainIdle;               //start in idle mode
+  main_state = kMainInit;               //start in idle mode
   breathing_state = kBreathingOutPause; //default state
   init_state = kInitStartFuelBellow;    //init secuence
 
@@ -153,7 +155,7 @@ void FrontEndCommunicationInit(void)
   //init front end coppy to detect when any warning change state
   frontend_warning_copy.all = main_warning.all & main_warning_mask.all;
 }
-
+/*
 void loop()
 {
   MeasureVariables();
@@ -163,7 +165,7 @@ void loop()
   DriverLoops();
   FrontEndCommunicationLoop();
 
-#if 0 //for test loop delay
+#if 1 //for test loop delay
 
   any_use_time = GetDiffTime(Millis(), ref_time_delay);
   ref_time_delay = Millis();
@@ -187,7 +189,7 @@ void loop()
 
 #endif
 }
-
+*/
 void ComputeParameters(void)
 {
   uint8_t i;
@@ -429,7 +431,7 @@ void WarningActions(void)
     if (!warning_power_source_prev)
     {
       dbprintf("INFO: Battery protection was restored\n");
-      DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
+      //DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
     }
   }
 
@@ -1159,7 +1161,7 @@ void loop()
 
 // Motor testing
 
-/*
+
 void AnyCallback(void);
 
 uint32_t ref =0 ;
@@ -1185,7 +1187,7 @@ void setup()
 void loop()
 {
   
-  if(GetDiffTime(Millis(),ref)>100)
+  if(GetDiffTime(millis(),ref)>100)
   {
     ref = Millis();
     Serial.print("ok vel: ");
@@ -1195,7 +1197,7 @@ void loop()
     DriverMotorMoveTo(kMotorIdBellows, 0.0);
   }
 
-  DriverLoops();
+  //DriverLoops();
 }
 
 
@@ -1205,7 +1207,7 @@ void AnyCallback(void)
   Serial.print(Micros());
   Serial.println(" ok\n");
 }
-*/
+
 
 //for comunication layer test
 /*
