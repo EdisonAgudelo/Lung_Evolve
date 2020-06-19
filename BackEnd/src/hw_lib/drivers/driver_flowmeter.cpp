@@ -189,6 +189,8 @@ void Flowmeter::Loop(void)
 float Flowmeter::GetFlow(void)
 {
     //if sensor is available, raw data will be uptaded, else it will hold the last read value.
+    if(scale_factor != 0.0)
         return ((float)(value_raw) - (float)offset_value) / ((float)scale_factor);
-
+    else
+        return 0.0;
 }

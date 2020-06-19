@@ -158,8 +158,8 @@ typedef enum
 } ValveIDs;
 
 //some valve constants definitions
-const bool kValveFullOpen = true;
-const bool kValveFullClose = false;
+const bool kValveFullOpen = false;
+const bool kValveFullClose = true;
 
 //sensor IDs
 typedef enum
@@ -278,7 +278,7 @@ typedef union {
     float battery_level;   //%
     float patient_leakage; //L x
 
-    float mixture_flow;    //slm x
+    //float mixture_flow;    //slm x
     float motor_temp;      // °C x
     float battery_temp;    // °C x
     float source_volatge;  // V x
