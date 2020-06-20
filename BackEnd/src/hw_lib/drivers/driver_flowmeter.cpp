@@ -52,8 +52,7 @@ void Flowmeter::Begin(void)
     sensor_available = false;
 
     value_raw = 0;
-
-     Serial.println("flow begin");
+    
     I2CBegin(i2c_id);
 
     /*
@@ -125,7 +124,6 @@ bool Flowmeter::MakeTransaction(uint16_t command, uint16_t *buffer)
     uint8_t cmd[2] = {(uint8_t)(command >> 8), (uint8_t)(command & 0xff)};
     uint8_t response[3];
 
-    //Serial.println(command);
     //send command if it is avilable
     if (0 != command)
     {
@@ -145,8 +143,6 @@ bool Flowmeter::MakeTransaction(uint16_t command, uint16_t *buffer)
             return false;
 
         CRC8Configure(0x31, 0x0);
-
-        //Serial.print(response[0]); Serial.print(response[1]);Serial.print(" crc: "); Serial.println(response[2]);
 
         if (response[2] != CRC8Calculate(response, 2))
             return false;

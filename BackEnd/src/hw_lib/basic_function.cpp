@@ -32,7 +32,7 @@
 
 //--------motor parameters-------//
 
-const uint8_t kMotorBellowUSteps = 16; //review
+const uint8_t kMotorBellowUSteps = 32; //review
 const uint8_t kMotorO2USteps = 8;      //review
 const uint8_t kMotorAirUSteps = 8;     //review
 
@@ -71,7 +71,7 @@ const float kVoltageAttenuationSource = (51.0 + 100.0) / (51.0);  //for 51k and 
 //------ Driver objects creation -------//
 DriverLed g_discharge_rele;
 
-Stepper motor_bellow(kHardwareStepMotor1, kHardwareDirMotor1, kHardwareEnMotor1, kHardwarePWMMotor1);
+Stepper motor_bellow(kHardwareStepMotor1, kHardwareDirMotor1,/* kHardwareEnMotor1,*/ kHardwarePWMMotor1);
 Stepper motor_valve_o2(kHardwareStepMotor2, kHardwareDirMotor2, kHardwareEnMotor2, kHardwarePWMMotor2);
 Stepper motor_valve_air(kHardwareStepMotor3, kHardwareDirMotor3, kHardwareEnMotor3, kHardwarePWMMotor3);
 
@@ -104,9 +104,12 @@ bool PinInitialization(void)
   PinConfigDigital(kHardwareRele1, kOutput);
   PinConfigDigital(kHardwareRele2, kOutput);
   PinConfigDigital(kHardwareRele3, kOutput);
-
   PinSetDigital(kHardwareRele4, kHigh);
   PinConfigDigital(kHardwareRele4, kOutput);
+
+  PinSetDigital(kHardwareRele1, kHigh);
+  PinSetDigital(kHardwareRele2, kHigh);
+  PinSetDigital(kHardwareRele3, kHigh);
 
   return true;
 }
@@ -223,8 +226,8 @@ bool DriverLoops(void)
   motor_valve_o2.Loop();
   motor_valve_air.Loop();
 
-  flow_in.Loop();
-  flow_out.Loop();
+  //flow_in.Loop();
+  //flow_out.Loop();
 
   pressure_in.Loop();
   pressure_out.Loop();

@@ -154,6 +154,8 @@ void FrontEndCommunicationInit(void)
   frontend_warning_copy.all = main_warning.all & main_warning_mask.all;
 }
 
+uint32_t time_ref = 0;
+
 void loop()
 {
   MeasureVariables();
@@ -162,6 +164,14 @@ void loop()
   FMSMainLoop();
   DriverLoops();
   FrontEndCommunicationLoop();
+
+  if(GetDiffTime(Millis(),time_ref)>500)
+  {
+    time_ref = Millis();
+    dbprintf("Data: %i,", (int)SensorGetValue(kSensorIdPressureIn));
+    dbprintf("%i\n", (int)system_measure.battery_level);
+
+  }
 
 #if 0 //for test loop delay
 
@@ -187,7 +197,6 @@ void loop()
 
 #endif
 }
-
 
 void ComputeParameters(void)
 {
@@ -216,6 +225,8 @@ void ComputeParameters(void)
     for (i = 0; i < 5; i++)
       breathing_config.all[i] = breathing_config_request.all[i];
 
+    //delete
+    //breathing_config_request.breathing_rate/=5;
     //calculate new breathing dinamics
     breathing_in_puase_time = ((int32_t)breathing_config_request.pause_time);
     breathing_in_time = 60000 / (((int32_t)breathing_config_request.breathing_rate) * (((int32_t)breathing_config_request.ie_ratio) + 1));
@@ -267,7 +278,7 @@ void ComputeParameters(void)
     breathing_dinamic.motor_return_vel_bellows = (kMotorBellowMaxPos * 1000.0) / (((float)breathing_dinamic.breathing_out_time) * 0.9); //mm/s
 
     if (breathing_config.is_volume_controled)
-      breathing_dinamic.sensor_air_flow_ref = ((float)breathing_config.volume_tidal*60.0)/((float)breathing_dinamic.breathing_in_time);
+      breathing_dinamic.sensor_air_flow_ref = ((float)breathing_config.volume_tidal * 60.0) / ((float)breathing_dinamic.breathing_in_time);
     else
       breathing_dinamic.sensor_pressure_ref = (float)breathing_config.in_presure;
 
@@ -293,9 +304,10 @@ void ComputeParameters(void)
 
     //----------review----------//
 
-    breathing_dinamic.motor_position_o2_choke = ((float)breathing_config.FiO2 - kMinimunFiO2) * kConstantO2Choke;   //valve position to control O2 flow through pneumatic system
-    breathing_dinamic.motor_position_air_choke = ((float)breathing_config.FiO2 - kMinimunFiO2) * kConstantAirChoke; //valve position to control O2 flow through pneumatic system
-
+    breathing_dinamic.motor_position_o2_choke = ((float)breathing_config.FiO2 - kMinimunFiO2) * kConstantO2Choke; //valve position to control O2 flow through pneumatic system
+    //restore
+    //breathing_dinamic.motor_position_air_choke = ((float)breathing_config.FiO2 - kMinimunFiO2) * kConstantAirChoke; //valve position to control O2 flow through pneumatic system
+    breathing_dinamic.motor_position_air_choke = kMotorChokeMaxPos;
     //--------------------------//
     dbprintf("INFO: config parameters accepted\n");
 
@@ -421,9 +433,37 @@ void WarningActions(void)
   // this make a local copy of supply warning to reset discharge rele
   // when power source is pluged in
   static bool warning_power_source_prev = false;
-  static bool first=true;
+  static bool trigger_reset = true;
+  static uint32_t trigger_reset_ref_time = 0;
 
-  if(first && Millis()>(kSlowDataPeriod+200) && !main_warning.no_main_supply )
+  if (trigger_reset && !main_warning.no_main_supply && GetDiffTime(Millis(), trigger_reset_ref_time) > 6000)
+  {
+    trigger_reset = false;
+    DriverLedShoot(&g_discharge_rele, 500);
+    dbprintf("Reset Battery\n");
+  }
+
+  if (main_warning.no_main_supply != warning_power_source_prev)
+  {
+    warning_power_source_prev = main_warning.no_main_supply;
+    //if supply recovery
+    if (!warning_power_source_prev)
+    {
+      trigger_reset = true;
+      trigger_reset_ref_time = Millis();
+    }
+    else
+    {
+      trigger_reset = false;
+    }
+  }
+
+  /*
+  static bool first = true;
+  static bool take_time = true;
+  static uint32_t warning_power_source_time_ref = 0;
+
+  if (first && Millis() > (kSlowDataPeriod + 200) && !main_warning.no_main_supply)
   {
     first = false;
     DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
@@ -432,14 +472,33 @@ void WarningActions(void)
   //only cath transition edge
   if (main_warning.no_main_supply != warning_power_source_prev)
   {
-    warning_power_source_prev = main_warning.no_main_supply;
+
     //if supply is restore
     if (!warning_power_source_prev)
     {
-      dbprintf("INFO: Battery protection was restored\n");
-      DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
+      //at first time, take a reference time to avoid false alarms
+      if (take_time)
+      {
+        take_time = false;
+        warning_power_source_time_ref = Millis();
+      }
+      else if (GetDiffTime(Millis(), warning_power_source_time_ref) > 1000)
+      {
+        //end transition event
+        warning_power_source_prev = main_warning.no_main_supply;
+        dbprintf("INFO: Battery protection was restored\n");
+        DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
+      }
+    }
+    else
+    {
+      //end transition event
+      warning_power_source_prev = main_warning.no_main_supply;
+      //trigger a time reference measure
+      take_time = true;
     }
   }
+*/
 
 #if 0
   //if system is going to break up
@@ -728,6 +787,7 @@ void FMSMainLoop(void)
           dbprintf("INFO: Init Bellows is full\n");
           init_state = kInitMoveChokeDefault;
           DriverMotorStop(kMotorIdAirChoke);
+          DriverMotorMoveTo(kMotorIdAirChoke, -3.0 * kMotorChokeMaxPos);
         }
       }
       break;
@@ -756,9 +816,9 @@ void FMSMainLoop(void)
           //if is the firt time, bring air choke to a close position
           if (any_use_count == 0)
           {
-            dbprintf("INFO: Init Closing air input\n");
-            DriverMotorMoveTo(kMotorIdAirChoke, -2.0 * kMotorChokeMaxPos); //close air choke valve
-
+            dbprintf("INFO: Init open air input\n");
+            DriverMotorMoveTo(kMotorIdAirChoke, kMotorChokeMaxPos); //close air choke valve
+            DriverMotorSetZeroPos(kMotorIdAirChoke);
             any_use_count++;
             main_state_ref_time = Millis();
           }
@@ -775,7 +835,7 @@ void FMSMainLoop(void)
       //make sure that valves are full closed
       if (DriverMotorIsStop(kMotorIdO2Choke))
       {
-        DriverMotorSetZeroPos(kMotorIdAirChoke);
+        //DriverMotorSetZeroPos(kMotorIdAirChoke);
         DriverMotorSetZeroPos(kMotorIdO2Choke);
         init_state = kInitStartFuelBellow;
         main_state = kMainIdle; //end init senquence
@@ -973,7 +1033,7 @@ void FMSMainLoop(void)
                                          (float)(breathing_dinamic.sensor_air_flow_ref - system_measure.patient_flow)));
       }
 #else
-    DriverMotorSetVel(kMotorIdBellows, kMotorDefaultReturnVelBellows);
+      DriverMotorSetVel(kMotorIdBellows, (breathing_dinamic.sensor_air_flow_ref) * kBellowFactor );
 
 #endif
       //----------transition events---------//
@@ -1181,6 +1241,7 @@ void AnyCallback(void);
 
 uint32_t ref = 0;
 float ref2 = 0.0;
+float ref3 = 0.0;
 void setup()
 {
 
@@ -1190,12 +1251,14 @@ void setup()
   DriverMotorSetVel(kMotorIdO2Choke, 0.5);
   DriverMotorMoveTo(kMotorIdAirChoke, -6.0);
   DriverMotorSetVel(kMotorIdAirChoke, 0.5);
-  DriverMotorMoveTo(kMotorIdBellows, 50);
-  DriverMotorSetVel(kMotorIdBellows, 50);
+  DriverMotorMoveTo(kMotorIdBellows, 80.0);
+  DriverMotorSetVel(kMotorIdBellows, 13.0);
 
   Serial.begin(115200);
 
   ref = Millis();
+  ref3 = 50.0;
+  DriverValveOpenTo(kValveIdInhalation, kValveFullOpen);
 }
 
 void loop()
@@ -1204,13 +1267,31 @@ void loop()
   if (GetDiffTime(millis(), ref) > 100)
   {
     ref = Millis();
-    Serial.print("ok vel: ");
-    Serial.println((DriverMotorActualPos(kMotorIdO2Choke) - ref2) / 0.1);
-    //Serial.println(DriverMotorActualPos(kMotorIdBellows));
-    ref2 = DriverMotorActualPos(kMotorIdO2Choke);
+    Serial.print("ok flow: ");
+    //Serial.println((DriverMotorActualPos(kMotorIdBellows) - ref2) / 0.1);
+    //ref2 = DriverMotorActualPos(kMotorIdBellows);
+    Serial.println(SensorGetValue(kSensorIdPressureIn));
+
     DriverMotorMoveTo(kMotorIdAirChoke, 0.0);
     DriverMotorMoveTo(kMotorIdO2Choke, 0.0);
-    DriverMotorMoveTo(kMotorIdBellows, 0.0);
+
+    if (DriverMotorIsStop(kMotorIdBellows))
+    {
+      if (ref3 < 1.0)
+      {
+        DriverValveOpenTo(kValveIdInhalation, kValveFullOpen);
+        DriverValveOpenTo(kValveIdExhalation, kValveFullClose);
+        ref3 = 50.0;
+        DriverMotorMoveTo(kMotorIdBellows, 80.0);
+      }
+      else
+      {
+        DriverValveOpenTo(kValveIdInhalation, kValveFullClose);
+        DriverValveOpenTo(kValveIdExhalation, kValveFullOpen);
+        ref3 = 0.0;
+        DriverMotorMoveTo(kMotorIdBellows, 0.0);
+      }
+    }
   }
 
   DriverLoops();
@@ -1221,7 +1302,6 @@ void AnyCallback(void)
   Serial.print(Micros());
   Serial.println(" ok\n");
 }
-
 */
 //for comunication layer test
 /*

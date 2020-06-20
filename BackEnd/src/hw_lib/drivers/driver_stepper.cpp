@@ -154,6 +154,8 @@ void Stepper::SoftStop(void)
 {
     int32_t missed_steps = 0;
     int pin_end;
+    int16_t i;
+
 
     //if there is a hard stop pendig, ignore this soft stop
     if (!hard_stop_flag)
@@ -195,15 +197,12 @@ void Stepper::SoftStop(void)
                 return; //a hard stop was execute
                 break;
             }
-            /*
-            Serial.print(pos_actual);
-            Serial.print(" ");
-            Serial.println(missed_steps);*/
 
             missed_steps = (missed_steps - STEPPER_FINE_ADJ) < 0 ? 0 : (missed_steps - STEPPER_FINE_ADJ);
-
+            
+            
             //try to get reach position
-            while (0 != missed_steps-- && (0 > pin_end || PinReadDigital(pin_end)))
+            for (i=0; (i< missed_steps) && (0 > pin_end || PinReadDigital(pin_end)); i++)
             {
                 PinSetDigital(pin_step, kStepLevel);
                 uDelay(step_period / 2.0);
@@ -325,8 +324,6 @@ void Stepper::Loop(void)
 
                 //set interrupt for stop motor in the correct moment
                 TimeVirtualISRAdd(id, timeout_isr[id], estimate_time - STEPPER_TIME_GAP); //stop me in the estimated time
-
-                // Serial.println(step_period);
 
                 //if there is not more time,  trigger stop
                 if (0 >= (estimate_time - STEPPER_TIME_GAP))
