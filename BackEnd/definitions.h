@@ -295,6 +295,7 @@ typedef union {
   };
 
   uint8_t all[15*4];
+  float general[15];
 
 } MeasureType;
 

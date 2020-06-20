@@ -24,7 +24,7 @@
 #include <stdbool.h>
 
 #define FLOWMETER_UPDATE_RATE 10 //ms
-#define FLOWMETER_MAX_ERROR_COUNT 3 //admissible consecutive errors 
+#define FLOWMETER_MAX_ERROR_COUNT 10 //admissible consecutive errors 
 #define FLOWMETER_SOFT_RESET_TIME 100 //ms
 
 
@@ -63,6 +63,7 @@ public:
 
     //getters
     float GetFlow(void);
+	bool Available(void);
 
 };
 

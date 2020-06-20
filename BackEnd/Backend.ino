@@ -17,10 +17,6 @@
     
     */
 
-#define HICOP_MAX_RESPONSE_TIME 500
-#define HICOP_LL_MAX_RX_TIME 100
-#define HICOP_HICOP_STACK_SIZE 2
-
 #include "definitions.h"
 #include "src/hw_lib/basic_function.h"
 #include "src/fw_lib/control.h"
@@ -158,6 +154,7 @@ uint32_t time_ref = 0;
 
 void loop()
 {
+
   MeasureVariables();
   WarningMonitor();
   WarningActions();
@@ -165,12 +162,20 @@ void loop()
   DriverLoops();
   FrontEndCommunicationLoop();
 
-  if(GetDiffTime(Millis(),time_ref)>500)
+  int i;
+
+  if (GetDiffTime(Millis(), time_ref) > 1500)
   {
     time_ref = Millis();
-    dbprintf("Data: %i,", (int)SensorGetValue(kSensorIdPressureIn));
-    dbprintf("%i\n", (int)system_measure.battery_level);
-
+    dbprintf("Data: ");
+    for (i = 0; i < 14; i++)
+    {
+      Serial.print(system_measure.general[i]);
+      dbprintf(" ");
+    }
+    Serial.print(flow_in.Available());
+    Serial.print(flow_out.Available());
+    dbprintf("\n");
   }
 
 #if 0 //for test loop delay
@@ -364,7 +369,6 @@ void MeasureVariables(void)
     //always save presure measure, and flow data
     system_measure.in_pressure = SensorGetValue(kSensorIdPressureIn);
     system_measure.out_pressure = SensorGetValue(kSensorIdPressureOut);
-    //system_measure.mixture_flow = SensorGetValue(kSensorIdAirFlowMixture);
     system_measure.patient_flow = SensorGetValue(kSensorIdAirFlowIn) + SensorGetValue(kSensorIdAirFlowOut);
 
     switch (breathing_state)
@@ -376,11 +380,11 @@ void MeasureVariables(void)
       {
         breathing_previous_state = breathing_state;
         last_inspiration_ref_time = Millis();
-        inspiration_time = last_inspiration_ref_time - last_espiration_ref_time;
+        inspiration_time = GetDiffTime(last_inspiration_ref_time, last_espiration_ref_time);
 
         //measure
-        system_measure.ie_ratio = (espiration_time) / inspiration_time;
-        system_measure.breathing_rate = 60000 / (espiration_time + inspiration_time);
+        system_measure.ie_ratio = ((float)espiration_time) / ((float)inspiration_time);
+        system_measure.breathing_rate = 60000.0 / ((float)espiration_time + (float)inspiration_time);
 
         //maximum value is tidal reference
         system_measure.tidal = system_measure.patient_volume;
@@ -397,11 +401,11 @@ void MeasureVariables(void)
       {
         breathing_previous_state = breathing_state;
         last_espiration_ref_time = Millis();
-        espiration_time = last_espiration_ref_time - last_inspiration_ref_time;
+        espiration_time = GetDiffTime(last_espiration_ref_time, last_inspiration_ref_time);
 
         //measure
-        system_measure.ie_ratio = (espiration_time) / inspiration_time;
-        system_measure.breathing_rate = 60000 / (espiration_time + inspiration_time);
+        system_measure.ie_ratio = ((float)espiration_time) / ((float)inspiration_time);
+        system_measure.breathing_rate = 60000.0 / ((float)espiration_time + (float)inspiration_time);
 
         system_measure.apnea_time = GetDiffTime(Millis(), apnea_ref_time);
 
@@ -439,7 +443,7 @@ void WarningActions(void)
   if (trigger_reset && !main_warning.no_main_supply && GetDiffTime(Millis(), trigger_reset_ref_time) > 6000)
   {
     trigger_reset = false;
-    DriverLedShoot(&g_discharge_rele, 500);
+    DriverLedShoot(&g_discharge_rele, 5000);
     dbprintf("Reset Battery\n");
   }
 
@@ -457,48 +461,6 @@ void WarningActions(void)
       trigger_reset = false;
     }
   }
-
-  /*
-  static bool first = true;
-  static bool take_time = true;
-  static uint32_t warning_power_source_time_ref = 0;
-
-  if (first && Millis() > (kSlowDataPeriod + 200) && !main_warning.no_main_supply)
-  {
-    first = false;
-    DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
-  }
-
-  //only cath transition edge
-  if (main_warning.no_main_supply != warning_power_source_prev)
-  {
-
-    //if supply is restore
-    if (!warning_power_source_prev)
-    {
-      //at first time, take a reference time to avoid false alarms
-      if (take_time)
-      {
-        take_time = false;
-        warning_power_source_time_ref = Millis();
-      }
-      else if (GetDiffTime(Millis(), warning_power_source_time_ref) > 1000)
-      {
-        //end transition event
-        warning_power_source_prev = main_warning.no_main_supply;
-        dbprintf("INFO: Battery protection was restored\n");
-        DriverLedShoot(&g_discharge_rele, 500); //open rele by 500 ms
-      }
-    }
-    else
-    {
-      //end transition event
-      warning_power_source_prev = main_warning.no_main_supply;
-      //trigger a time reference measure
-      take_time = true;
-    }
-  }
-*/
 
 #if 0
   //if system is going to break up
@@ -1033,7 +995,7 @@ void FMSMainLoop(void)
                                          (float)(breathing_dinamic.sensor_air_flow_ref - system_measure.patient_flow)));
       }
 #else
-      DriverMotorSetVel(kMotorIdBellows, (breathing_dinamic.sensor_air_flow_ref) * kBellowFactor );
+      DriverMotorSetVel(kMotorIdBellows, (breathing_dinamic.sensor_air_flow_ref) * kBellowFactor);
 
 #endif
       //----------transition events---------//
@@ -1152,7 +1114,7 @@ void FrontEndCommunicationLoop(void)
       //check if there is an interesting data to send depending of machine state
       if (main_state == kMainBreathing)
       {
-        for (i = 0; i < sizeof(kTxFastDataId) / sizeof(float); i++)
+        for (i = 0; i < sizeof(kTxFastDataId); i++)
         {
           transfer_buffer[transfer_pointer++] = kTxFastDataId[i];
           for (j = 0; j < sizeof(float); j++)
@@ -1167,7 +1129,7 @@ void FrontEndCommunicationLoop(void)
       //dbprintf("INFO: data send %i\n",(uint8_t) system_measure.battery_level);
       last_update_time.slow_data = Millis();
 
-      for (i = 0; i < sizeof(kTxSlowDataId) / sizeof(float); i++)
+      for (i = 0; i < sizeof(kTxSlowDataId); i++)
       {
         transfer_buffer[transfer_pointer++] = kTxSlowDataId[i];
         for (j = 0; j < sizeof(float); j++)
@@ -1228,7 +1190,9 @@ void loop()
       Serial.print(SensorGetValue(i));
       Serial.print(" ");
     }
-    Serial.print("\n");
+    Serial.print(flow_in.Available());
+  Serial.println(flow_out.Available());
+
   }
 
   DriverLoops();

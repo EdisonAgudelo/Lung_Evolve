@@ -44,14 +44,13 @@ Flowmeter::~Flowmeter()
 
 void Flowmeter::Begin(void)
 {
-    //CounterBegin(counter_id);
     prev_update_time = Millis();
     sensor_reset_time = Millis();
 
-    sensor_power_up = false; //let the sensor to power up
+    sensor_power_up = true; //let the sensor to power up
     sensor_available = false;
 
-    value_raw = 0;
+    value_raw = 0xffff/2;
     
     I2CBegin(i2c_id);
 
@@ -72,8 +71,10 @@ void Flowmeter::SensorGetParam(void)
         sensor_power_up = true;
         sensor_available = false;
         sensor_reset_time = Millis();
+		
         
-        //reset sensor
+        
+		//reset sensor
         MakeTransaction(kFlowCommandSoftReset, nullptr);
     }
     else if (GetDiffTime(Millis(), sensor_reset_time)>=FLOWMETER_SOFT_RESET_TIME)
@@ -130,8 +131,6 @@ bool Flowmeter::MakeTransaction(uint16_t command, uint16_t *buffer)
         
         if (!I2CWrite(i2c_id, i2c_addr, cmd, 2))
             return false;
-       // else
-            //uDelay(500); //typical response time
     }
 
       
@@ -196,4 +195,9 @@ float Flowmeter::GetFlow(void)
         return ((float)(value_raw) - (float)offset_value) / ((float)scale_factor);
     else
         return 0.0;
+}
+
+bool Flowmeter::Available(void)
+{
+	return sensor_available;
 }

@@ -71,7 +71,7 @@ const float kVoltageAttenuationSource = (51.0 + 100.0) / (51.0);  //for 51k and 
 //------ Driver objects creation -------//
 DriverLed g_discharge_rele;
 
-Stepper motor_bellow(kHardwareStepMotor1, kHardwareDirMotor1,/* kHardwareEnMotor1,*/ kHardwarePWMMotor1);
+Stepper motor_bellow(kHardwareStepMotor1, kHardwareDirMotor1, kHardwareEnMotor1, kHardwarePWMMotor1);
 Stepper motor_valve_o2(kHardwareStepMotor2, kHardwareDirMotor2, kHardwareEnMotor2, kHardwarePWMMotor2);
 Stepper motor_valve_air(kHardwareStepMotor3, kHardwareDirMotor3, kHardwareEnMotor3, kHardwarePWMMotor3);
 
@@ -226,8 +226,8 @@ bool DriverLoops(void)
   motor_valve_o2.Loop();
   motor_valve_air.Loop();
 
-  //flow_in.Loop();
-  //flow_out.Loop();
+  flow_in.Loop();
+  flow_out.Loop();
 
   pressure_in.Loop();
   pressure_out.Loop();

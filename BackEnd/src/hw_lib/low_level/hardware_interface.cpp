@@ -17,10 +17,12 @@
     
     */
 
-
 //definitions for sofware I2C
-#define I2C_TIMEOUT 10
+#define I2C_MAXWAIT 2
+#define I2C_TIMEOUT 5
 #define I2C_PULLUP 1
+#define I2C_FASTMODE 0
+
 #define SDA_PORT PORTA //r
 #define SDA_PIN 1      //r
 #define SCL_PORT PORTA //r
@@ -29,7 +31,7 @@
 #include "SoftI2CMaster.h"
 
 #include "hardware_interface.h"
-#include <Wire.h>
+#include "I2C.h"
 
 //library version for arduino mega
 
@@ -40,33 +42,31 @@
   Timer 2 is not used  
 */
 
-void (*timer1m_callback)(void)=nullptr;
-void (*uart_callback)(void)=nullptr;
+void (*timer1m_callback)(void) = nullptr;
+void (*uart_callback)(void) = nullptr;
 
 volatile bool g_pending_interrupt[6] = {false};
 
 volatile uint8_t g_overflow_count[6] = {0};
 
-
 //read data from a I2C slave device
 bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
 {
   int i = 0;
-  uint16_t time_out = 0;
 
   switch (id)
   {
   case kSoftI2C:
-    
+
     if (!i2c_start_wait((addres << 1) | I2C_READ))
     {
       i2c_stop();
       return false;
     }
-    
+
     while (0 != lenght--)
     {
-    
+
       buffer[i++] = i2c_read(0 == lenght);
     }
     i2c_stop();
@@ -74,24 +74,7 @@ bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
 
   case kHardI2C:
 
-    // request data to a slave
-    Wire.requestFrom(addres, lenght);
-
-    do
-    {
-      time_out++;
-      while (Wire.available())
-      {
-        time_out = 0;
-        //for protection purpose
-        if (i >= lenght)
-          break;
-        buffer[i++] = Wire.read();
-      }
-    } while (i < lenght && time_out < I2C_TIMEOUT*10);
-
-    if (time_out >= I2C_TIMEOUT*10)
-      return false;
+    return I2c.read(addres, lenght, buffer) == 0;
 
     break;
 
@@ -130,14 +113,11 @@ bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
 
   case kHardI2C:
 
-    Wire.beginTransmission(addres);
-    i = Wire.write(buffer, lenght);
-    Wire.endTransmission();
+    if (lenght < 2)
+      return (I2c.write(addres, buffer[0])) == 0;
 
-    //if it is a no complete transaction
-    if (i != lenght)
-      return false;
-    break;
+    else
+      return (I2c.write(addres, buffer[0], buffer + 1, lenght - 1)) == 0;
 
   default:
     return false;
@@ -151,7 +131,10 @@ bool I2CBegin(int id)
   switch (id)
   {
   case kHardI2C:
-    Wire.begin();
+    I2c.pullup(true);
+    I2c.timeOut(5);
+    I2c.setSpeed(false);
+    I2c.begin();
     break;
   case kSoftI2C:
     break;
@@ -162,7 +145,6 @@ bool I2CBegin(int id)
   return true;
 }
 
-
 ////////// Serial interface ////////
 
 //this config a custom user function wich will be called each time that uart data is available
@@ -172,8 +154,9 @@ void UartConfigCallback(void (*callback)(void))
 }
 
 //this is the arduino implementation of uart reception interrupt
-void serialEvent2() {
-  if(uart_callback!=nullptr)
+void serialEvent2()
+{
+  if (uart_callback != nullptr)
     uart_callback();
 }
 
@@ -196,7 +179,8 @@ uint8_t UartRead(void)
 }
 
 //if there is available data in uart retun true
-bool UartAvailable(void){
+bool UartAvailable(void)
+{
   return Serial2.available();
 }
 
@@ -207,13 +191,12 @@ void DebugBegin(void)
 
 void DebugWrite(char *buffer, uint16_t length)
 {
-int i=0;
+  int i = 0;
 
-  while(0!=length-- && buffer[i]!= '\0')
+  while (0 != length-- && buffer[i] != '\0')
   {
     Serial.write(buffer[i++]);
   }
-
 }
 ////////// GPIO interface //////////
 
@@ -263,7 +246,7 @@ uint16_t Timer1msCount(void)
   return (((uint16_t)TCNT3H) << 8) + (uint16_t)TCNT3L;
 }
 
-//set an interrupt for each time that dedicated time for timing aplication reach 1ms period 
+//set an interrupt for each time that dedicated time for timing aplication reach 1ms period
 void Timer1msISR(void (*callback)(void))
 {
   timer1m_callback = callback;
@@ -279,7 +262,7 @@ void Timer1msISR(void (*callback)(void))
   TIMSK3 = 0x2; // intterrupt in compare match A
 }
 
-//init hardware counters for generate a custom pwm frecuency. Also it returns de real reached pwm period in us 
+//init hardware counters for generate a custom pwm frecuency. Also it returns de real reached pwm period in us
 double PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
 {
   uint8_t i;
@@ -305,7 +288,7 @@ double PWMConfigFrecuency(uint32_t frecuency, int pwm_id)
 
   A = (double)(compare_value);
   B = (double)(F_CPU / preescaler[i]);
-  pwm_period = 1000000.0*A/B;
+  pwm_period = 1000000.0 * A / B;
 
   g_pending_interrupt[pwm_id] = false;
 
@@ -418,33 +401,33 @@ void CounterBegin(int counter_id)
     break;
 
   default:
-    //not able to work 
+    //not able to work
     break;
   }
 }
 
-//return the actual value of rising edge counter 
+//return the actual value of rising edge counter
 uint32_t CounterGetValue(int counter_id)
 {
-  uint32_t temp=0;
+  uint32_t temp = 0;
   switch (counter_id)
   {
   case 0:
     temp = TCNT0;
     TCNT0 = 0;
-    temp +=g_overflow_count[counter_id]*0xfe;
+    temp += g_overflow_count[counter_id] * 0xfe;
     g_overflow_count[counter_id] = 0;
     break;
 
   case 1:
     temp = g_overflow_count[counter_id];
     g_overflow_count[counter_id] = 0;
-  break;
+    break;
 
   default:
     break;
   }
-      
+
   return temp;
 }
 
@@ -455,7 +438,6 @@ ISR(TIMER0_COMPA_vect)
   TCNT0 = 0;
   g_overflow_count[0]++;
 }
-
 
 ISR(TIMER1_OVF_vect)
 {

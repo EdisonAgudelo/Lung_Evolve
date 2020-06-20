@@ -60,7 +60,7 @@ bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
     break;
 
   case kHardI2C:
-  /*
+    /*
     // request data to a slave
     Wire.requestFrom(addres, lenght);
 
@@ -80,10 +80,8 @@ bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
     if (time_out >= I2C_TIMEOUT * 10)
       return false;
 */
-	return I2c.read(addres, lenght, buffer)==0;
+    return I2c.read(addres, lenght, buffer) == 0;
 
-
-	
     break;
 
   default:
@@ -120,17 +118,17 @@ bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght)
     break;
 
   case kHardI2C:
-	
-	if(lenght<2)
-	{
-	return (I2c.write(addres, buffer[0]))==0;
-	}
-	else
-	{
-	return (I2c.write(addres, buffer[0], buffer+1, lenght-1))==0;
-	}
 
-/*
+    if (lenght < 2)
+    {
+      return (I2c.write(addres, buffer[0])) == 0;
+    }
+    else
+    {
+      return (I2c.write(addres, buffer[0], buffer + 1, lenght - 1)) == 0;
+    }
+
+    /*
     Wire.beginTransmission(addres);
     i = Wire.write(buffer, lenght);
     Wire.endTransmission();
@@ -154,17 +152,17 @@ bool I2CBegin(int id)
   switch (id)
   {
   case kHardI2C:
-  
-  /*
+
+    /*
     Wire.setClock(400000);
     Wire.begin();
 	
 	*/
-	
-	 I2c.pullup(true); 
-	 I2c.timeOut(2);
-	  I2c.setSpeed(true); 
-	   I2c.begin();
+
+    I2c.pullup(true);
+    I2c.timeOut(2);
+    I2c.setSpeed(true);
+    I2c.begin();
     break;
   case kSoftI2C:
     break;
