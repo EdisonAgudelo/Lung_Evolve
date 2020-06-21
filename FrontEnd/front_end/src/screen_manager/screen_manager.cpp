@@ -1,16 +1,27 @@
-//#include <Nextion.h>
+
+/*
+    Lung Evolve Mechanical Ventilator
+    Copyright (C) 2020  Edison Agudelo, Mateo Garcia, Alejandra Londoño
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see https://www.gnu.org/licenses/gpl-3.0.html.
+    
+    */
+
+
 #include "screen_manager.h"
 #include "screen_objetcs.h"
-//#include "../nextion/Nextion.h"
-//#include <SoftwareSerial.h>
-
-//serial to backend pins
-//#define SFRONT_END_TX 7
-//#define SFRONT_END_RX 6
+#include "time_s.h"
 
 
 
-//buffer_screen buff;
 CONFIGURATION config;
 volatile Alarm_state AS;
 ALARMS alarms_struct;
@@ -25,8 +36,9 @@ static bool monitoring=false;
 bool alarmPage=false;
 bool update_alarm_screen;
 bool off;
+bool new_conf_screen;
 
-#define factor  255/7000
+
 #define CH0_OFFSET 10
 #define CH1_OFFSET 50
 #define CH2_OFFSET 100
@@ -42,7 +54,7 @@ void serial_screen_init(void)
   
   //SFrontEnd.begin(9600);
   Serial2.begin(9600);
-  //Serial.print("init");
+  //Serial.println("screen serial communcation begin");
 }
 
 void init_screen_management(void)
@@ -51,8 +63,9 @@ void init_screen_management(void)
   nexInit();
   handlers();
   init_mask();
+  //Serial.println("screen management initialization done");
   //clear_buffer(NUM_BYTES1);
-  bt1.setValue(0);
+  //bt1.setValue(0);
   
 }
 
@@ -100,25 +113,42 @@ void handlers (void)
 
 void b2PushCallback(void *ptr)
 {
-  
+
+  //Serial.println("breathing parameters menu");
   config.tunning=false;
+  monitoring=false;
+  new_conf_screen=true; 
+  
 }
 
+void virtualCallbackISR(void)
+{
+  static bool prev=false;
+  //b2PushCallback(nullptr);
+  nexLoop(nex_listen_list);
+  TimeVirtualISRAdd(!prev,virtualCallbackISR,2000);
+    prev=!prev;
+
+}
 void b3PushCallback(void *ptr)
 {
   config.tunning=true;
-  //Serial.print("tunning");
+  //Serial.println("calibration menu");
 }
 
 void b5PushCallback(void *ptr)
 {
   config.tunning=false;
+  //Serial.println("alarm configuration menu");
 }
 
 void b9PushCallback(void *ptr)
 {
   //shut down
+  //Serial.println("shut down");
   off=true;
+  //Serial.print("off");
+  delay(5);
 }
 
 
@@ -126,6 +156,7 @@ void b11PushCallback(void *ptr)
 {
   //assistive
   MODE=Kassistive;
+  //Serial.println("assistive mode");
   
   
   
@@ -135,6 +166,7 @@ void b12PushCallback(void *ptr)
 {
   //controlled
   MODE=Kcontrolled;
+  //Serial.println("controlled mode");
   
  
 }
@@ -142,6 +174,7 @@ void b12PushCallback(void *ptr)
 void b14PushCallback(void *ptr)
 {
   //volume control
+  //Serial.println("volume control mode");
   
 }
 
@@ -150,6 +183,7 @@ void b15PushCallback(void *ptr)
   //pressure control
   
   //Serial.print("pression control");
+  //Serial.println("pressure control mode");
  
 }
 
@@ -168,7 +202,9 @@ void b29PushCallback(void *ptr)
   //volume2
   //Serial.print("volume");
   TYPE=Kvolume2;
+  new_conf_screen=false;
   screen_revieve_data();
+  //Serial.println("configuration recieved");
  
 }
 
@@ -178,13 +214,16 @@ void b37PushCallback(void *ptr)
   //pressure1
   TYPE=kpressure1;
   screen_revieve_data();
+  
 }
 
 void b42PushCallback(void *ptr)
 {
   //guarda numeros y checkbox de la pag8 y pasa a la pag 20
   TYPE=Kpressure2;
+  new_conf_screen=false;
   screen_revieve_data();
+  //Serial.println("configuration recieved");
 }
 
 void b75PushCallback(void *ptr)
@@ -199,6 +238,8 @@ void b50PushCallback(void *ptr)
   //guarda numeros y checkbox de la pag10 pasa a la pag 20
   TYPE=Kassistive2;
   screen_revieve_data();
+  new_conf_screen=false;
+  //Serial.println("configuration recieved");
 }
 
 void b61PushCallback(void *ptr)
@@ -214,30 +255,33 @@ void b73PushCallback(void *ptr)
   //guarda numeros y checkbox de la pag12 y pasa a la pag 1
   TYPE=Kalarms2;
   screen_revieve_data();
+  //Serial.println("configuration recieved");
 }
 
 void bt0PushCallback(void *ptr)
 {
   uint32_t temp=0;
   
+  Serial.println("pause  detected ");
   update=1;
   bt0.getValue(&temp);
   if(temp==0x1)
   {
     config.pause=0x1;
-    Serial.print("push");
+    new_conf_screen=false;
+    //Serial.println("pause init detected");
   }
   else
   {
     config.pause=0x0;
-    Serial.print("pop");
+    //Serial.println("pause end detected");
   }
   delay(6);
 }
 
 void bt0PopCallback(void *ptr)
 {
-  config.pause=0x0;
+  //config.pause=0x0;
 }
 
 void bt1PushCallback(void *ptr)
@@ -247,12 +291,12 @@ void bt1PushCallback(void *ptr)
   if(temp==0x1)
   {
     AS.ScreenSoundOff=true;
-    //Serial.print("sounOff");
+    //Serial.println("sound OFF detected");
   }
   else
   {
     AS.ScreenSoundOff=false;
-    //Serial.print("sounOn");
+    //Serial.println("sound ON detected");
   }
 
   //Serial.print("silence");
@@ -265,12 +309,14 @@ void b69PushCallback(void *ptr)
   alarmPage=true;//si se pone bloqueante, quite los nextloop de send_screen_alarm y descomente
   //screen_alarms();
   send_screen_alarm();
+  //Serial.println("alarm state page");
 }
 
 void b70PushCallback(void *prt)
 {
   alarmPage=false;
-  Serial.print("false");
+  //Serial.println("return to other option menu detected");
+  //Serial.print("false");
   Serial2.print("page 18");
   Serial2.write(0xff);
   Serial2.write(0xff);
@@ -529,7 +575,7 @@ void send_screen_alarm(void)
   uint32_t red=63488,yellow=65504,white=65535;
   if(mask_alarms_struct.bits!=alarms_struct.bits)
   {
-
+    //Serial.println("sending alarm state");
         if(alarms_struct.bits[0]==true)
         {
           t30.Set_background_color_bco(yellow);
@@ -733,7 +779,7 @@ void send_screen_alarm(void)
   {
     update_alarm_screen=false;
   }
-  
+  //Serial.println("end of sending alarm state");
   for(int j=0;j<21;j++)
   {
     mask_alarms_struct.bits[j]=alarms_struct.bits[j];
@@ -751,6 +797,7 @@ void screen_management(void)
   
   static int i=0;
   const uint8_t OFFSET=0x40;
+  const uint32_t factor_pressure =0x64/0x3c,factor_tidal=0x64/0x1b58,factor_mix=0x64/0x78;
   uint32_t conth,contm;
     /*
     *si estoy en pagina tal que hago
@@ -759,30 +806,42 @@ void screen_management(void)
    
     nexLoop(nex_listen_list);
     
-    if(alarmPage==true)
-    {
-      //send_screen_alarm();
-      //Serial.print("loop");
-      
-  
-    }
+
 
   if(monitoring)
   {
+    //Serial.println("monitoring page data sending");
     if(data_change)
     {
-      s0.addValue(0,((dataValue.battery_level)+CH0_OFFSET));//dataValue.battery_level
-      s0.addValue(1,((dataValue.in_pressure)+CH1_OFFSET));
-      s0.addValue(2,((dataValue.mixture_flow)+CH2_OFFSET));
-      Serial.write(dataValue.battery_level);
+      s0.addValue(0,((dataValue.patient_volume*factor_tidal)+CH0_OFFSET));//dataValue.battery_level
+      delay(2);
+      s0.addValue(1,((dataValue.in_pressure*factor_pressure)+CH1_OFFSET));
+      delay(2);
+      s0.addValue(2,((dataValue.mixture_flow*factor_mix)+CH2_OFFSET));
+      delay(2);
+      //j1.setValue(dataValue.battery_level);
+      //delay(2);
+      n32.setValue(dataValue.in_pressure);
+      delay(2);
+      n33.setValue(dataValue.tidal);
+      delay(2);
+      n34.setValue(dataValue.breathing_rate);
+      delay(2);
+      n35.setValue(dataValue.ie_ratio);
+      delay(2);
       data_change = false;
     }
     
+  }
+  else
+  {
+
   }
 
   if(off)
   {
     off=false;
+    //Serial.println("the device is going to turn off");
     RELE(true);
 
   }

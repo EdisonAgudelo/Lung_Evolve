@@ -1,4 +1,20 @@
 
+/*
+    Lung Evolve Mechanical Ventilator
+    Copyright (C) 2020  Edison Agudelo, Mateo Garcia, Alejandra Londoño
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see https://www.gnu.org/licenses/gpl-3.0.html.
+    
+    */
+
 #include "hardware_front.h"
 
 
@@ -7,8 +23,8 @@
 
 //frontend peripheral pins
 #define Ypin 9 
-#define Rpin 10
-#define BUZZERpin 11//3
+#define Rpin 11
+#define BUZZERpin 10
 #define RELEpin 7
 
 

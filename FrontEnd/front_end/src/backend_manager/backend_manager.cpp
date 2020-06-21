@@ -1,9 +1,20 @@
-//protocolo backend
-//funcion para actualizar el bus de datos
-//recibir datos de backend
 
+/*
+    Lung Evolve Mechanical Ventilator
+    Copyright (C) 2020  Edison Agudelo, Mateo Garcia, Alejandra Londoño
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see https://www.gnu.org/licenses/gpl-3.0.html.
+    
+    */
 
-//serial
 #include "backend_manager.h"
 #define HICOP_MAX_RESPONSE_TIME 500
 #include "../HICOP_protocol/hicop_config.h"
@@ -30,7 +41,7 @@ void backend_init(void)
 {
     //uint8_t test[]={0x64,0x35,0x12};
     HicopInit();
-    //HicopSendData(kHicopHeaderConfig, test, sizeof(test));
+    Serial.println("backend managment initialization done");
 }
 
 
@@ -41,7 +52,9 @@ void backend_management(void)
   HicopHeaders rx_flag;
   uint8_t idtemp;
   uint8_t i;
-
+if(!new_conf_screen)
+{
+    Serial.print("recieving");
     if (HicopReadData(&rx_flag, transfer_buffer, &transfer_pointer))
     {
         
@@ -53,7 +66,7 @@ void backend_management(void)
             break;
             case kHicopHeaderData:
             //update parameters
-            Serial.print("dato ");
+            //Serial.println(transfer_pointer);
             i=0;
                  while (i<transfer_pointer)
                 {
@@ -63,17 +76,16 @@ void backend_management(void)
                     temp.all[2]=transfer_buffer[i++];
                     temp.all[3]=transfer_buffer[i++];
                     dataValue.all[idtemp] = (uint32_t) temp.var;
+                    //Serial.print(temp.var);
                 }
-                Serial.write(temp.all[0]);
-                Serial.write(temp.all[1]);
-                Serial.write(temp.all[2]);
-                Serial.write(temp.all[3]);
-                Serial.print("done   ");
+                //Serial.print("\n");
+               
+                //Serial.print("done   ");
 
 
                 data_change = true;
-                Serial3.write(2, 32);//send data to the datalogger to be stored
-                
+                //Serial3.write(dataValue.all, 32);//send data to the datalogger to be stored
+                //Serial.println("backend data recieved");
             break;
             case kHicopHeaderAlarm:
             //update parameters
@@ -93,7 +105,7 @@ void backend_management(void)
 
                 }
                 warnings_change = true;
-                Serial3.write(1, 21);//send alarms to the datalogger to be stored
+                //Serial3.write(alarms_struct, 21);//send alarms to the datalogger to be stored
                 //mask_alarms_struct.all=alarms_struct.all;
 
                /*Serial.write(alarms_struct.apnea_alarm);
@@ -117,13 +129,14 @@ void backend_management(void)
                 Serial.write(alarms_struct.no_main_supply);
                 Serial.write(alarms_struct.high_temp_bat);
                 Serial.write(alarms_struct.high_temp_motor);*/
-                
+                //Serial.println("backend alarm recieved");
             break;
             default:
                 //do nothing
             break;
         }
     }
+}
     HicopLoop();
     transfer_pointer = 0;
 
@@ -139,8 +152,13 @@ void backend_management(void)
         //send data
         
         HicopSendData(kHicopHeaderConfig, config.all, sizeof(config.all));
+        if(config.pause)
+        {
+            Serial.print("pause sended");
+        }
         update=false;
-        Serial.write(config.tunning);
+        //Serial.println("configuration sended to backend");
+        /*Serial.write(config.tunning);
         Serial.write(config.pause);
         Serial.write(config.control);
         Serial.write(config.controlType);
@@ -161,10 +179,10 @@ void backend_management(void)
         Serial.write(config.minTV);
         Serial.write(config.peep);
         Serial.write(config.max_leakage);
-        //Serial.print("ENVIO");
+        //Serial.print("ENVIO");*/
 
 
-        Serial3.write(0, 66);//send configuration to the datalogger to be stored
+        //Serial3.write(config.all, 66);//send configuration to the datalogger to be stored
     }   
     else
     {
