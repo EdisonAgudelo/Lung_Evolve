@@ -27,11 +27,11 @@
 
 #include "drivers/driver_led.h"
 #include "low_level/hardware_interface.h"
-
+#include "drivers/driver_flowmeter.h"
 //----------Driver varibles----------//
-extern DriverLed g_led_red;
-extern DriverLed g_buzzer;
 extern DriverLed g_discharge_rele;
+extern Flowmeter flow_in;
+extern Flowmeter flow_out;
 
 //this function bring a especific motor to a know position
 //return 0 is no succes o 1 if action was totally complete

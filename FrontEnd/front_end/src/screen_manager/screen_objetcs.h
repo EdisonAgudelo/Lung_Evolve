@@ -1,3 +1,20 @@
+
+/*
+    Lung Evolve Mechanical Ventilator
+    Copyright (C) 2020  Edison Agudelo, Mateo Garcia, Alejandra Londoño
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see https://www.gnu.org/licenses/gpl-3.0.html.
+    
+    */
+
 #ifndef SCREEN_OBJECTS_H
 #define SCREEN_OBJECTS_H
 
@@ -34,6 +51,12 @@ NexNumber n16 = NexNumber(11, 10, "n16");
 NexNumber n17 = NexNumber(11, 11, "n17");
 NexNumber n18 = NexNumber(12, 9, "n18");
 NexNumber n19 = NexNumber(12, 10, "n19");
+NexNumber n32 = NexNumber(20, 35, "n32");
+NexNumber n33 = NexNumber(20, 36, "n33");
+NexNumber n34 = NexNumber(20, 37, "n34");
+NexNumber n35 = NexNumber(20, 38, "n35");
+
+NexProgressBar j1 = NexProgressBar(20,2,"j1");
 
 NexButton b2 = NexButton(1, 5, "b2");      // parameters Button
 NexButton b3 = NexButton(1, 6, "b3");      // calibration Button
