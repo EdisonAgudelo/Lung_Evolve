@@ -154,6 +154,8 @@ void Stepper::SoftStop(void)
 {
     int32_t missed_steps = 0;
     int pin_end;
+    int16_t i;
+
 
     //if there is a hard stop pendig, ignore this soft stop
     if (!hard_stop_flag)
@@ -195,15 +197,12 @@ void Stepper::SoftStop(void)
                 return; //a hard stop was execute
                 break;
             }
-            /*
-            Serial.print(pos_actual);
-            Serial.print(" ");
-            Serial.println(missed_steps);*/
 
             missed_steps = (missed_steps - STEPPER_FINE_ADJ) < 0 ? 0 : (missed_steps - STEPPER_FINE_ADJ);
-
+            
+            
             //try to get reach position
-            while (0 != missed_steps-- && (0 > pin_end || !PinReadDigital(pin_end)))
+            for (i=0; (i< missed_steps) && (0 > pin_end || PinReadDigital(pin_end)); i++)
             {
                 PinSetDigital(pin_step, kStepLevel);
                 uDelay(step_period / 2.0);
@@ -212,7 +211,7 @@ void Stepper::SoftStop(void)
             }
 
             //if while ends due to end switch
-            if (0 <= pin_end && PinReadDigital(pin_end))
+            if (0 <= pin_end && !PinReadDigital(pin_end))
                 pos_target = pos_actual; //force  position
             else
             {
@@ -326,8 +325,6 @@ void Stepper::Loop(void)
                 //set interrupt for stop motor in the correct moment
                 TimeVirtualISRAdd(id, timeout_isr[id], estimate_time - STEPPER_TIME_GAP); //stop me in the estimated time
 
-                // Serial.println(step_period);
-
                 //if there is not more time,  trigger stop
                 if (0 >= (estimate_time - STEPPER_TIME_GAP))
                     SoftStop();
@@ -348,7 +345,7 @@ void Stepper::Loop(void)
             }
 
             //check if this driver can jump to foward
-            if (pos_target > pos_actual && (0 > pin_limit_forward || !PinReadDigital(pin_limit_forward)))
+            if (pos_target > pos_actual && (0 > pin_limit_forward || PinReadDigital(pin_limit_forward)))
             {
 
                 state = kStepperStateFoward;
@@ -359,7 +356,7 @@ void Stepper::Loop(void)
                     PinSetDigital(pin_enable, kStepEnable);
             }
             //check if this driver can jump to backward
-            else if (pos_target < pos_actual && (0 > pin_limit_backward || !PinReadDigital(pin_limit_backward)))
+            else if (pos_target < pos_actual && (0 > pin_limit_backward || PinReadDigital(pin_limit_backward)))
             {
 
                 state = kStepperStateBackward;
@@ -391,11 +388,11 @@ void Stepper::ISRHandle(int type)
         switch (state)
         {
         case kStepperStateFoward:
-            if (0 <= pin_limit_forward && PinReadDigital(pin_limit_forward))
+            if (0 <= pin_limit_forward && !PinReadDigital(pin_limit_forward))
                 HardStop();
             break;
         case kStepperStateBackward:
-            if (0 <= pin_limit_backward && PinReadDigital(pin_limit_backward))
+            if (0 <= pin_limit_backward && !PinReadDigital(pin_limit_backward))
                 HardStop();
             break;
         }

@@ -119,11 +119,29 @@ void uDelay(uint32_t dalay_microseconds)
     volatile uint8_t i;
     uint32_t time=Micros();
     
+    /*
     dalay_microseconds*=0.9;
     while(GetDiffTime(Micros(),time)<dalay_microseconds)
     {
         i++;
-    };
+    };*/
+    
+    do 
+    {
+        if(dalay_microseconds>0xff)
+        {
+            delayMicroseconds(0xff-0x4);
+            dalay_microseconds-=0xff;
+        }
+        else
+        {
+            delayMicroseconds((uint8_t)dalay_microseconds);
+            dalay_microseconds=0;
+        }
+
+        /* code */
+    }while(dalay_microseconds!=0);
+    
 }
 
 void TimeVirtualISRBegin(void)

@@ -57,51 +57,51 @@ const int kHardwareI2C2SCLPin = 25; //r
 
 //indicator 
 const int kHardwareLedRedPin = 8; // review
-const int kHardwareBuzzerPin = 3; // review
+const int kHardwareBuzzerPin = 37; // review
 
 //driver enable pin
-const int kHardwareEnMotor1 = 13;  // r
-const int kHardwareEnMotor2 = 43;  // r
-const int kHardwareEnMotor3 = 8;  // r
+const int kHardwareEnMotor1 = 11;  // r //x
+const int kHardwareEnMotor2 = 47;  // r //x
+const int kHardwareEnMotor3 = 5;  // r //x
  
 //driver step or pulse pin
-const int kHardwareStepMotor1 = 12;
-const int kHardwareStepMotor2 = 45;
-const int kHardwareStepMotor3 = 7;
+const int kHardwareStepMotor1 = 12; //x
+const int kHardwareStepMotor2 = 45; //x
+const int kHardwareStepMotor3 = 7; //x
 const int kHardwareWFlowPin = 38;
 
 //driver dir pin
-const int kHardwareDirMotor1 = 11; // r
-const int kHardwareDirMotor2 = 47; // r
-const int kHardwareDirMotor3 = 6; // r
+const int kHardwareDirMotor1 = 13; // r //x
+const int kHardwareDirMotor2 = 43; // r //x
+const int kHardwareDirMotor3 = 6; // r //x
 
 //final switch pins
-const int kHardwareSwitchFMotor1 = 2; // r
+const int kHardwareSwitchFMotor1 = 2; // r 
 const int kHardwareSwitchBMotor1 = 3; // r
 const int kHardwareSwitchFMotor2 = -1; // r
-const int kHardwareSwitchBMotor2 = 18; // r
+const int kHardwareSwitchBMotor2 = 19; // r
 const int kHardwareSwitchFMotor3 = -1; // r
-const int kHardwareSwitchBMotor3 = 19; // r
+const int kHardwareSwitchBMotor3 = 18; // r
 
 //driver flow pins
 
 //rele pins
-const int kHardwareRele1 = 27; // r
-const int kHardwareRele2 = 29; // r
-const int kHardwareRele3 = 31; // r
-const int kHardwareRele4 = 33; // r
+const int kHardwareRele1 = 29; // r //x
+const int kHardwareRele2 = 33; // r //x
+const int kHardwareRele3 = 31; // r //x
+const int kHardwareRele4 = 27; // r //x
 
 //Driver diff pressure
-const int kHardwareDiffPressure1 = A0; // r
-const int kHardwareDiffPressure2 = A1; // r
+const int kHardwareDiffPressure1 = A1; // r
+const int kHardwareDiffPressure2 = A0; // r
 
 //Temperature sensor 
 const int kHardwareTemp1 = A2; //r
 const int kHardwareTemp2 = A3; //r
 
 //Voltage sensor
-const int kHardwareVoltage1 = A8; //r
-const int kHardwareVoltage2 = A9; //r
+const int kHardwareVoltage1 = A9; //r
+const int kHardwareVoltage2 = A8; //r
 
 
 // ------- conventions --------//
