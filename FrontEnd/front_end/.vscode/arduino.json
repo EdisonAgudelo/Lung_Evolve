@@ -1,0 +1,6 @@
+{
+    "board": "arduino:avr:megaADK",
+    "sketch": "front_end.ino",
+    "port": "COM3",
+    "programmer": "AVRISP mkII"
+}
