@@ -995,6 +995,7 @@ void FMSMainLoop(void)
                                          (float)(breathing_dinamic.sensor_air_flow_ref - system_measure.patient_flow)));
       }
 #else
+//be carefull, this is for testing porpuses
       DriverMotorSetVel(kMotorIdBellows, (breathing_dinamic.sensor_air_flow_ref) * kBellowFactor);
 
 #endif
