@@ -33,7 +33,7 @@ void setup()
 	init_hardware_front();
   init_screen_management();
   init_alarm_maganement();
-  TimeVirtualISRAdd(0,virtualCallbackISR,2000);
+  //TimeVirtualISRAdd(0,virtualCallbackISR,2000);
   //Serial.write(alarms_struct.low_breathing_rate);
   
 }
@@ -44,5 +44,6 @@ void loop()
   screen_management();
   backend_management();
   alarm_management_loop();
+  
 
 }

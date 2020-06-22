@@ -797,7 +797,7 @@ void screen_management(void)
   
   static int i=0;
   const uint8_t OFFSET=0x40;
-  const uint32_t factor_pressure =0x64/0x3c,factor_tidal=0x64/0x1b58,factor_mix=0x64/0x78;
+  const uint32_t factor_pressure =0xff/0x3c,factor_tidal=0x64/0x1b58,factor_mix=0x64/0x78;
   uint32_t conth,contm;
     /*
     *si estoy en pagina tal que hago
@@ -813,15 +813,15 @@ void screen_management(void)
     //Serial.println("monitoring page data sending");
     if(data_change)
     {
-      s0.addValue(0,((dataValue.patient_volume*factor_tidal)+CH0_OFFSET));//dataValue.battery_level
-      delay(2);
+      //s0.addValue(0,((dataValue.patient_volume*factor_tidal)+CH0_OFFSET));//dataValue.battery_level
+      //delay(2);
       s0.addValue(1,((dataValue.in_pressure*factor_pressure)+CH1_OFFSET));
-      delay(2);
-      s0.addValue(2,((dataValue.mixture_flow*factor_mix)+CH2_OFFSET));
-      delay(2);
+      //delay(2);
+      //s0.addValue(2,((dataValue.mixture_flow*factor_mix)+CH2_OFFSET));
+      //delay(2);
       //j1.setValue(dataValue.battery_level);
       //delay(2);
-      n32.setValue(dataValue.in_pressure);
+     /* n32.setValue(dataValue.in_pressure);
       delay(2);
       n33.setValue(dataValue.tidal);
       delay(2);
@@ -830,6 +830,7 @@ void screen_management(void)
       n35.setValue(dataValue.ie_ratio);
       delay(2);
       data_change = false;
+      nexLoop(nex_listen_list);*/
     }
     
   }
