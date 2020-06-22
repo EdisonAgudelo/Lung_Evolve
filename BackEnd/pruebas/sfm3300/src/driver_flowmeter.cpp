@@ -19,10 +19,10 @@
 
 #include "driver_flowmeter.h"
 
-#include "../low_level/hardware_interface.h"
+#include "hardware_interface.h"
 
-#include "../time.h"
-#include "../../fw_lib/crc8.h"
+#include "time.h"
+#include "crc8.h"
 
 //all command are in big endian
 const uint16_t kFlowCommandStarFlowMeasure = 0x1000;

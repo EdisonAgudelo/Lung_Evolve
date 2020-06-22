@@ -1,4 +1,3 @@
-
 /*
     Lung Evolve Mechanical Ventilator
     Copyright (C) 2020  Edison Agudelo, Mateo Garcia, Alejandra Londoño
@@ -17,15 +16,16 @@
     along with this program.  If not, see https://www.gnu.org/licenses/gpl-3.0.html.
     
     */
+   
+#ifndef _CRC_8_H_
+#define _CRC_8_H_
 
-#include "debug.h"
+uint8_t CRC8Calculate(uint8_t *data, uint8_t length);
+
+//for single uint16_nummbers
+uint8_t CRC8Calculate(uint16_t data);
+
+uint8_t CRC8Configure(uint8_t poly, uint8_t initial);
 
 
-char db_buffer[100];
-
-
-void DebugInit(void)
-{
-    DebugBegin();
-    dbprintf("Debug sension was started\n\n");
-}
+#endif

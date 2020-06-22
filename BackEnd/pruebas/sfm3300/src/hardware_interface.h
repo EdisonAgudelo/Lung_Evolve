@@ -1,4 +1,4 @@
-
+ 
 /*
     Lung Evolve Mechanical Ventilator
     Copyright (C) 2020  Edison Agudelo, Mateo Garcia, Alejandra Londoño
@@ -17,15 +17,28 @@
     along with this program.  If not, see https://www.gnu.org/licenses/gpl-3.0.html.
     
     */
+   
+#ifndef _HARDWARE_INTERFACE_H_
+#define _HARDWARE_INTERFACE_H_
 
-#include "debug.h"
+//this library is used to create an interface with mcu periphericals. if everything work properly,  you can change MCU and modify 
+// only this library to make compatible with your mcu and all other firmware elements shuld work well.
+
+#include <stdint.h>
+#include <Arduino.h>
+// ------- conventions --------//
 
 
-char db_buffer[100];
+const uint8_t kSoftI2C = 1;
+const uint8_t kHardI2C = 0;
 
 
-void DebugInit(void)
-{
-    DebugBegin();
-    dbprintf("Debug sension was started\n\n");
-}
+//--------- Functions interface --------//
+
+//i2c functions
+bool I2CBegin(int id);
+bool I2CRead(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght);
+bool I2CWrite(int id, uint8_t addres, uint8_t *buffer, uint8_t lenght);
+
+
+#endif

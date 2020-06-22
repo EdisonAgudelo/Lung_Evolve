@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define NEG_LOGIC
 
 void DriverLedInit(DriverLed *led, int gpio_output)
 {
@@ -58,14 +59,22 @@ inline void DriverLedTurnOn(DriverLed *led)
 {
     led->blink = false;
     led->state = kLedOn;
+#if defined(NEG_LOGIC)
+    PinSetDigital(led->gpio_pin, false);
+#else
     PinSetDigital(led->gpio_pin, true);
+#endif
 }
 
 inline void DriverLedTurnOff(DriverLed *led)
 {
     led->blink = false;
     led->state = kLedOff;
+#if defined(NEG_LOGIC)
+    PinSetDigital(led->gpio_pin, true);
+#else
     PinSetDigital(led->gpio_pin, false);
+#endif
 }
 
 ////////////////////////////////////////////////////////////
@@ -82,7 +91,11 @@ void DriverLedLoop(DriverLed *led)
             if (GetDiffTime(Millis(), led->ref_time) > led->period_ms)
             {
                 led->ref_time = Millis();
-                PinSetDigital(led->gpio_pin, false); //positive logic
+#if defined(NEG_LOGIC)
+                PinSetDigital(led->gpio_pin, true);
+#else
+                PinSetDigital(led->gpio_pin, false);    //positive logic
+#endif
                 led->state = kLedOff;
                 led->n_times_count++;
             }
@@ -96,7 +109,11 @@ void DriverLedLoop(DriverLed *led)
 
                 if (led->n_times_count < led->n_times_ref || led->n_times_ref == 0)
                 {
+#if defined(NEG_LOGIC)
+                    PinSetDigital(led->gpio_pin, false);
+#else
                     PinSetDigital(led->gpio_pin, true); //positive logic
+#endif
                     led->state = kLedOn;
                 }
                 else
@@ -112,7 +129,11 @@ void DriverLedLoop(DriverLed *led)
             {
                 led->ref_time = Millis();
                 led->state = kLedOn;
-                PinSetDigital(led->gpio_pin, true); //positive logic
+#if defined(NEG_LOGIC)
+                PinSetDigital(led->gpio_pin, false);
+#else
+                PinSetDigital(led->gpio_pin, true);     //positive logic
+#endif
                 led->n_times_count = 0;
             }
             break;
@@ -120,7 +141,11 @@ void DriverLedLoop(DriverLed *led)
         default:
             //something was wrong, reset state machine
             led->ref_time = Millis();
+#if defined(NEG_LOGIC)
+            PinSetDigital(led->gpio_pin, false);
+#else
             PinSetDigital(led->gpio_pin, true);
+#endif
             led->state = kLedOn;
             break;
         }
@@ -145,11 +170,15 @@ void DriverLedShoot(DriverLed *led, uint32_t shoot_time_ms)
 
 void DriverLedTShoot(DriverLed *led, uint32_t shoot_period_ms, uint32_t shoot_time)
 {
+#if defined(NEG_LOGIC)
+    PinSetDigital(led->gpio_pin, false);
+#else
     PinSetDigital(led->gpio_pin, true);
+#endif
     led->blink = true;
     led->state = kLedOn;
-    led->period_death_ms = shoot_period_ms - 2*shoot_time;
+    led->period_death_ms = shoot_period_ms - 2 * shoot_time;
     led->period_ms = shoot_time;
     led->ref_time = Millis();
-    led->n_times_ref = 1;   
+    led->n_times_ref = 1;
 }

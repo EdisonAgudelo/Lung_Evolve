@@ -141,13 +141,13 @@ typedef enum
 
 //review
 const float kMotorBellowMaxPos = 280.0; // mm. In this position, bellow is full closed
-const float kMotorBellowMinPos = 5.0;   // mm. In this position, bellow is full open
-const float kMotorChokeMaxPos = 6.0;   // mm. In this position, choke valve is full open
+const float kMotorBellowMinPos = 0;   // mm. In this position, bellow is full open
+const float kMotorChokeMaxPos = 5.0;   // mm. In this position, choke valve is full open
 const float kMotorChokeMinPos = 0.0;    // mm. In this position, choke valve is full closed
 
 const float kMotorDefaultReturnVelBellows = 10.0; //mm/s //to go to home position
-const float kMotorDefaultVelAirChoke = 0.5;       //mm/s //normal operation
-const float kMotorDefaultVelO2Choke = 0.5;        //mm/s //normal operation
+const float kMotorDefaultVelAirChoke = 0.4;       //mm/s //normal operation
+const float kMotorDefaultVelO2Choke = 0.2;        //mm/s //normal operation
 
 //valve IDs
 typedef enum
@@ -158,8 +158,8 @@ typedef enum
 } ValveIDs;
 
 //some valve constants definitions
-const bool kValveFullOpen = true;
-const bool kValveFullClose = false;
+const bool kValveFullOpen = false;
+const bool kValveFullClose = true;
 
 //sensor IDs
 typedef enum
@@ -278,7 +278,7 @@ typedef union {
     float battery_level;   //%
     float patient_leakage; //L x
 
-    float mixture_flow;    //slm x
+    //float mixture_flow;    //slm x
     float motor_temp;      // °C x
     float battery_temp;    // °C x
     float source_volatge;  // V x
@@ -295,6 +295,7 @@ typedef union {
   };
 
   uint8_t all[15*4];
+  float general[15];
 
 } MeasureType;
 
